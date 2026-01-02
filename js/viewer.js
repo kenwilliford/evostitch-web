@@ -61,7 +61,8 @@
             }
 
             // Initialize OpenSeadragon with R2 tile source
-            const dziUrl = `${TILES_BASE_URL}/${mosaicId}/${metadata.title || mosaicId}.dzi`;
+            const dziName = metadata.name || metadata.title || mosaicId;
+            const dziUrl = `${TILES_BASE_URL}/${mosaicId}/${dziName}.dzi`;
             viewer = OpenSeadragon({
                 id: 'viewer',
                 tileSources: dziUrl,
