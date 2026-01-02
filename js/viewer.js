@@ -3,6 +3,9 @@
 (function() {
     'use strict';
 
+    // Tile server configuration
+    const TILES_BASE_URL = 'https://pub-db7ffa4b7df04b76aaae379c13562977.r2.dev';
+
     // Parse mosaic ID from URL
     const params = new URLSearchParams(window.location.search);
     const mosaicId = params.get('mosaic');
@@ -37,8 +40,8 @@
     // Initialize viewer
     async function init() {
         try {
-            // Load metadata
-            const metadataUrl = `mosaics/${mosaicId}/metadata.json`;
+            // Load metadata from R2
+            const metadataUrl = `${TILES_BASE_URL}/${mosaicId}/metadata.json`;
             const response = await fetch(metadataUrl);
             if (!response.ok) {
                 throw new Error(`Failed to load metadata: ${response.status}`);
@@ -54,8 +57,8 @@
                 scaleUmPerPixel = (metadata.scale.x + metadata.scale.y) / 2;
             }
 
-            // Initialize OpenSeadragon
-            const dziUrl = `mosaics/${mosaicId}/${metadata.title || mosaicId}.dzi`;
+            // Initialize OpenSeadragon with R2 tile source
+            const dziUrl = `${TILES_BASE_URL}/${mosaicId}/${metadata.title || mosaicId}.dzi`;
             viewer = OpenSeadragon({
                 id: 'viewer',
                 tileSources: dziUrl,
