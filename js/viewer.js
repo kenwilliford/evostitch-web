@@ -22,6 +22,9 @@
 
     // Scale bar configuration
     const SCALE_BAR_STEPS = [
+        { value: 1, label: '1 µm' },
+        { value: 2, label: '2 µm' },
+        { value: 5, label: '5 µm' },
         { value: 10, label: '10 µm' },
         { value: 20, label: '20 µm' },
         { value: 50, label: '50 µm' },
