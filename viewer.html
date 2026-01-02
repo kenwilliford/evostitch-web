@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mosaic Viewer - evostitch</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/openseadragon@4.1/build/openseadragon/openseadragon.min.js"></script>
+</head>
+<body class="viewer-page">
+    <header class="viewer-header">
+        <a href="index.html" class="back-link">&larr; Back to catalog</a>
+        <h1 id="mosaic-title">Loading...</h1>
+        <button id="fullscreen-btn" class="fullscreen-btn" title="Toggle fullscreen">&#x26F6;</button>
+    </header>
+
+    <div id="viewer" class="viewer-container"></div>
+
+    <div id="scale-bar" class="scale-bar">
+        <div class="scale-bar-line"></div>
+        <span class="scale-bar-label">100 µm</span>
+    </div>
+
+    <div id="coordinates" class="coordinates">
+        <span id="coord-display">X: 0 µm, Y: 0 µm</span>
+    </div>
+
+    <script src="js/viewer.js"></script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>evostitch - Microscopy Mosaic Viewer</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <h1>evostitch</h1>
+        <p class="tagline">High-resolution microscopy mosaic viewer</p>
+    </header>
+
+    <main>
+        <section class="catalog">
+            <h2>Available Mosaics</h2>
+            <div id="mosaic-grid" class="mosaic-grid">
+                <!-- Mosaics will be loaded dynamically -->
+                <p class="loading">Loading mosaics...</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Powered by <a href="https://github.com/kenwilliford/evostitch">evostitch</a> and <a href="https://openseadragon.github.io/">OpenSeadragon</a></p>
+    </footer>
+
+    <script src="js/catalog.js"></script>
+</body>
+</html>

@@ -1,0 +1,232 @@
+/* evostitch-web styles */
+
+:root {
+    --bg-primary: #1a1a2e;
+    --bg-secondary: #16213e;
+    --text-primary: #eee;
+    --text-secondary: #aaa;
+    --accent: #0f4c75;
+    --accent-light: #3282b8;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+}
+
+a {
+    color: var(--accent-light);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Header */
+header {
+    padding: 2rem;
+    text-align: center;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid #333;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    font-weight: 300;
+    letter-spacing: 0.1em;
+}
+
+.tagline {
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+}
+
+/* Main content */
+main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.catalog h2 {
+    margin-bottom: 1.5rem;
+    font-weight: 400;
+}
+
+/* Mosaic grid */
+.mosaic-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.mosaic-card {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+}
+
+.mosaic-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.mosaic-card .thumbnail {
+    width: 100%;
+    height: 200px;
+    background: #222;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+}
+
+.mosaic-card .thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.mosaic-card .info {
+    padding: 1rem;
+}
+
+.mosaic-card .title {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.mosaic-card .dimensions {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.loading {
+    color: var(--text-secondary);
+    text-align: center;
+    padding: 2rem;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+    border-top: 1px solid #333;
+    margin-top: 4rem;
+}
+
+/* Viewer page */
+.viewer-page {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.viewer-header {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid #333;
+    gap: 1rem;
+}
+
+.viewer-header h1 {
+    flex: 1;
+    font-size: 1.25rem;
+    font-weight: 400;
+    text-align: center;
+}
+
+.back-link {
+    font-size: 0.9rem;
+}
+
+.fullscreen-btn {
+    background: none;
+    border: 1px solid #555;
+    color: var(--text-primary);
+    padding: 0.5rem 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.fullscreen-btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+/* Viewer container */
+.viewer-container {
+    flex: 1;
+    background: #000;
+}
+
+/* Scale bar */
+.scale-bar {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 8px 12px;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 1000;
+}
+
+.scale-bar-line {
+    width: 100px;
+    height: 3px;
+    background: #fff;
+    margin-bottom: 4px;
+}
+
+.scale-bar-label {
+    color: #fff;
+    font-size: 12px;
+    font-family: monospace;
+}
+
+/* Coordinates display */
+.coordinates {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 8px 12px;
+    border-radius: 4px;
+    z-index: 1000;
+}
+
+#coord-display {
+    color: #fff;
+    font-size: 12px;
+    font-family: monospace;
+}
+
+/* Fullscreen adjustments */
+.viewer-page:fullscreen .viewer-header,
+.viewer-page:-webkit-full-screen .viewer-header {
+    display: none;
+}
+
+.viewer-page:fullscreen .viewer-container,
+.viewer-page:-webkit-full-screen .viewer-container {
+    height: 100vh;
+}
