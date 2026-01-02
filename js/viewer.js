@@ -37,7 +37,7 @@
         { value: 10000, label: '10 mm' },
     ];
 
-    const SCALE_BAR_MIN_WIDTH = 60;  // pixels
+    const SCALE_BAR_MIN_WIDTH = 30;  // pixels
     const SCALE_BAR_MAX_WIDTH = 150; // pixels
 
     // Initialize viewer
