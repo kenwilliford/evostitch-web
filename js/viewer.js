@@ -161,13 +161,7 @@
         const umY = pixelY * scaleUmPerPixel;
 
         const display = document.getElementById('coord-display');
-
-        // Format based on magnitude
-        if (umX > 1000 || umY > 1000) {
-            display.textContent = `X: ${(umX / 1000).toFixed(2)} mm, Y: ${(umY / 1000).toFixed(2)} mm`;
-        } else {
-            display.textContent = `X: ${umX.toFixed(1)} µm, Y: ${umY.toFixed(1)} µm`;
-        }
+        display.textContent = `X: ${umX.toFixed(1)} µm, Y: ${umY.toFixed(1)} µm`;
     }
 
     function toggleFullscreen() {
