@@ -15,8 +15,9 @@
         return;
     }
 
-    // Configuration - will be loaded from metadata.json
+    // Configuration - will be loaded from metadata.json and catalog.json
     let metadata = null;
+    let catalogEntry = null;
     let viewer = null;
     let scaleUmPerPixel = null;
 
@@ -43,17 +44,32 @@
     // Initialize viewer
     async function init() {
         try {
-            // Load metadata from R2
+            // Load metadata from R2 and catalog in parallel
             const metadataUrl = `${TILES_BASE_URL}/${mosaicId}/metadata.json`;
-            const response = await fetch(metadataUrl);
-            if (!response.ok) {
-                throw new Error(`Failed to load metadata: ${response.status}`);
-            }
-            metadata = await response.json();
+            const [metadataResponse, catalogResponse] = await Promise.all([
+                fetch(metadataUrl),
+                fetch('mosaics/catalog.json')
+            ]);
 
-            // Update title
-            document.getElementById('mosaic-title').textContent = metadata.title || mosaicId;
-            document.title = `${metadata.title || mosaicId} - evostitch`;
+            if (!metadataResponse.ok) {
+                throw new Error(`Failed to load metadata: ${metadataResponse.status}`);
+            }
+            metadata = await metadataResponse.json();
+
+            // Get catalog entry for this mosaic
+            if (catalogResponse.ok) {
+                const catalog = await catalogResponse.json();
+                catalogEntry = catalog.mosaics.find(m => m.id === mosaicId);
+            }
+
+            // Update title and description from catalog (fall back to metadata)
+            const title = catalogEntry?.title || metadata.title || mosaicId;
+            document.getElementById('mosaic-title').textContent = title;
+            document.title = `${title} - evostitch`;
+
+            if (catalogEntry?.description) {
+                document.getElementById('mosaic-description').textContent = catalogEntry.description;
+            }
 
             // Get scale (µm per pixel)
             if (metadata.scale) {

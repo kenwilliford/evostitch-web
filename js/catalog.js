@@ -71,6 +71,7 @@
             </div>
             <div class="info">
                 <div class="title">${mosaic.title || mosaic.id}</div>
+                ${mosaic.description ? `<div class="description">${mosaic.description}</div>` : ''}
                 <div class="dimensions">${dimensions}</div>
                 ${physicalSize ? `<div class="dimensions">${physicalSize}</div>` : ''}
             </div>
