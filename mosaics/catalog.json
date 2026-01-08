@@ -44,6 +44,15 @@
       "physicalWidth": 21284,
       "physicalHeight": 30338,
       "thumbnail": "thumbnail.jpg"
+    },
+    {
+      "id": "feedback-test",
+      "title": "Feedback Test",
+      "width": 14800,
+      "height": 21105,
+      "physicalWidth": 21284,
+      "physicalHeight": 30338,
+      "thumbnail": "thumbnail.jpg"
     }
   ]
 }
