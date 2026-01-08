@@ -2,11 +2,20 @@
   "mosaics": [
     {
       "id": "SCH-55-22B_50xt_global",
-      "title": "SCH-55-22B 50× Gunflint Formation (Global-First)",
+      "title": "SCH-55-22B 50\u00d7 Gunflint Formation (Global-First)",
       "width": 237647,
       "height": 338116,
       "physicalWidth": 21361,
       "physicalHeight": 30380,
+      "thumbnail": "thumbnail.jpg"
+    },
+    {
+      "id": "SCH-55-22B_50xt_test5_6pct_pyramid",
+      "title": "SCH-55-22B_50xt_test5_6pct_pyramid",
+      "width": 14800,
+      "height": 21105,
+      "physicalWidth": 21284,
+      "physicalHeight": 30338,
       "thumbnail": "thumbnail.jpg"
     }
   ]
