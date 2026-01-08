@@ -247,3 +247,60 @@ footer {
 .viewer-page:-webkit-full-screen .viewer-container {
     height: 100vh;
 }
+
+/* Mobile styles */
+@media (max-width: 768px) {
+    /* Catalog page */
+    header {
+        padding: 1.5rem 1rem;
+    }
+
+    header h1 {
+        font-size: 2rem;
+    }
+
+    main {
+        padding: 1rem;
+    }
+
+    .mosaic-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Viewer page */
+    .viewer-header {
+        padding: 0.5rem 0.75rem;
+        gap: 0.5rem;
+    }
+
+    .viewer-header h1 {
+        font-size: 1rem;
+    }
+
+    .viewer-description {
+        display: none;
+    }
+
+    .fullscreen-btn {
+        display: none;
+    }
+
+    .back-link {
+        font-size: 0.8rem;
+    }
+
+    /* Scale bar and coordinates */
+    .scale-bar,
+    .coordinates {
+        bottom: 10px;
+        padding: 6px 10px;
+    }
+
+    .scale-bar {
+        left: 10px;
+    }
+
+    .coordinates {
+        right: 10px;
+    }
+}
