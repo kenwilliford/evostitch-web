@@ -17,6 +17,15 @@
       "physicalWidth": 21284,
       "physicalHeight": 30338,
       "thumbnail": "thumbnail.jpg"
+    },
+    {
+      "id": "SCH-55-22B_50x_E2E_Test",
+      "title": "SCH-55-22B_50x_E2E_Test",
+      "width": 237648,
+      "height": 338117,
+      "physicalWidth": 21360,
+      "physicalHeight": 30377,
+      "thumbnail": "thumbnail.jpg"
     }
   ]
 }
