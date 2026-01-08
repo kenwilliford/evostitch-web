@@ -2,65 +2,11 @@
   "mosaics": [
     {
       "id": "SCH-55-22B_50xt_global",
-      "title": "SCH-55-22B 50\u00d7 Gunflint Formation (Global-First)",
+      "title": "SCH-55-22B 50× Gunflint Formation (Global-First)",
       "width": 237647,
       "height": 338116,
       "physicalWidth": 21361,
       "physicalHeight": 30380,
-      "thumbnail": "thumbnail.jpg"
-    },
-    {
-      "id": "SCH-55-22B_50xt_test5_6pct_pyramid",
-      "title": "SCH-55-22B_50xt_test5_6pct_pyramid",
-      "width": 14800,
-      "height": 21105,
-      "physicalWidth": 21284,
-      "physicalHeight": 30338,
-      "thumbnail": "thumbnail.jpg"
-    },
-    {
-      "id": "SCH-55-22B_50x_E2E_Test",
-      "title": "SCH-55-22B_50x_E2E_Test",
-      "width": 237648,
-      "height": 338117,
-      "physicalWidth": 21360,
-      "physicalHeight": 30377,
-      "thumbnail": "thumbnail.jpg"
-    },
-    {
-      "id": "notification-test",
-      "title": "Notification Test",
-      "width": 14800,
-      "height": 21105,
-      "physicalWidth": 21284,
-      "physicalHeight": 30338,
-      "thumbnail": "thumbnail.jpg"
-    },
-    {
-      "id": "promote-test",
-      "title": "Promote Test",
-      "width": 14800,
-      "height": 21105,
-      "physicalWidth": 21284,
-      "physicalHeight": 30338,
-      "thumbnail": "thumbnail.jpg"
-    },
-    {
-      "id": "feedback-test",
-      "title": "Feedback Test",
-      "width": 14800,
-      "height": 21105,
-      "physicalWidth": 21284,
-      "physicalHeight": 30338,
-      "thumbnail": "thumbnail.jpg"
-    },
-    {
-      "id": "link-test",
-      "title": "Link Test",
-      "width": 14800,
-      "height": 21105,
-      "physicalWidth": 21284,
-      "physicalHeight": 30338,
       "thumbnail": "thumbnail.jpg"
     }
   ]
