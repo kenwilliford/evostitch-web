@@ -1,4 +1,4 @@
-// evostitch OpenSeadragon viewer with adaptive scale bar
+// evostitch OpenSeadragon viewer with adaptive scale bar and Z-stack support
 
 (function() {
     'use strict';
@@ -21,6 +21,11 @@
     let viewer = null;
     let scaleUmPerPixel = null;
 
+    // Z-stack state
+    let currentZ = 0;
+    let zCount = 1;
+    let zLabels = null;
+
     // Scale bar configuration
     const SCALE_BAR_STEPS = [
         { value: 1, label: '1 µm' },
@@ -40,6 +45,22 @@
 
     const SCALE_BAR_MIN_WIDTH = 30;  // pixels
     const SCALE_BAR_MAX_WIDTH = 150; // pixels
+
+    // OpenSeadragon configuration (shared between 2D and 3D)
+    const OSD_CONFIG = {
+        id: 'viewer',
+        prefixUrl: 'https://cdn.jsdelivr.net/npm/openseadragon@4.1/build/openseadragon/images/',
+        showNavigator: true,
+        navigatorPosition: 'TOP_RIGHT',
+        navigatorSizeRatio: 0.15,
+        animationTime: 0.3,
+        blendTime: 0.1,
+        constrainDuringPan: true,
+        maxZoomPixelRatio: 2,
+        minZoomImageRatio: 0.5,
+        visibilityRatio: 0.5,
+        zoomPerScroll: 1.2,
+    };
 
     // Initialize viewer
     async function init() {
@@ -76,37 +97,15 @@
                 scaleUmPerPixel = (metadata.scale.x + metadata.scale.y) / 2;
             }
 
-            // Initialize OpenSeadragon with R2 tile source
-            const dziName = metadata.name || metadata.title || mosaicId;
-            const dziUrl = `${TILES_BASE_URL}/${mosaicId}/${dziName}.dzi`;
-            viewer = OpenSeadragon({
-                id: 'viewer',
-                tileSources: dziUrl,
-                prefixUrl: 'https://cdn.jsdelivr.net/npm/openseadragon@4.1/build/openseadragon/images/',
-                showNavigator: true,
-                navigatorPosition: 'TOP_RIGHT',
-                navigatorSizeRatio: 0.15,
-                animationTime: 0.3,
-                blendTime: 0.1,
-                constrainDuringPan: true,
-                maxZoomPixelRatio: 2,
-                minZoomImageRatio: 0.5,
-                visibilityRatio: 0.5,
-                zoomPerScroll: 1.2,
-            });
+            // Check for 3D mosaic
+            zCount = metadata.zCount || 1;
+            zLabels = metadata.zLabels || null;
 
-            // Set up event handlers
-            viewer.addHandler('zoom', updateScaleBar);
-            viewer.addHandler('open', updateScaleBar);
-            viewer.addHandler('animation', updateCoordinates);
-
-            // Mouse move for coordinates
-            viewer.addHandler('canvas-press', updateCoordinates);
-
-            const canvas = viewer.canvas;
-            canvas.addEventListener('mousemove', function(e) {
-                updateCoordinatesFromEvent(e);
-            });
+            if (zCount > 1) {
+                await initZStack();
+            } else {
+                await init2D();
+            }
 
             // Fullscreen button
             document.getElementById('fullscreen-btn').addEventListener('click', toggleFullscreen);
@@ -115,6 +114,127 @@
             console.error('Viewer initialization failed:', error);
             document.getElementById('mosaic-title').textContent = `Error: ${error.message}`;
         }
+    }
+
+    // Initialize 2D viewer (single plane)
+    async function init2D() {
+        // For 2D, DZI name matches the metadata name/title
+        const dziName = metadata.name || metadata.title || mosaicId;
+        const dziUrl = `${TILES_BASE_URL}/${mosaicId}/${dziName}.dzi`;
+
+        viewer = OpenSeadragon({
+            ...OSD_CONFIG,
+            tileSources: dziUrl,
+        });
+
+        setupViewerHandlers();
+    }
+
+    // Initialize 3D viewer (Z-stack)
+    async function initZStack() {
+        // For 3D, DZI files are always named "mosaic" per generate_dzi_3d()
+        const dziName = 'mosaic';
+
+        // Build tile sources array - all planes
+        const tileSources = [];
+        for (let z = 0; z < zCount; z++) {
+            const zDir = `z_${String(z).padStart(2, '0')}`;
+            tileSources.push(`${TILES_BASE_URL}/${mosaicId}/${zDir}/${dziName}.dzi`);
+        }
+
+        viewer = OpenSeadragon({
+            ...OSD_CONFIG,
+            tileSources: tileSources,
+            collectionMode: false,
+            sequenceMode: false,
+        });
+
+        // Wait for all images to be added to the world
+        let imagesLoaded = 0;
+        viewer.world.addHandler('add-item', function() {
+            imagesLoaded++;
+            if (imagesLoaded === zCount) {
+                // All planes loaded - set visibility
+                for (let z = 1; z < zCount; z++) {
+                    const item = viewer.world.getItemAt(z);
+                    if (item) item.setOpacity(0);
+                }
+                // Initialize Z-slider UI
+                initZSliderUI();
+            }
+        });
+
+        setupViewerHandlers();
+    }
+
+    // Set up common event handlers
+    function setupViewerHandlers() {
+        viewer.addHandler('zoom', updateScaleBar);
+        viewer.addHandler('open', updateScaleBar);
+        viewer.addHandler('animation', updateCoordinates);
+
+        // Mouse move for coordinates
+        viewer.addHandler('canvas-press', updateCoordinates);
+
+        const canvas = viewer.canvas;
+        canvas.addEventListener('mousemove', function(e) {
+            updateCoordinatesFromEvent(e);
+        });
+    }
+
+    // Z-slider UI initialization
+    function initZSliderUI() {
+        const container = document.getElementById('z-slider-container');
+        const slider = document.getElementById('z-slider');
+
+        // Configure slider range
+        slider.max = zCount - 1;
+        slider.value = 0;
+
+        // Update displays
+        updateZDisplay();
+
+        // Show container
+        container.style.display = 'flex';
+
+        // Handle slider changes
+        slider.addEventListener('input', handleZSliderChange);
+    }
+
+    function handleZSliderChange(e) {
+        const newZ = parseInt(e.target.value, 10);
+        setZPlane(newZ);
+    }
+
+    function setZPlane(newZ) {
+        if (newZ === currentZ || newZ < 0 || newZ >= zCount) return;
+
+        // Hide current plane
+        const currentItem = viewer.world.getItemAt(currentZ);
+        if (currentItem) currentItem.setOpacity(0);
+
+        // Show new plane
+        const newItem = viewer.world.getItemAt(newZ);
+        if (newItem) newItem.setOpacity(1);
+
+        currentZ = newZ;
+        updateZDisplay();
+    }
+
+    function updateZDisplay() {
+        const depthDisplay = document.getElementById('z-depth');
+        const indexDisplay = document.getElementById('z-index');
+
+        // Depth label from metadata or computed
+        if (zLabels && zLabels[currentZ]) {
+            depthDisplay.textContent = zLabels[currentZ];
+        } else {
+            const spacing = metadata.zSpacing || 1;
+            depthDisplay.textContent = `+${(currentZ * spacing).toFixed(1)} µm`;
+        }
+
+        // Plane index (1-based for humans)
+        indexDisplay.textContent = `(${currentZ + 1}/${zCount})`;
     }
 
     function updateScaleBar() {
@@ -178,7 +298,14 @@
         const umY = pixelY * scaleUmPerPixel;
 
         const display = document.getElementById('coord-display');
-        display.textContent = `X: ${umX.toFixed(1)} µm, Y: ${umY.toFixed(1)} µm`;
+
+        if (zCount > 1) {
+            // Include Z coordinate for 3D mosaics
+            const zLabel = zLabels?.[currentZ] || `+${(currentZ * (metadata.zSpacing || 1)).toFixed(1)} µm`;
+            display.textContent = `X: ${umX.toFixed(1)} µm, Y: ${umY.toFixed(1)} µm, Z: ${zLabel}`;
+        } else {
+            display.textContent = `X: ${umX.toFixed(1)} µm, Y: ${umY.toFixed(1)} µm`;
+        }
     }
 
     function toggleFullscreen() {

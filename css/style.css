@@ -304,3 +304,116 @@ footer {
         right: 10px;
     }
 }
+
+/* Z-slider */
+.z-slider-container {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    padding: 8px 16px;
+    border-radius: 4px;
+    display: none;  /* Hidden by default, shown via JS when zCount > 1 */
+    align-items: center;
+    gap: 10px;
+    z-index: 1000;
+    font-family: monospace;
+    /* iOS: Prevent zoom on double-tap */
+    touch-action: manipulation;
+}
+
+.z-label {
+    color: #fff;
+    font-size: 12px;
+}
+
+.z-slider {
+    width: 140px;
+    height: 8px;  /* Taller track for easier touch */
+    -webkit-appearance: none;
+    appearance: none;
+    background: #444;
+    border-radius: 4px;
+    outline: none;
+    /* iOS: Prevent default styling */
+    border: none;
+    margin: 0;
+}
+
+/* Webkit (Chrome, Safari, iOS Safari) */
+.z-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--accent-light);
+    cursor: pointer;
+    border: none;
+}
+
+/* Firefox */
+.z-slider::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--accent-light);
+    cursor: pointer;
+    border: none;
+}
+
+/* Webkit track styling */
+.z-slider::-webkit-slider-runnable-track {
+    height: 8px;
+    background: #444;
+    border-radius: 4px;
+}
+
+.z-depth {
+    color: #fff;
+    font-size: 12px;
+    min-width: 50px;
+}
+
+.z-index {
+    color: #aaa;
+    font-size: 11px;
+}
+
+/* Mobile & touch devices */
+@media (max-width: 768px), (pointer: coarse) {
+    .z-slider-container {
+        bottom: 10px;
+        padding: 10px 14px;
+        gap: 8px;
+    }
+
+    .z-slider {
+        width: 120px;
+        height: 10px;
+    }
+
+    .z-slider::-webkit-slider-thumb {
+        width: 28px;
+        height: 28px;
+    }
+
+    .z-slider::-moz-range-thumb {
+        width: 28px;
+        height: 28px;
+    }
+}
+
+/* iOS safe area inset (notch/home indicator) */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .z-slider-container {
+        bottom: calc(20px + env(safe-area-inset-bottom));
+    }
+
+    @media (max-width: 768px) {
+        .z-slider-container {
+            bottom: calc(10px + env(safe-area-inset-bottom));
+        }
+    }
+}
