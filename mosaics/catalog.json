@@ -9,6 +9,17 @@
       "physicalWidth": 21361,
       "physicalHeight": 30380,
       "thumbnail": "thumbnail.jpg"
+    },
+    {
+      "id": "3x3x3-test",
+      "title": "3x3x3 Z-Stack Test",
+      "description": "Test mosaic with 3 Z-planes for keyboard navigation testing.",
+      "width": 8404,
+      "height": 5815,
+      "physicalWidth": 755,
+      "physicalHeight": 522,
+      "zCount": 3,
+      "thumbnail": "thumbnail.jpg"
     }
   ]
 }
