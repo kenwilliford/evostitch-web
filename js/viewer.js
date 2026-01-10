@@ -199,6 +199,9 @@
 
         // Handle slider changes
         slider.addEventListener('input', handleZSliderChange);
+
+        // Preload adjacent planes for smoother first navigation
+        preloadAdjacentPlanes(0);
     }
 
     function handleZSliderChange(e) {
@@ -219,6 +222,20 @@
 
         currentZ = newZ;
         updateZDisplay();
+
+        // Preload adjacent planes (±2) for smoother navigation
+        preloadAdjacentPlanes(newZ);
+    }
+
+    function preloadAdjacentPlanes(z) {
+        const radius = 2;
+        for (let dz = -radius; dz <= radius; dz++) {
+            const targetZ = z + dz;
+            if (targetZ >= 0 && targetZ < zCount && targetZ !== z) {
+                const item = viewer.world.getItemAt(targetZ);
+                if (item) item.setPreload(true);
+            }
+        }
     }
 
     // Normalize unit strings to use proper µm symbol
