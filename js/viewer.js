@@ -221,13 +221,18 @@
         updateZDisplay();
     }
 
+    // Normalize unit strings to use proper µm symbol
+    function normalizeUnit(text) {
+        return text.replace(/um\b/g, 'µm');
+    }
+
     function updateZDisplay() {
         const depthDisplay = document.getElementById('z-depth');
         const indexDisplay = document.getElementById('z-index');
 
         // Depth label from metadata or computed
         if (zLabels && zLabels[currentZ]) {
-            depthDisplay.textContent = zLabels[currentZ];
+            depthDisplay.textContent = normalizeUnit(zLabels[currentZ]);
         } else {
             const spacing = metadata.zSpacing || 1;
             depthDisplay.textContent = `+${(currentZ * spacing).toFixed(1)} µm`;
@@ -301,7 +306,8 @@
 
         if (zCount > 1) {
             // Include Z coordinate for 3D mosaics
-            const zLabel = zLabels?.[currentZ] || `+${(currentZ * (metadata.zSpacing || 1)).toFixed(1)} µm`;
+            let zLabel = zLabels?.[currentZ] || `+${(currentZ * (metadata.zSpacing || 1)).toFixed(1)} µm`;
+            zLabel = normalizeUnit(zLabel);
             display.textContent = `X: ${umX.toFixed(1)} µm, Y: ${umY.toFixed(1)} µm, Z: ${zLabel}`;
         } else {
             display.textContent = `X: ${umX.toFixed(1)} µm, Y: ${umY.toFixed(1)} µm`;
