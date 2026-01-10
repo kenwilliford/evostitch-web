@@ -227,6 +227,38 @@
         preloadAdjacentPlanes(newZ);
     }
 
+    function handleKeyboardZ(e) {
+        // Ignore if user is typing in an input/textarea
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            return;
+        }
+
+        switch (e.key) {
+            case 'ArrowUp':
+            case 'PageUp':
+                e.preventDefault();
+                setZPlane(currentZ + 1);  // Deeper (higher Z-index)
+                document.getElementById('z-slider').value = currentZ;
+                break;
+            case 'ArrowDown':
+            case 'PageDown':
+                e.preventDefault();
+                setZPlane(currentZ - 1);  // Shallower (lower Z-index)
+                document.getElementById('z-slider').value = currentZ;
+                break;
+            case 'Home':
+                e.preventDefault();
+                setZPlane(0);  // Surface
+                document.getElementById('z-slider').value = 0;
+                break;
+            case 'End':
+                e.preventDefault();
+                setZPlane(zCount - 1);  // Deepest
+                document.getElementById('z-slider').value = zCount - 1;
+                break;
+        }
+    }
+
     function preloadAdjacentPlanes(z) {
         const radius = 2;
         for (let dz = -radius; dz <= radius; dz++) {
