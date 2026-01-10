@@ -25,6 +25,43 @@
     let currentZ = 0;
     let zCount = 1;
     let zLabels = null;
+    let deviceConfig = null;
+
+    // Device capability detection for adaptive caching
+    function getDeviceConfig() {
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+                         || (window.innerWidth < 768 && 'ontouchstart' in window);
+        const deviceMemory = navigator.deviceMemory || 4; // Default 4GB if API unavailable
+
+        if (isMobile || deviceMemory < 4) {
+            // Mobile / Low memory: conservative settings
+            return {
+                tier: 'mobile',
+                cacheBase: 150,
+                cachePlaneMultiplier: 50,
+                preloadRadius: 1,
+                imageLoaderLimit: 2
+            };
+        } else if (deviceMemory < 8) {
+            // Standard desktop: moderate settings
+            return {
+                tier: 'standard',
+                cacheBase: 200,
+                cachePlaneMultiplier: 80,
+                preloadRadius: 2,
+                imageLoaderLimit: 4
+            };
+        } else {
+            // High memory desktop: aggressive settings
+            return {
+                tier: 'high',
+                cacheBase: 300,
+                cachePlaneMultiplier: 100,
+                preloadRadius: 2,
+                imageLoaderLimit: 6
+            };
+        }
+    }
 
     // Scale bar configuration
     const SCALE_BAR_STEPS = [
@@ -144,9 +181,13 @@
             tileSources.push(`${TILES_BASE_URL}/${mosaicId}/${zDir}/${dziName}.dzi`);
         }
 
-        // Dynamic cache size: base + tiles for preloaded planes (±2 radius = 5 planes max)
-        const preloadPlanes = Math.min(zCount, 5);
-        const dynamicCacheCount = 200 + (preloadPlanes * 100);
+        // Device-aware cache configuration
+        deviceConfig = getDeviceConfig();
+        const preloadWindow = deviceConfig.preloadRadius * 2 + 1; // ±radius = 2*radius+1 planes
+        const preloadPlanes = Math.min(zCount, preloadWindow);
+        const dynamicCacheCount = deviceConfig.cacheBase + (preloadPlanes * deviceConfig.cachePlaneMultiplier);
+
+        console.log(`[evostitch] Device tier: ${deviceConfig.tier}, cache: ${dynamicCacheCount}, preload radius: ±${deviceConfig.preloadRadius}`);
 
         viewer = OpenSeadragon({
             ...OSD_CONFIG,
@@ -154,6 +195,7 @@
             collectionMode: false,
             sequenceMode: false,
             maxImageCacheCount: dynamicCacheCount,
+            imageLoaderLimit: deviceConfig.imageLoaderLimit,
         });
 
         // Wait for all images to be added to the world
@@ -236,7 +278,7 @@
         currentZ = newZ;
         updateZDisplay();
 
-        // Preload adjacent planes (±2) for smoother navigation
+        // Preload adjacent planes for smoother navigation
         preloadAdjacentPlanes(newZ);
     }
 
@@ -289,7 +331,7 @@
     }
 
     function preloadAdjacentPlanes(z) {
-        const radius = 2;
+        const radius = deviceConfig?.preloadRadius || 2;
         for (let dz = -radius; dz <= radius; dz++) {
             const targetZ = z + dz;
             if (targetZ >= 0 && targetZ < zCount && targetZ !== z) {
