@@ -205,6 +205,9 @@
 
         // Keyboard navigation for Z-planes
         document.addEventListener('keydown', handleKeyboardZ);
+
+        // Shift+Scroll wheel navigation for Z-planes
+        viewer.canvas.addEventListener('wheel', handleWheelZ, { passive: false });
     }
 
     function handleZSliderChange(e) {
@@ -260,6 +263,22 @@
                 document.getElementById('z-slider').value = zCount - 1;
                 break;
         }
+    }
+
+    function handleWheelZ(e) {
+        // Shift+Scroll for Z-plane navigation (plain scroll = zoom)
+        if (!e.shiftKey) return;
+
+        e.preventDefault();
+
+        // Scroll up (negative deltaY) = deeper (higher Z), scroll down = shallower
+        if (e.deltaY < 0) {
+            setZPlane(currentZ + 1);
+        } else if (e.deltaY > 0) {
+            setZPlane(currentZ - 1);
+        }
+
+        document.getElementById('z-slider').value = currentZ;
     }
 
     function preloadAdjacentPlanes(z) {
