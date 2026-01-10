@@ -202,6 +202,9 @@
 
         // Preload adjacent planes for smoother first navigation
         preloadAdjacentPlanes(0);
+
+        // Keyboard navigation for Z-planes
+        document.addEventListener('keydown', handleKeyboardZ);
     }
 
     function handleZSliderChange(e) {
