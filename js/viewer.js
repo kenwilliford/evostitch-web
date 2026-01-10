@@ -60,6 +60,8 @@
         minZoomImageRatio: 0.5,
         visibilityRatio: 0.5,
         zoomPerScroll: 1.2,
+        maxImageCacheCount: 500,
+        imageLoaderLimit: 4,
     };
 
     // Initialize viewer
