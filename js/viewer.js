@@ -144,11 +144,16 @@
             tileSources.push(`${TILES_BASE_URL}/${mosaicId}/${zDir}/${dziName}.dzi`);
         }
 
+        // Dynamic cache size: base + tiles for preloaded planes (±2 radius = 5 planes max)
+        const preloadPlanes = Math.min(zCount, 5);
+        const dynamicCacheCount = 200 + (preloadPlanes * 100);
+
         viewer = OpenSeadragon({
             ...OSD_CONFIG,
             tileSources: tileSources,
             collectionMode: false,
             sequenceMode: false,
+            maxImageCacheCount: dynamicCacheCount,
         });
 
         // Wait for all images to be added to the world
