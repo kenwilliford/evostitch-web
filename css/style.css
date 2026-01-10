@@ -387,7 +387,7 @@ footer {
 /* Mobile & touch devices */
 @media (max-width: 768px), (pointer: coarse) {
     .z-slider-container {
-        bottom: 10px;
+        bottom: 50px;  /* Above scale bar and coordinates */
         padding: 10px 14px;
         gap: 8px;
     }
@@ -417,7 +417,7 @@ footer {
 
     @media (max-width: 768px) {
         .z-slider-container {
-            bottom: calc(10px + env(safe-area-inset-bottom));
+            bottom: calc(50px + env(safe-area-inset-bottom));
         }
     }
 }
