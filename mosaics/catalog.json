@@ -12,8 +12,8 @@
     },
     {
       "id": "3x3x3-test",
-      "title": "3x3x3 Z-Stack Test",
-      "description": "Test mosaic with 3 Z-planes for keyboard navigation testing.",
+      "title": "Z-Stack Demo",
+      "description": "Demonstration mosaic with 3 Z-planes. Use arrow keys or slider to navigate depth.",
       "width": 8404,
       "height": 5815,
       "physicalWidth": 755,
