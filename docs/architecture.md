@@ -25,7 +25,8 @@ web/
 ├── viewer.html         # Viewer page (loads OpenSeadragon)
 ├── js/
 │   ├── catalog.js      # Catalog loading and card rendering
-│   └── viewer.js       # Viewer initialization, scale bar, Z-navigation
+│   ├── viewer.js       # Viewer initialization, scale bar, Z-navigation
+│   └── telemetry.js    # Tile load performance measurement
 ├── css/
 │   └── style.css       # Shared styles (dark theme)
 ├── mosaics/
@@ -73,6 +74,33 @@ Initializes OpenSeadragon and handles 2D/3D viewing modes.
 |------|-----------|----------|
 | 2D | `zCount == 1` | Single DZI tile source |
 | 3D | `zCount > 1` | All Z-planes loaded, opacity switching |
+
+### telemetry.js
+
+Measures tile load performance to distinguish cold (network) vs warm (browser cache) loads.
+
+| Function | Purpose |
+|----------|---------|
+| `recordTileLoad()` | Record a tile load event (called by viewer.js) |
+| `getStats()` | Get aggregated statistics by zoom level |
+| `logSummary()` | Log summary to console |
+| `clearStats()` | Clear all telemetry data |
+| `flushToStorage()` | Force flush pending data to localStorage |
+
+**How it works:**
+
+1. **Measurement:** Uses `PerformanceResourceTiming` API to get actual tile load duration
+2. **Classification:** Tiles loading < 50ms → "warm" (cache hit), ≥ 50ms → "cold" (network)
+3. **Batching:** Writes batched in memory, flushed every 5s or 50 tiles (avoids blocking main thread)
+4. **Persistence:** Data stored in `localStorage['evostitch_tile_telemetry']`
+
+**Console API:**
+
+```javascript
+evostitch.telemetry.getStats()    // View stats: { byZoom, totals: { coldCount, coldAvgMs, warmCount, warmAvgMs } }
+evostitch.telemetry.logSummary()  // Log: "cold=206 tiles (avg 135ms), warm=72 tiles (avg 1ms)"
+evostitch.telemetry.clearStats()  // Reset all data
+```
 
 ---
 
