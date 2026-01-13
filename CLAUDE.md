@@ -28,9 +28,78 @@ JavaScript viewer for displaying stitched microscopy mosaics with Z-plane naviga
 
 ## Testing
 
-No test suite yet (see Issue #1). For now:
+No test suite yet (see Issue #18). For now:
 - Manual testing in browser
 - Check console for errors
+
+## Performance Optimization Workflow
+
+**Every optimization task follows this protocol.** This is non-negotiable for W1-W6 work.
+
+### The Cycle
+
+```
+Hypothesis → Baseline → Implement → Measure → Validate → Document
+```
+
+### Before Implementation
+
+1. **Hypothesis**: What will improve? By how much? Why do you expect this?
+   - Be specific: "Service worker will reduce p95 cold tile load by 40% on 3G"
+   - Not vague: "This should make things faster"
+
+2. **Baseline**: Run test harness, record metrics under test matrix conditions
+   - Use `npm run perf-test` (see #50)
+   - Compare against `docs/performance-baseline.json`
+
+3. **Prediction Table**: Document expected impact per condition
+   ```
+   | Condition | Metric | Baseline | Predicted |
+   |-----------|--------|----------|-----------|
+   | 3G/Cold   | p95 tile load | 2400ms | 1440ms (-40%) |
+   ```
+
+### After Implementation
+
+4. **Measurement**: Re-run test harness with identical conditions
+
+5. **Validation**: Compare actual vs predicted
+   - Did it improve the predicted metric?
+   - Were there unexpected regressions elsewhere?
+   - Was the magnitude correct?
+
+6. **Documentation**: Record learnings
+   - What matched predictions?
+   - What surprised you?
+   - How should this inform future predictions?
+
+### Test Matrix Dimensions
+
+| Dimension | Values |
+|-----------|--------|
+| Network | Unthrottled, Fast 3G (1.6Mbps), Slow 3G (400kbps) |
+| Cache | Cold (cleared), Warm (primed) |
+| Viewport | Desktop (1920x1080), Mobile (375x812) |
+
+### When This Applies
+
+- **Always**: W1-W6 optimization tasks
+- **Maybe**: Bug fixes that might affect performance
+- **Skip**: Pure refactoring with no performance intent
+
+### Red Flags (You're Rationalizing)
+
+| Thought | Reality |
+|---------|---------|
+| "This obviously helps" | Measure it. Obvious improvements sometimes don't. |
+| "Too small to measure" | Small changes compound. Measure anyway. |
+| "I'll measure after a few changes" | Measure after EACH. Otherwise you can't attribute impact. |
+| "The harness isn't set up yet" | Set it up first (#50). No optimization without measurement. |
+
+### Relevant Issues
+
+- #50: Performance test harness
+- #51: Baseline capture
 
 ## Code Style
 
