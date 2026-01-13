@@ -149,6 +149,9 @@
             // Fullscreen button
             document.getElementById('fullscreen-btn').addEventListener('click', toggleFullscreen);
 
+            // Log telemetry summary from previous sessions
+            window.evostitch.telemetry.logSummary();
+
         } catch (error) {
             console.error('Viewer initialization failed:', error);
             document.getElementById('mosaic-title').textContent = `Error: ${error.message}`;
@@ -160,6 +163,10 @@
         // For 2D, DZI name matches the metadata name/title
         const dziName = metadata.name || metadata.title || mosaicId;
         const dziUrl = `${TILES_BASE_URL}/${mosaicId}/${dziName}.dzi`;
+
+        // Set device tier for telemetry (2D uses default config)
+        const config = getDeviceConfig();
+        window.evostitch.telemetry.setDeviceTier(config.tier);
 
         viewer = OpenSeadragon({
             ...OSD_CONFIG,
@@ -188,6 +195,7 @@
         const dynamicCacheCount = deviceConfig.cacheBase + (preloadPlanes * deviceConfig.cachePlaneMultiplier);
 
         console.log(`[evostitch] Device tier: ${deviceConfig.tier}, cache: ${dynamicCacheCount}, preload radius: ±${deviceConfig.preloadRadius}`);
+        window.evostitch.telemetry.setDeviceTier(deviceConfig.tier);
 
         viewer = OpenSeadragon({
             ...OSD_CONFIG,
@@ -221,6 +229,29 @@
         viewer.addHandler('zoom', updateScaleBar);
         viewer.addHandler('open', updateScaleBar);
         viewer.addHandler('animation', updateCoordinates);
+
+        // Tile load telemetry - use PerformanceResourceTiming API for accurate latency
+        viewer.addHandler('tile-loaded', function(event) {
+            const zoomLevel = event.tile.level;
+
+            // Get tile URL from the tile object (use getUrl() to avoid deprecation warning)
+            const tileUrl = event.tile.getUrl ? event.tile.getUrl() : event.tile.url;
+            let latencyMs = 0;
+            let isWarm = true;  // Default to warm if we can't measure
+
+            if (tileUrl && typeof performance !== 'undefined' && performance.getEntriesByName) {
+                const entries = performance.getEntriesByName(tileUrl, 'resource');
+                if (entries.length > 0) {
+                    // Use most recent entry (in case of retries)
+                    const timing = entries[entries.length - 1];
+                    latencyMs = Math.round(timing.duration);
+                    isWarm = latencyMs < window.evostitch.telemetry.WARM_THRESHOLD_MS;
+                }
+                // If no entry found, tile was likely served from browser cache (very warm)
+            }
+
+            window.evostitch.telemetry.recordTileLoad(zoomLevel, latencyMs, isWarm);
+        });
 
         // Mouse move for coordinates
         viewer.addHandler('canvas-press', updateCoordinates);
