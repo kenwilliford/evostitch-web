@@ -1,0 +1,13 @@
+{
+  "name": "evostitch-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "evostitch web viewer",
+  "scripts": {
+    "perf-test": "node tests/perf/run-harness.js",
+    "perf-test:quick": "node tests/perf/run-harness.js --quick"
+  },
+  "devDependencies": {
+    "playwright": "^1.40.0"
+  }
+}

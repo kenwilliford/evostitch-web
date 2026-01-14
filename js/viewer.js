@@ -173,6 +173,9 @@
             tileSources: dziUrl,
         });
 
+        // Expose viewer for external instrumentation (performance testing)
+        document.getElementById('viewer').viewer = viewer;
+
         setupViewerHandlers();
     }
 
@@ -205,6 +208,9 @@
             maxImageCacheCount: dynamicCacheCount,
             imageLoaderLimit: deviceConfig.imageLoaderLimit,
         });
+
+        // Expose viewer for external instrumentation (performance testing)
+        document.getElementById('viewer').viewer = viewer;
 
         // Wait for all images to be added to the world
         let imagesLoaded = 0;
