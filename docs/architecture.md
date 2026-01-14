@@ -205,3 +205,73 @@ The `metadata.json` provides scale from core's OME-TIFF metadata.
 Static files deployed to GitHub Pages from `web/` directory.
 - Custom domain: evostitch.net (configured via CNAME file)
 - DZI tiles served from Cloudflare R2 (separate from GitHub Pages)
+
+---
+
+## Performance Testing
+
+Automated harness for measuring viewer performance under controlled conditions.
+
+### Structure
+
+```
+web/tests/perf/
+├── config.js           # Test matrix configuration
+├── metrics-collector.js # Browser-side instrumentation
+└── run-harness.js      # Main test runner
+```
+
+### Usage
+
+```bash
+# Full test matrix (all conditions)
+npm run perf-test
+
+# Quick test (reduced matrix for fast iteration)
+npm run perf-test:quick
+```
+
+### Test Matrix
+
+| Dimension | Values |
+|-----------|--------|
+| Network | Unthrottled, Fast 3G (1.6Mbps), Slow 3G (400kbps) |
+| Cache | Cold (cleared), Warm (primed) |
+| Viewport | Desktop (1920x1080), Mobile (375x812) |
+
+### Metrics Captured
+
+| Metric | Description |
+|--------|-------------|
+| `timeToFirstTile` | Time from navigation to first tile loaded (ms) |
+| `timeToViewportComplete` | Time until all visible tiles loaded (ms) |
+| `p50TileLoad` | Median tile load latency (ms) |
+| `p95TileLoad` | 95th percentile tile load latency (ms) |
+
+### Output
+
+Results written to `docs/performance-baseline.json`:
+
+```json
+{
+  "timestamp": "2026-01-13T...",
+  "mosaic": "3x3x3-test",
+  "conditions": [
+    {
+      "conditions": { "network": "fast-3g", "cache": "cold", "viewport": "desktop" },
+      "metrics": { "timeToFirstTile": 234, "timeToViewportComplete": 1892, "p50TileLoad": 145 }
+    }
+  ]
+}
+```
+
+### Implementation Notes
+
+- Uses Playwright with Chrome DevTools Protocol for network throttling
+- Browser-side metrics collector injected via `addInitScript`
+- Viewer exposes OSD instance via `document.getElementById('viewer').viewer`
+- Environment variable `PERF_VIEWER_URL` overrides default viewer URL for local testing
+
+### Known Limitations
+
+- **Warm cache tests:** Each Playwright browser context has isolated cache. The "warm" cache test warms in a separate browser from the test browser, so warm results may not reflect actual browser cache behavior. This is a known limitation pending future enhancement.

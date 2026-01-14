@@ -1,0 +1,174 @@
+{
+  "timestamp": "2026-01-14T07:16:16.519Z",
+  "mosaic": "3x3x3-test",
+  "conditions": [
+    {
+      "conditions": {
+        "network": "unthrottled",
+        "cache": "cold",
+        "viewport": "desktop"
+      },
+      "metrics": {
+        "timeToFirstTile": 413,
+        "timeToViewportComplete": 2108,
+        "p50TileLoad": 83,
+        "p95TileLoad": 161,
+        "totalTilesLoaded": 72
+      }
+    },
+    {
+      "conditions": {
+        "network": "unthrottled",
+        "cache": "warm",
+        "viewport": "desktop"
+      },
+      "metrics": {
+        "timeToFirstTile": 319,
+        "timeToViewportComplete": 2035,
+        "p50TileLoad": 75,
+        "p95TileLoad": 97,
+        "totalTilesLoaded": 72
+      }
+    },
+    {
+      "conditions": {
+        "network": "fast-3g",
+        "cache": "cold",
+        "viewport": "desktop"
+      },
+      "metrics": {
+        "timeToFirstTile": 1756,
+        "timeToViewportComplete": 2669,
+        "p50TileLoad": 731,
+        "p95TileLoad": 760,
+        "totalTilesLoaded": 4
+      }
+    },
+    {
+      "conditions": {
+        "network": "fast-3g",
+        "cache": "warm",
+        "viewport": "desktop"
+      },
+      "metrics": {
+        "timeToFirstTile": 1694,
+        "timeToViewportComplete": 2651,
+        "p50TileLoad": 634,
+        "p95TileLoad": 660,
+        "totalTilesLoaded": 4
+      }
+    },
+    {
+      "conditions": {
+        "network": "slow-3g",
+        "cache": "cold",
+        "viewport": "desktop"
+      },
+      "metrics": {
+        "timeToFirstTile": 6707,
+        "timeToViewportComplete": 8360,
+        "p50TileLoad": 3085,
+        "p95TileLoad": 3145,
+        "totalTilesLoaded": 4
+      }
+    },
+    {
+      "conditions": {
+        "network": "slow-3g",
+        "cache": "warm",
+        "viewport": "desktop"
+      },
+      "metrics": {
+        "timeToFirstTile": 6705,
+        "timeToViewportComplete": 8346,
+        "p50TileLoad": 3124,
+        "p95TileLoad": 3140,
+        "totalTilesLoaded": 4
+      }
+    },
+    {
+      "conditions": {
+        "network": "unthrottled",
+        "cache": "cold",
+        "viewport": "mobile"
+      },
+      "metrics": {
+        "timeToFirstTile": 346,
+        "timeToViewportComplete": 1043,
+        "p50TileLoad": 109,
+        "p95TileLoad": 150,
+        "totalTilesLoaded": 9
+      }
+    },
+    {
+      "conditions": {
+        "network": "unthrottled",
+        "cache": "warm",
+        "viewport": "mobile"
+      },
+      "metrics": {
+        "timeToFirstTile": 378,
+        "timeToViewportComplete": 1043,
+        "p50TileLoad": 121,
+        "p95TileLoad": 169,
+        "totalTilesLoaded": 9
+      }
+    },
+    {
+      "conditions": {
+        "network": "fast-3g",
+        "cache": "cold",
+        "viewport": "mobile"
+      },
+      "metrics": {
+        "timeToFirstTile": 1829,
+        "timeToViewportComplete": 3143,
+        "p50TileLoad": 740,
+        "p95TileLoad": 1512,
+        "totalTilesLoaded": 9
+      }
+    },
+    {
+      "conditions": {
+        "network": "fast-3g",
+        "cache": "warm",
+        "viewport": "mobile"
+      },
+      "metrics": {
+        "timeToFirstTile": 1821,
+        "timeToViewportComplete": 3139,
+        "p50TileLoad": 723,
+        "p95TileLoad": 1510,
+        "totalTilesLoaded": 9
+      }
+    },
+    {
+      "conditions": {
+        "network": "slow-3g",
+        "cache": "cold",
+        "viewport": "mobile"
+      },
+      "metrics": {
+        "timeToFirstTile": 6764,
+        "timeToViewportComplete": 8344,
+        "p50TileLoad": 2678,
+        "p95TileLoad": 2795,
+        "totalTilesLoaded": 6
+      }
+    },
+    {
+      "conditions": {
+        "network": "slow-3g",
+        "cache": "warm",
+        "viewport": "mobile"
+      },
+      "metrics": {
+        "timeToFirstTile": 6707,
+        "timeToViewportComplete": 7348,
+        "p50TileLoad": 3009,
+        "p95TileLoad": 3038,
+        "totalTilesLoaded": 3
+      }
+    }
+  ]
+}
