@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-01-14T07:16:16.519Z",
+  "timestamp": "2026-01-14T16:31:55.045Z",
   "mosaic": "3x3x3-test",
   "conditions": [
     {
@@ -9,11 +9,11 @@
         "viewport": "desktop"
       },
       "metrics": {
-        "timeToFirstTile": 413,
-        "timeToViewportComplete": 2108,
-        "p50TileLoad": 83,
-        "p95TileLoad": 161,
-        "totalTilesLoaded": 72
+        "timeToFirstTile": 547,
+        "timeToViewportComplete": 1204,
+        "p50TileLoad": 88,
+        "p95TileLoad": 121,
+        "totalTilesLoaded": 49
       }
     },
     {
@@ -23,11 +23,11 @@
         "viewport": "desktop"
       },
       "metrics": {
-        "timeToFirstTile": 319,
-        "timeToViewportComplete": 2035,
-        "p50TileLoad": 75,
-        "p95TileLoad": 97,
-        "totalTilesLoaded": 72
+        "timeToFirstTile": 360,
+        "timeToViewportComplete": 1095,
+        "p50TileLoad": 103,
+        "p95TileLoad": 136,
+        "totalTilesLoaded": 66
       }
     },
     {
@@ -37,11 +37,11 @@
         "viewport": "desktop"
       },
       "metrics": {
-        "timeToFirstTile": 1756,
-        "timeToViewportComplete": 2669,
-        "p50TileLoad": 731,
-        "p95TileLoad": 760,
-        "totalTilesLoaded": 4
+        "timeToFirstTile": 1599,
+        "timeToViewportComplete": 7209,
+        "p50TileLoad": 1579,
+        "p95TileLoad": 1971,
+        "totalTilesLoaded": 31
       }
     },
     {
@@ -51,11 +51,11 @@
         "viewport": "desktop"
       },
       "metrics": {
-        "timeToFirstTile": 1694,
-        "timeToViewportComplete": 2651,
-        "p50TileLoad": 634,
-        "p95TileLoad": 660,
-        "totalTilesLoaded": 4
+        "timeToFirstTile": 1806,
+        "timeToViewportComplete": 8152,
+        "p50TileLoad": 1429,
+        "p95TileLoad": 2129,
+        "totalTilesLoaded": 35
       }
     },
     {
@@ -65,11 +65,11 @@
         "viewport": "desktop"
       },
       "metrics": {
-        "timeToFirstTile": 6707,
-        "timeToViewportComplete": 8360,
-        "p50TileLoad": 3085,
-        "p95TileLoad": 3145,
-        "totalTilesLoaded": 4
+        "timeToFirstTile": 6147,
+        "timeToViewportComplete": 29339,
+        "p50TileLoad": 6562,
+        "p95TileLoad": 8495,
+        "totalTilesLoaded": 29
       }
     },
     {
@@ -79,11 +79,11 @@
         "viewport": "desktop"
       },
       "metrics": {
-        "timeToFirstTile": 6705,
-        "timeToViewportComplete": 8346,
-        "p50TileLoad": 3124,
-        "p95TileLoad": 3140,
-        "totalTilesLoaded": 4
+        "timeToFirstTile": 6178,
+        "timeToViewportComplete": 29209,
+        "p50TileLoad": 6502,
+        "p95TileLoad": 8493,
+        "totalTilesLoaded": 29
       }
     },
     {
@@ -93,10 +93,10 @@
         "viewport": "mobile"
       },
       "metrics": {
-        "timeToFirstTile": 346,
-        "timeToViewportComplete": 1043,
-        "p50TileLoad": 109,
-        "p95TileLoad": 150,
+        "timeToFirstTile": 379,
+        "timeToViewportComplete": 468,
+        "p50TileLoad": 124,
+        "p95TileLoad": 152,
         "totalTilesLoaded": 9
       }
     },
@@ -107,10 +107,10 @@
         "viewport": "mobile"
       },
       "metrics": {
-        "timeToFirstTile": 378,
-        "timeToViewportComplete": 1043,
-        "p50TileLoad": 121,
-        "p95TileLoad": 169,
+        "timeToFirstTile": 404,
+        "timeToViewportComplete": 502,
+        "p50TileLoad": 103,
+        "p95TileLoad": 125,
         "totalTilesLoaded": 9
       }
     },
@@ -121,10 +121,10 @@
         "viewport": "mobile"
       },
       "metrics": {
-        "timeToFirstTile": 1829,
-        "timeToViewportComplete": 3143,
-        "p50TileLoad": 740,
-        "p95TileLoad": 1512,
+        "timeToFirstTile": 1696,
+        "timeToViewportComplete": 2457,
+        "p50TileLoad": 727,
+        "p95TileLoad": 1513,
         "totalTilesLoaded": 9
       }
     },
@@ -135,10 +135,10 @@
         "viewport": "mobile"
       },
       "metrics": {
-        "timeToFirstTile": 1821,
-        "timeToViewportComplete": 3139,
+        "timeToFirstTile": 1684,
+        "timeToViewportComplete": 2449,
         "p50TileLoad": 723,
-        "p95TileLoad": 1510,
+        "p95TileLoad": 1509,
         "totalTilesLoaded": 9
       }
     },
@@ -149,11 +149,11 @@
         "viewport": "mobile"
       },
       "metrics": {
-        "timeToFirstTile": 6764,
-        "timeToViewportComplete": 8344,
-        "p50TileLoad": 2678,
-        "p95TileLoad": 2795,
-        "totalTilesLoaded": 6
+        "timeToFirstTile": 6236,
+        "timeToViewportComplete": 9241,
+        "p50TileLoad": 3043,
+        "p95TileLoad": 6016,
+        "totalTilesLoaded": 7
       }
     },
     {
@@ -163,11 +163,11 @@
         "viewport": "mobile"
       },
       "metrics": {
-        "timeToFirstTile": 6707,
-        "timeToViewportComplete": 7348,
-        "p50TileLoad": 3009,
-        "p95TileLoad": 3038,
-        "totalTilesLoaded": 3
+        "timeToFirstTile": 6207,
+        "timeToViewportComplete": 9198,
+        "p50TileLoad": 3007,
+        "p95TileLoad": 5979,
+        "totalTilesLoaded": 7
       }
     }
   ]
