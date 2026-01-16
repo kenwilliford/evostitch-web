@@ -31,7 +31,12 @@ web/
 │   ├── tile-prioritizer.js  # Request prioritization and Z-prefetch (W2)
 │   ├── network-detect.js    # Network speed detection (W3)
 │   ├── quality-adapt.js     # Adaptive quality based on network (W4)
-│   └── blur-up-loader.js    # Progressive tile resolution (blur-up loading)
+│   ├── blur-up-loader.js    # Progressive tile resolution (blur-up loading)
+│   ├── loading-indicator.js # Dual-arc progress ring for tile loading
+│   ├── browser-decode.js    # Browser detection for decode strategy
+│   ├── worker-pool.js       # Web Worker pool management
+│   ├── tile-decoder-worker.js # Off-thread tile decoding worker
+│   └── worker-tile-source.js  # OSD integration for worker decoding
 ├── css/
 │   └── style.css       # Shared styles (dark theme)
 ├── mosaics/
@@ -287,6 +292,141 @@ Shows low-resolution placeholder tiles while high-res tiles load, improving perc
 evostitch.blurUpLoader.getState()              // { enabled, activePlaceholders, pendingPlaceholderCount }
 evostitch.blurUpLoader.setDebug(true)          // Enable debug logging
 evostitch.blurUpLoader.clearAllPlaceholders()  // Remove all placeholders
+```
+
+### loading-indicator.js
+
+Dual-arc SVG progress ring showing tile loading progress.
+
+| Function | Purpose |
+|----------|---------|
+| `init()` | Create and inject indicator DOM elements |
+| `show()` | Display indicator (with 300ms delay to avoid flash) |
+| `hide()` | Hide indicator and reset progress |
+| `setProgress(xy, z)` | Update progress (0-1 for XY tiles, 0-1 for Z-planes) |
+| `getState()` | Get debugging state |
+
+**Visual design:**
+
+- Outer arc: XY tile completion (current plane)
+- Inner arc: Z-plane readiness (±2 adjacent planes)
+- 300ms display delay to avoid flash on fast loads
+- Smooth opacity transitions
+
+**Accessibility:**
+
+- `role="progressbar"` with `aria-valuenow`/`aria-label`
+- Live region announcer for screen readers
+- `prefers-reduced-motion` support
+
+**Console API:**
+
+```javascript
+evostitch.loadingIndicator.show()           // Show with 300ms delay
+evostitch.loadingIndicator.setProgress(0.5, 0.8)  // 50% XY, 80% Z
+evostitch.loadingIndicator.hide()           // Hide and reset
+evostitch.loadingIndicator.getState()       // { initialized, isLoading, visible, xyProgress, zProgress }
+```
+
+### browser-decode.js
+
+Detects browser capabilities and provides optimal decode strategy.
+
+| Function | Purpose |
+|----------|---------|
+| `init()` | Run browser detection |
+| `getStrategy()` | Get recommended decode strategy: `worker` or `main-thread` |
+| `getInfo()` | Get detection results |
+| `decodeMainThread(url)` | Fallback decode using Image.decode() |
+
+**Browser detection:**
+
+- Chromium: Uses `window.chrome` detection
+- Firefox: Uses `InstallTrigger` or user agent
+- Safari: User agent after excluding Chrome
+
+**Console API:**
+
+```javascript
+evostitch.browserDecode.getInfo()  // { browser: 'chromium', canUseWorkers: true, strategy: 'worker' }
+```
+
+### worker-pool.js
+
+Manages a pool of Web Workers for parallel tile decoding.
+
+| Function | Purpose |
+|----------|---------|
+| `init(options)` | Initialize pool (size defaults to `navigator.hardwareConcurrency`) |
+| `decode(url)` | Decode tile via worker, returns Promise<ImageBitmap> |
+| `getState()` | Get pool status |
+| `terminate()` | Shut down all workers |
+| `setDebug(enabled)` | Enable/disable debug logging |
+
+**Pool sizing:**
+
+- Default: `navigator.hardwareConcurrency || 4`
+- Maximum: 12 workers
+- Round-robin task distribution
+
+**Console API:**
+
+```javascript
+evostitch.workerPool.decode(url)  // Returns Promise<ImageBitmap>
+evostitch.workerPool.getState()   // { initialized, workerCount, pendingJobs, nextJobId }
+evostitch.workerPool.setDebug(true)
+```
+
+### tile-decoder-worker.js
+
+Web Worker that performs off-thread tile decoding.
+
+**Message protocol:**
+
+```javascript
+// Input
+{ id: number, url: string }
+
+// Output (success)
+{ id: number, bitmap: ImageBitmap, success: true }
+
+// Output (error)
+{ id: number, success: false, error: string }
+```
+
+**Decode process:**
+
+1. `fetch(url)` with credentials omit
+2. `response.blob()` to get Blob
+3. `createImageBitmap(blob)` for off-thread decode
+4. Transfer ImageBitmap back (zero-copy)
+
+### worker-tile-source.js
+
+Integrates worker pool with OpenSeadragon's tile loading.
+
+| Function | Purpose |
+|----------|---------|
+| `init(viewer, options)` | Initialize with OSD viewer |
+| `getStats()` | Get decode statistics |
+| `setEnabled(bool)` | Enable/disable worker decoding |
+| `setDebug(enabled)` | Enable/disable debug logging |
+
+**Integration approach:**
+
+- Hooks `viewer.imageLoader.addJob` to intercept tile requests
+- Same-origin tiles: decoded via worker pool
+- Cross-origin tiles: fallback to standard OSD loader (CORS limitation)
+
+**CORS limitation:**
+
+Workers cannot fetch cross-origin resources without CORS headers. Tiles from R2 CDN require `Access-Control-Allow-Origin: *` header for worker decoding.
+
+**Console API:**
+
+```javascript
+evostitch.workerTileSource.getStats()  // { enabled, workerDecodes, fallbackDecodes, errors, workerPoolState }
+evostitch.workerTileSource.setDebug(true)
 ```
 
 ---

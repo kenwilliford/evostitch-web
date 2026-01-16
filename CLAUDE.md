@@ -196,6 +196,40 @@ evostitch.qualityAdapt.getState()            // Full debugging state
 evostitch.qualityAdapt.setDebug(true)
 ```
 
+### Loading Indicator
+
+```javascript
+evostitch.loadingIndicator.show()           // Show with 300ms delay
+evostitch.loadingIndicator.setProgress(0.5, 0.8)  // 50% XY tiles, 80% Z-planes
+evostitch.loadingIndicator.hide()           // Hide and reset
+evostitch.loadingIndicator.getState()       // { initialized, isLoading, visible, xyProgress, zProgress }
+```
+
+### Worker Pool (W5)
+
+```javascript
+evostitch.workerPool.decode(url)  // Returns Promise<ImageBitmap>
+evostitch.workerPool.getState()   // { initialized, workerCount, pendingJobs, nextJobId }
+evostitch.workerPool.setDebug(true)
+evostitch.workerPool.terminate()  // Shut down all workers
+```
+
+### Worker Tile Source (W5)
+
+```javascript
+evostitch.workerTileSource.getStats()  // { enabled, workerDecodes, fallbackDecodes, errors }
+evostitch.workerTileSource.setEnabled(true/false)  // Enable/disable
+evostitch.workerTileSource.setDebug(true)
+```
+
+**Note:** Worker tile decoding requires CORS headers on tile server for cross-origin tiles. R2 CDN tiles currently use standard OSD loader.
+
+### Browser Decode Detection
+
+```javascript
+evostitch.browserDecode.getInfo()  // { browser, canUseWorkers, strategy }
+```
+
 ## GitHub Pages
 
 Deployed from `web/` directory to evostitch.net

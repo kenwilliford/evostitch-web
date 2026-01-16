@@ -492,3 +492,64 @@ footer {
 .viewer-page:-webkit-full-screen .quality-selector {
     top: 20px;
 }
+
+/* Loading indicator - dual-arc progress ring */
+.loading-indicator {
+    position: fixed;
+    bottom: 80px;  /* Above scale bar */
+    left: 20px;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 300ms ease-in;
+    pointer-events: none;
+}
+
+.loading-indicator.visible {
+    opacity: 1;
+    transition: opacity 200ms ease-out;
+}
+
+/* Mobile adjustment for loading indicator */
+@media (max-width: 768px) {
+    .loading-indicator {
+        bottom: 70px;
+        left: 10px;
+    }
+}
+
+/* iOS safe area for loading indicator */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .loading-indicator {
+        bottom: calc(80px + env(safe-area-inset-bottom));
+    }
+
+    @media (max-width: 768px) {
+        .loading-indicator {
+            bottom: calc(70px + env(safe-area-inset-bottom));
+        }
+    }
+}
+
+/* Visually hidden - accessible but invisible */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .loading-indicator,
+    .loading-indicator.visible {
+        transition: none;
+    }
+    .loading-indicator circle {
+        transition: none;
+    }
+}
