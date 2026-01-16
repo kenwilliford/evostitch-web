@@ -25,6 +25,8 @@
         maxPendingJobs: 50,
         // Enable debug logging
         debug: false,
+        // Enable diagnostic logging (always logs processQueue activity)
+        diagnostic: false,
         // Z-aware prefetching settings
         prefetch: {
             // Prefetch Z±1 planes
@@ -59,6 +61,10 @@
     let lastZChangeTime = 0;
     let lastZPlane = 0;
     let zVelocity = 0; // planes per second, positive = forward, negative = backward
+
+    // Heartbeat interval for processing queue when no OSD events fire
+    let heartbeatIntervalId = null;
+    const HEARTBEAT_INTERVAL_MS = 500;
 
     /**
      * Initialize the tile prioritizer with an OpenSeadragon viewer
@@ -103,6 +109,23 @@
             // Calculate priority for this job
             const priority = calculatePriority(options);
 
+            // Log tile Z-plane for diagnostic purposes
+            const tile = options.tile;
+            const tiledImage = tile ? tile.tiledImage : null;
+            const tileUrl = tile ? (tile.getUrl ? tile.getUrl() : tile.url) : null;
+            const tileZPlane = tiledImage ? getTileZPlane(tiledImage) : getZPlaneFromUrl(tileUrl);
+            logDiagnostic('addJob', {
+                zPlane: tileZPlane,
+                currentZ: currentZPlane,
+                priority: priority,
+                level: tile ? tile.level : 'unknown',
+                isCurrentZ: tileZPlane === currentZPlane,
+                hasTile: !!tile,
+                hasTiledImage: !!tiledImage,
+                usedUrlFallback: !tiledImage && tileZPlane >= 0,
+                tileUrl: tileUrl || 'no-tile'
+            });
+
             // Add to priority queue
             pendingJobs.push({
                 options: options,
@@ -127,6 +150,9 @@
 
             log('Job queued with priority ' + priority + ', queue size: ' + pendingJobs.length);
 
+            // Start heartbeat to ensure queue gets processed even without OSD events
+            startHeartbeat();
+
             // Process queue
             processQueue();
         };
@@ -145,16 +171,27 @@
         }
 
         // Get the tile's tiledImage (Z-plane)
-        const tiledImage = tile.tiledImage;
-        if (!tiledImage) {
+        let tiledImage = tile.tiledImage;
+        let tileZPlane = -1;
+
+        if (tiledImage) {
+            // Normal path: get Z-plane from tiledImage
+            tileZPlane = getTileZPlane(tiledImage);
+        } else {
+            // Fallback: extract Z-plane from tile URL (handles OSD timing quirk)
+            // URL pattern: .../z_XX/... where XX is the zero-padded Z-plane index
+            const tileUrl = tile.getUrl ? tile.getUrl() : tile.url;
+            tileZPlane = getZPlaneFromUrl(tileUrl);
+        }
+
+        // If we still can't determine Z-plane, use default priority
+        if (tileZPlane < 0) {
             return PRIORITY.DEFAULT;
         }
 
-        // Determine which Z-plane this tile belongs to
-        const tileZPlane = getTileZPlane(tiledImage);
-
         // Check if tile is in the current viewport
-        const inViewport = isTileInViewport(tile, tiledImage);
+        // When tiledImage is unavailable, assume in viewport (conservative)
+        const inViewport = tiledImage ? isTileInViewport(tile, tiledImage) : true;
 
         // Assign priority based on Z-plane and viewport visibility
         if (inViewport) {
@@ -168,6 +205,23 @@
         }
 
         return PRIORITY.PREFETCH;
+    }
+
+    /**
+     * Extract Z-plane index from tile URL
+     * Matches evostitch URL pattern: .../z_XX/... where XX is zero-padded
+     * @param {string} url - The tile URL
+     * @returns {number} Z-plane index, or -1 if not found
+     */
+    function getZPlaneFromUrl(url) {
+        if (!url) return -1;
+
+        // Match /z_XX/ pattern (e.g., /z_00/, /z_05/, /z_12/)
+        const match = url.match(/\/z_(\d+)\//);
+        if (match) {
+            return parseInt(match[1], 10);
+        }
+        return -1;
     }
 
     /**
@@ -215,7 +269,13 @@
      * Process the priority queue, dispatching jobs up to the current limit
      */
     function processQueue() {
-        if (processingQueue || pendingJobs.length === 0) {
+        const pendingCount = pendingJobs.length;
+
+        if (processingQueue || pendingCount === 0) {
+            logDiagnostic('processQueue SKIP', {
+                reason: processingQueue ? 'already processing' : 'queue empty',
+                pendingJobs: pendingCount
+            });
             return;
         }
 
@@ -225,6 +285,13 @@
         const currentLimit = imageLoader.jobLimit;
         const currentJobs = imageLoader.jobsInProgress || 0;
         const availableSlots = Math.max(0, currentLimit - currentJobs);
+
+        logDiagnostic('processQueue START', {
+            pendingJobs: pendingCount,
+            currentJobs: currentJobs,
+            jobLimit: currentLimit,
+            availableSlots: availableSlots
+        });
 
         // Dispatch jobs up to available slots
         const toDispatch = Math.min(availableSlots, pendingJobs.length);
@@ -238,12 +305,58 @@
 
         processingQueue = false;
 
+        logDiagnostic('processQueue END', {
+            dispatched: toDispatch,
+            remainingJobs: pendingJobs.length
+        });
+
         // If there are still pending jobs and we couldn't dispatch any,
         // we'll process again when a job completes
         if (pendingJobs.length > 0 && toDispatch === 0) {
             // Schedule retry - jobs will complete and free slots
+            logDiagnostic('processQueue RETRY scheduled', { delay: '50ms' });
             setTimeout(processQueue, 50);
         }
+
+        // Stop heartbeat if queue is empty
+        if (pendingJobs.length === 0) {
+            stopHeartbeat();
+        }
+    }
+
+    /**
+     * Start heartbeat interval to process queue when no OSD events fire
+     * Called when jobs are added to ensure queue gets processed
+     */
+    function startHeartbeat() {
+        if (heartbeatIntervalId !== null) {
+            return; // Already running
+        }
+
+        heartbeatIntervalId = setInterval(function() {
+            if (pendingJobs.length > 0) {
+                logDiagnostic('heartbeat TICK', { pendingJobs: pendingJobs.length });
+                processQueue();
+            } else {
+                // Queue drained, stop heartbeat
+                stopHeartbeat();
+            }
+        }, HEARTBEAT_INTERVAL_MS);
+
+        logDiagnostic('heartbeat STARTED', { interval: HEARTBEAT_INTERVAL_MS + 'ms' });
+    }
+
+    /**
+     * Stop heartbeat interval when queue is empty
+     */
+    function stopHeartbeat() {
+        if (heartbeatIntervalId === null) {
+            return; // Not running
+        }
+
+        clearInterval(heartbeatIntervalId);
+        heartbeatIntervalId = null;
+        logDiagnostic('heartbeat STOPPED', { reason: 'queue empty' });
     }
 
     /**
@@ -584,6 +697,7 @@
         if (prefetchTimeout) {
             clearTimeout(prefetchTimeout);
         }
+        stopHeartbeat();
         pendingJobs = [];
         prefetchedZPlanes.clear();
         lastPrefetchBounds = null;
@@ -606,6 +720,10 @@
             jobLimit: viewer ? viewer.imageLoader.jobLimit : null,
             originalJobLimit: originalJobLimit,
             queuePriorities: pendingJobs.map(function(j) { return j.priority; }),
+            heartbeat: {
+                active: heartbeatIntervalId !== null,
+                intervalMs: HEARTBEAT_INTERVAL_MS
+            },
             prefetch: {
                 prefetchedZPlanes: Array.from(prefetchedZPlanes),
                 hasPendingPrefetch: prefetchTimeout !== null,
@@ -625,6 +743,19 @@
         }
     }
 
+    /**
+     * Diagnostic logging for processQueue activity
+     * Used to diagnose tile loading stalls
+     */
+    function logDiagnostic(message, data) {
+        if (CONFIG.diagnostic) {
+            const timestamp = new Date().toISOString().split('T')[1].slice(0, -1);
+            // Stringify data for Playwright console capture
+            const dataStr = data ? JSON.stringify(data) : '';
+            console.log('[DIAG ' + timestamp + '] ' + message + ' ' + dataStr);
+        }
+    }
+
     // Expose public API
     window.evostitch = window.evostitch || {};
     window.evostitch.tilePrioritizer = {
@@ -635,6 +766,7 @@
         destroy: destroy,
         getState: getState,
         setDebug: function(enabled) { CONFIG.debug = enabled; },
+        setDiagnostic: function(enabled) { CONFIG.diagnostic = enabled; },
         // Z-aware prefetching API (W2 Step 2.3)
         schedulePrefetch: schedulePrefetch,
         cancelPrefetch: cancelPrefetch,

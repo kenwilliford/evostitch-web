@@ -149,6 +149,18 @@ test('tile-prioritizer.js calculates priority based on Z-plane', () => {
     assert.ok(prioritizerSource.includes('currentZPlane'), 'Should compare against current Z-plane');
 });
 
+test('tile-prioritizer.js has URL-based Z-plane fallback (3.3 fix)', () => {
+    assert.ok(prioritizerSource.includes('function getZPlaneFromUrl('), 'Should have getZPlaneFromUrl function');
+    assert.ok(prioritizerSource.includes('z_(\\d+)'), 'Should match z_XX URL pattern');
+    assert.ok(prioritizerSource.includes('usedUrlFallback'), 'Should log when URL fallback is used');
+});
+
+test('tile-prioritizer.js calculatePriority uses URL fallback when tiledImage unavailable', () => {
+    // Verify the logic flow in calculatePriority
+    assert.ok(prioritizerSource.includes('getZPlaneFromUrl(tileUrl)'), 'Should call getZPlaneFromUrl as fallback');
+    assert.ok(prioritizerSource.includes('tiledImage ? isTileInViewport'), 'Should handle missing tiledImage for viewport check');
+});
+
 test('tile-prioritizer.js checks viewport bounds', () => {
     assert.ok(prioritizerSource.includes('function isTileInViewport('), 'Should have isTileInViewport function');
     assert.ok(prioritizerSource.includes('viewport.getBounds'), 'Should get viewport bounds');
@@ -358,6 +370,93 @@ test('tile-prioritizer.js destroy clears prefetch state', () => {
     assert.ok(destroySection.includes('prefetchTimeout'), 'destroy should clear prefetchTimeout');
     assert.ok(destroySection.includes('prefetchedZPlanes.clear'), 'destroy should clear prefetchedZPlanes');
     assert.ok(destroySection.includes('lastPrefetchBounds = null'), 'destroy should clear lastPrefetchBounds');
+});
+
+// ========== Heartbeat tests (W2 2.1-2.3) ==========
+
+test('tile-prioritizer.js defines heartbeat interval constant', () => {
+    assert.ok(prioritizerSource.includes('let heartbeatIntervalId = null'), 'Should have heartbeatIntervalId state');
+    assert.ok(prioritizerSource.includes('HEARTBEAT_INTERVAL_MS'), 'Should have HEARTBEAT_INTERVAL_MS constant');
+    const intervalMatch = prioritizerSource.match(/HEARTBEAT_INTERVAL_MS\s*=\s*(\d+)/);
+    assert.ok(intervalMatch, 'Should define HEARTBEAT_INTERVAL_MS value');
+    const interval = parseInt(intervalMatch[1], 10);
+    assert.ok(interval >= 100 && interval <= 1000, `Heartbeat interval should be 100-1000ms (got ${interval})`);
+});
+
+test('tile-prioritizer.js has startHeartbeat function', () => {
+    assert.ok(prioritizerSource.includes('function startHeartbeat('), 'Should have startHeartbeat function');
+});
+
+test('tile-prioritizer.js has stopHeartbeat function', () => {
+    assert.ok(prioritizerSource.includes('function stopHeartbeat('), 'Should have stopHeartbeat function');
+});
+
+test('tile-prioritizer.js startHeartbeat guards against multiple intervals', () => {
+    const startSection = prioritizerSource.substring(
+        prioritizerSource.indexOf('function startHeartbeat'),
+        prioritizerSource.indexOf('function stopHeartbeat')
+    );
+    assert.ok(startSection.includes('heartbeatIntervalId !== null'), 'Should check if heartbeat already running');
+    assert.ok(startSection.includes('return'), 'Should return early if already running');
+});
+
+test('tile-prioritizer.js stopHeartbeat clears interval', () => {
+    const stopSection = prioritizerSource.substring(
+        prioritizerSource.indexOf('function stopHeartbeat'),
+        prioritizerSource.indexOf('function setupAnimationHandlers')
+    );
+    assert.ok(stopSection.includes('clearInterval'), 'Should clear interval');
+    assert.ok(stopSection.includes('heartbeatIntervalId = null'), 'Should reset heartbeatIntervalId to null');
+});
+
+test('tile-prioritizer.js addJob starts heartbeat (2.3)', () => {
+    // Verify that addJob calls startHeartbeat
+    const addJobSection = prioritizerSource.substring(
+        prioritizerSource.indexOf('imageLoader.addJob = function'),
+        prioritizerSource.indexOf('function calculatePriority')
+    );
+    assert.ok(addJobSection.includes('startHeartbeat()'), 'addJob should call startHeartbeat');
+});
+
+test('tile-prioritizer.js heartbeat calls processQueue when jobs pending (2.2)', () => {
+    const startSection = prioritizerSource.substring(
+        prioritizerSource.indexOf('function startHeartbeat'),
+        prioritizerSource.indexOf('function stopHeartbeat')
+    );
+    assert.ok(startSection.includes('setInterval'), 'Should use setInterval');
+    assert.ok(startSection.includes('pendingJobs.length > 0'), 'Should check if jobs pending');
+    assert.ok(startSection.includes('processQueue()'), 'Should call processQueue');
+});
+
+test('tile-prioritizer.js heartbeat stops when queue empty (2.3)', () => {
+    // Check that processQueue stops heartbeat when queue empties
+    const processSection = prioritizerSource.substring(
+        prioritizerSource.indexOf('function processQueue'),
+        prioritizerSource.indexOf('function startHeartbeat')
+    );
+    assert.ok(processSection.includes('pendingJobs.length === 0'), 'Should check if queue empty');
+    assert.ok(processSection.includes('stopHeartbeat()'), 'Should call stopHeartbeat when queue empty');
+
+    // Also check that heartbeat callback stops when queue drains
+    const heartbeatSection = prioritizerSource.substring(
+        prioritizerSource.indexOf('function startHeartbeat'),
+        prioritizerSource.indexOf('function stopHeartbeat')
+    );
+    assert.ok(heartbeatSection.includes('stopHeartbeat()'), 'Heartbeat callback should stop when queue empty');
+});
+
+test('tile-prioritizer.js destroy stops heartbeat', () => {
+    const destroySection = prioritizerSource.substring(
+        prioritizerSource.indexOf('function destroy'),
+        prioritizerSource.indexOf('function getState')
+    );
+    assert.ok(destroySection.includes('stopHeartbeat()'), 'destroy should call stopHeartbeat');
+});
+
+test('tile-prioritizer.js getState includes heartbeat info', () => {
+    assert.ok(prioritizerSource.includes('heartbeat:'), 'getState should return heartbeat section');
+    assert.ok(prioritizerSource.includes('active:'), 'getState heartbeat should include active status');
+    assert.ok(prioritizerSource.includes('intervalMs:'), 'getState heartbeat should include intervalMs');
 });
 
 // Summary

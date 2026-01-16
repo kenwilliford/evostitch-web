@@ -402,6 +402,7 @@
             viewer.addHandler('animation-start', function() {
                 resetTileCounters();
                 window.evostitch.loadingIndicator.show();
+                startProgressPolling();
             });
 
             // Update progress after draw cycle completes (when lastDrawn is populated)
@@ -481,6 +482,59 @@
         setZPlane(newZ);
     }
 
+    // Track progressive load animation state
+    let progressiveLoadInterval = null;
+
+    /**
+     * Force OSD to load tiles for the current viewport after Z-change.
+     *
+     * Problem: When changing Z-planes at max zoom, OSD has pre-loaded tiles
+     * for the new TiledImage, but they're edge tiles (for pan preloading),
+     * not the viewport center tiles. OSD draws lower-level tiles because
+     * the correct high-level center tiles aren't loaded.
+     *
+     * Solution: Reset the TiledImage's tile cache and do a zoom-out-zoom-in
+     * cycle. This forces OSD to load tiles fresh with correct viewport focus.
+     */
+    function triggerProgressiveTileLoad() {
+        // Cancel any previous animations
+        if (progressiveLoadInterval) {
+            clearInterval(progressiveLoadInterval);
+            progressiveLoadInterval = null;
+        }
+
+        const vp = viewer.viewport;
+        const maxZoom = vp.getMaxZoom();
+        const currentZoom = vp.getZoom();
+        const ti = viewer.world.getItemAt(currentZ);
+
+        if (!ti) return;
+
+        // Reset the TiledImage's tile cache to force fresh loading
+        // This clears pre-loaded edge tiles and forces OSD to prioritize
+        // viewport center tiles during the zoom animation
+        ti.tilesMatrix = {};
+        ti._lastResetTime = Date.now();
+        ti._needsDraw = true;
+        ti._loading = 0;
+        if (ti._coverage) {
+            ti._coverage = {};
+        }
+        ti._midDraw = false;
+        ti._tiles = {};
+        ti._lastDrawn = [];
+
+        // Do a zoom-out-zoom-in cycle to trigger proper tile loading
+        // Zoom out to 30% of max, then back to original zoom level
+        const targetZoom = currentZoom;  // Remember where we were
+        const zoomOutTarget = maxZoom * 0.3;
+
+        vp.zoomTo(zoomOutTarget, null, false);  // Animated zoom out
+        setTimeout(() => {
+            vp.zoomTo(targetZoom, null, false);  // Animated zoom back
+        }, 1500);
+    }
+
     function setZPlane(newZ) {
         if (newZ === currentZ || newZ < 0 || newZ >= zCount) return;
 
@@ -488,11 +542,30 @@
         const currentItem = viewer.world.getItemAt(currentZ);
         if (currentItem) currentItem.setOpacity(0);
 
+        // Update currentZ BEFORE triggering tile loading so triggerProgressiveTileLoad
+        // operates on the new plane
+        currentZ = newZ;
+
         // Show new plane
         const newItem = viewer.world.getItemAt(newZ);
-        if (newItem) newItem.setOpacity(1);
+        if (newItem) {
+            newItem.setOpacity(1);
+            // Disable preload mode so OSD uses normal viewport-based tile loading
+            // (preload mode may have been set when this was an adjacent plane)
+            newItem.setPreload(false);
 
-        currentZ = newZ;
+            // Force OSD to recalculate tile coverage for this TiledImage
+            // When a TiledImage switches from hidden to visible, OSD may not
+            // automatically recalculate which tiles are needed
+            newItem._needsDraw = true;
+            newItem.update();
+            viewer.forceRedraw();
+
+            // Trigger a zoom animation to drive progressive tile loading
+            // OSD loads tiles progressively during viewport changes
+            triggerProgressiveTileLoad();
+        }
+
         updateZDisplay();
 
         // Update tile prioritizer with new Z-plane (W2)
@@ -507,6 +580,7 @@
         if (window.evostitch && window.evostitch.loadingIndicator) {
             resetTileCounters();
             window.evostitch.loadingIndicator.show();
+            startProgressPolling();
         }
 
         // Update loading indicator - Z window has shifted
@@ -596,10 +670,31 @@
     // Tile loading progress tracking
     let loadedTileCount = 0;
     let progressResetTimer = null;
+    let progressPollingInterval = null;
+    const PROGRESS_POLL_INTERVAL_MS = 100;  // Update indicator every 100ms during loading
 
     // Reset counters when viewport animation starts
     function resetTileCounters() {
         loadedTileCount = 0;
+    }
+
+    // Start polling for progress updates (ensures real-time ring updates)
+    function startProgressPolling() {
+        if (progressPollingInterval !== null) {
+            return; // Already polling
+        }
+
+        progressPollingInterval = setInterval(function() {
+            updateLoadingProgress();
+        }, PROGRESS_POLL_INTERVAL_MS);
+    }
+
+    // Stop polling when loading completes
+    function stopProgressPolling() {
+        if (progressPollingInterval !== null) {
+            clearInterval(progressPollingInterval);
+            progressPollingInterval = null;
+        }
     }
 
     // Calculate XY progress based on actual viewport tile coverage
@@ -647,11 +742,13 @@
             return 0.5 * (drawnLevel / bestLevel);
         }
 
-        // OSD drew at adequate or better resolution - check coverage at that level
+        // OSD drew at adequate or better resolution - check coverage at bestLevel
+        // Using bestLevel (not drawnLevel) ensures we measure "adequate coverage"
+        // even when OSD is loading higher-resolution tiles
         let corners;
         try {
             corners = tiledImage._getCornerTiles(
-                drawnLevel,
+                bestLevel,
                 viewportBounds.getTopLeft(),
                 viewportBounds.getBottomRight()
             );
@@ -660,24 +757,99 @@
             return Math.min(0.95, loadedTileCount * 0.05);
         }
 
-        // Count needed tiles at the drawn level
+        // Count needed tiles at bestLevel
         const neededTileCount = (corners.bottomRight.x - corners.topLeft.x + 1) *
                                 (corners.bottomRight.y - corners.topLeft.y + 1);
 
         if (neededTileCount <= 0) return 1;
 
-        // Count drawn tiles at the drawn level within viewport bounds
-        let drawnInViewport = 0;
+        // Track which bestLevel positions are covered (to avoid double-counting)
+        const coveredPositions = new Set();
 
         for (const tile of lastDrawn) {
-            if (tile.level === drawnLevel &&
-                tile.x >= corners.topLeft.x && tile.x <= corners.bottomRight.x &&
-                tile.y >= corners.topLeft.y && tile.y <= corners.bottomRight.y) {
-                drawnInViewport++;
+            if (tile.level < bestLevel) continue;  // Lower than adequate, skip
+
+            // Map tile position to bestLevel coordinate space
+            // Higher level tiles have finer grid: position at level L maps to
+            // position / 2^(L - bestLevel) at bestLevel
+            const levelDiff = tile.level - bestLevel;
+            const mappedX = Math.floor(tile.x / Math.pow(2, levelDiff));
+            const mappedY = Math.floor(tile.y / Math.pow(2, levelDiff));
+
+            // Check if this mapped position is within viewport bounds at bestLevel
+            if (mappedX >= corners.topLeft.x && mappedX <= corners.bottomRight.x &&
+                mappedY >= corners.topLeft.y && mappedY <= corners.bottomRight.y) {
+                coveredPositions.add(`${mappedX},${mappedY}`);
             }
         }
 
-        return drawnInViewport / neededTileCount;
+        return coveredPositions.size / neededTileCount;
+    }
+
+    // Calculate viewport tile coverage for any TiledImage using tilesMatrix
+    // This checks if tiles needed for current viewport are actually loaded
+    // Returns 0-1 coverage ratio
+    function calculateTileCoverageForPlane(tiledImage) {
+        if (!tiledImage || !tiledImage.source) return 0;
+
+        const viewport = viewer.viewport;
+        const source = tiledImage.source;
+        const viewportBounds = viewport.getBounds();
+
+        // Calculate bestLevel (same logic as calculateXYProgress)
+        const containerWidth = viewport.getContainerSize().x;
+        const viewportWidthInViewport = viewportBounds.width;
+        const pixelsPerViewportUnit = containerWidth / viewportWidthInViewport;
+
+        let bestLevel = 0;
+        for (let level = 0; level <= source.maxLevel; level++) {
+            const levelScale = source.getLevelScale(level);
+            const levelPixelsPerViewportUnit = source.width * levelScale;
+            if (levelPixelsPerViewportUnit >= pixelsPerViewportUnit * 0.5) {
+                bestLevel = level;
+                break;
+            }
+            bestLevel = level;
+        }
+
+        // Get corner tiles at bestLevel
+        let corners;
+        try {
+            corners = tiledImage._getCornerTiles(
+                bestLevel,
+                viewportBounds.getTopLeft(),
+                viewportBounds.getBottomRight()
+            );
+        } catch (e) {
+            return 0;  // Can't calculate
+        }
+
+        // Count needed tiles at bestLevel
+        const neededTileCount = (corners.bottomRight.x - corners.topLeft.x + 1) *
+                                (corners.bottomRight.y - corners.topLeft.y + 1);
+
+        if (neededTileCount <= 0) return 1;
+
+        // Check tilesMatrix for loaded tiles at needed positions
+        // tilesMatrix is structured as tilesMatrix[level][x][y] containing Tile objects
+        const tilesMatrix = tiledImage.tilesMatrix;
+        if (!tilesMatrix || !tilesMatrix[bestLevel]) return 0;
+
+        let loadedCount = 0;
+        for (let x = corners.topLeft.x; x <= corners.bottomRight.x; x++) {
+            for (let y = corners.topLeft.y; y <= corners.bottomRight.y; y++) {
+                const row = tilesMatrix[bestLevel][x];
+                if (row && row[y]) {
+                    const tile = row[y];
+                    // Check if tile is loaded (OSD uses 'loaded' property)
+                    if (tile.loaded) {
+                        loadedCount++;
+                    }
+                }
+            }
+        }
+
+        return loadedCount / neededTileCount;
     }
 
     // Calculate Z progress based on ±2 adjacent planes readiness
@@ -704,10 +876,11 @@
                         readyCount++;
                     }
                 } else {
-                    // For adjacent planes, use getFullyLoaded() as proxy
-                    // (we can't check lastDrawn for planes not being rendered)
+                    // For adjacent planes, use viewport coverage proxy
+                    // Don't trust getFullyLoaded() - check actual tile coverage
                     const item = viewer.world.getItemAt(targetZ);
-                    if (item && typeof item.getFullyLoaded === 'function' && item.getFullyLoaded()) {
+                    const coverage = calculateTileCoverageForPlane(item);
+                    if (coverage >= 0.95) {
                         readyCount++;
                     }
                 }
@@ -750,8 +923,9 @@
 
         window.evostitch.loadingIndicator.setProgress(xyProgress, zProgress);
 
-        // Schedule counter reset after loading settles (for next pan/zoom cycle)
-        if (xyProgress >= 1) {
+        // Stop polling and schedule counter reset when fully loaded
+        if (xyProgress >= 1 && zProgress >= 1) {
+            stopProgressPolling();
             if (progressResetTimer) {
                 clearTimeout(progressResetTimer);
             }
