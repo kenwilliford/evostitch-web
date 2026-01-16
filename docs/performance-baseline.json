@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-01-14T16:31:55.045Z",
+  "timestamp": "2026-01-15T08:08:46.668Z",
   "mosaic": "3x3x3-test",
   "conditions": [
     {
@@ -9,11 +9,22 @@
         "viewport": "desktop"
       },
       "metrics": {
-        "timeToFirstTile": 547,
-        "timeToViewportComplete": 1204,
-        "p50TileLoad": 88,
-        "p95TileLoad": 121,
-        "totalTilesLoaded": 49
+        "timeToFirstTile": 463,
+        "timeToViewportComplete": 1192,
+        "p50TileLoad": 103,
+        "p95TileLoad": 131,
+        "totalTilesLoaded": 68,
+        "cacheHitRate": 0,
+        "cacheStats": {
+          "total": 68,
+          "cacheHits": 0,
+          "networkLoads": 68,
+          "hitRate": 0
+        },
+        "zTransitions": [],
+        "zTransitionP50": 0,
+        "zTransitionP95": 0,
+        "operations": []
       }
     },
     {
@@ -23,11 +34,22 @@
         "viewport": "desktop"
       },
       "metrics": {
-        "timeToFirstTile": 360,
-        "timeToViewportComplete": 1095,
-        "p50TileLoad": 103,
-        "p95TileLoad": 136,
-        "totalTilesLoaded": 66
+        "timeToFirstTile": 422,
+        "timeToViewportComplete": 1099,
+        "p50TileLoad": 84,
+        "p95TileLoad": 150,
+        "totalTilesLoaded": 68,
+        "cacheHitRate": 0,
+        "cacheStats": {
+          "total": 68,
+          "cacheHits": 0,
+          "networkLoads": 68,
+          "hitRate": 0
+        },
+        "zTransitions": [],
+        "zTransitionP50": 0,
+        "zTransitionP95": 0,
+        "operations": []
       }
     },
     {
@@ -37,11 +59,22 @@
         "viewport": "desktop"
       },
       "metrics": {
-        "timeToFirstTile": 1599,
-        "timeToViewportComplete": 7209,
-        "p50TileLoad": 1579,
-        "p95TileLoad": 1971,
-        "totalTilesLoaded": 31
+        "timeToFirstTile": 1397,
+        "timeToViewportComplete": 7231,
+        "p50TileLoad": 1586,
+        "p95TileLoad": 2207,
+        "totalTilesLoaded": 31,
+        "cacheHitRate": 0,
+        "cacheStats": {
+          "total": 31,
+          "cacheHits": 0,
+          "networkLoads": 31,
+          "hitRate": 0
+        },
+        "zTransitions": [],
+        "zTransitionP50": 0,
+        "zTransitionP95": 0,
+        "operations": []
       }
     },
     {
@@ -51,11 +84,22 @@
         "viewport": "desktop"
       },
       "metrics": {
-        "timeToFirstTile": 1806,
-        "timeToViewportComplete": 8152,
-        "p50TileLoad": 1429,
-        "p95TileLoad": 2129,
-        "totalTilesLoaded": 35
+        "timeToFirstTile": 1644,
+        "timeToViewportComplete": 7226,
+        "p50TileLoad": 1590,
+        "p95TileLoad": 1963,
+        "totalTilesLoaded": 31,
+        "cacheHitRate": 0,
+        "cacheStats": {
+          "total": 31,
+          "cacheHits": 0,
+          "networkLoads": 31,
+          "hitRate": 0
+        },
+        "zTransitions": [],
+        "zTransitionP50": 0,
+        "zTransitionP95": 0,
+        "operations": []
       }
     },
     {
@@ -65,11 +109,22 @@
         "viewport": "desktop"
       },
       "metrics": {
-        "timeToFirstTile": 6147,
-        "timeToViewportComplete": 29339,
-        "p50TileLoad": 6562,
-        "p95TileLoad": 8495,
-        "totalTilesLoaded": 29
+        "timeToFirstTile": 6065,
+        "timeToViewportComplete": 29327,
+        "p50TileLoad": 6415,
+        "p95TileLoad": 8695,
+        "totalTilesLoaded": 29,
+        "cacheHitRate": 0,
+        "cacheStats": {
+          "total": 29,
+          "cacheHits": 0,
+          "networkLoads": 29,
+          "hitRate": 0
+        },
+        "zTransitions": [],
+        "zTransitionP50": 0,
+        "zTransitionP95": 0,
+        "operations": []
       }
     },
     {
@@ -79,11 +134,22 @@
         "viewport": "desktop"
       },
       "metrics": {
-        "timeToFirstTile": 6178,
-        "timeToViewportComplete": 29209,
-        "p50TileLoad": 6502,
-        "p95TileLoad": 8493,
-        "totalTilesLoaded": 29
+        "timeToFirstTile": 6031,
+        "timeToViewportComplete": 29409,
+        "p50TileLoad": 6511,
+        "p95TileLoad": 8642,
+        "totalTilesLoaded": 29,
+        "cacheHitRate": 0,
+        "cacheStats": {
+          "total": 29,
+          "cacheHits": 0,
+          "networkLoads": 29,
+          "hitRate": 0
+        },
+        "zTransitions": [],
+        "zTransitionP50": 0,
+        "zTransitionP95": 0,
+        "operations": []
       }
     },
     {
@@ -93,11 +159,22 @@
         "viewport": "mobile"
       },
       "metrics": {
-        "timeToFirstTile": 379,
-        "timeToViewportComplete": 468,
-        "p50TileLoad": 124,
-        "p95TileLoad": 152,
-        "totalTilesLoaded": 9
+        "timeToFirstTile": 468,
+        "timeToViewportComplete": 545,
+        "p50TileLoad": 105,
+        "p95TileLoad": 156,
+        "totalTilesLoaded": 9,
+        "cacheHitRate": 0,
+        "cacheStats": {
+          "total": 9,
+          "cacheHits": 0,
+          "networkLoads": 9,
+          "hitRate": 0
+        },
+        "zTransitions": [],
+        "zTransitionP50": 0,
+        "zTransitionP95": 0,
+        "operations": []
       }
     },
     {
@@ -107,11 +184,22 @@
         "viewport": "mobile"
       },
       "metrics": {
-        "timeToFirstTile": 404,
-        "timeToViewportComplete": 502,
-        "p50TileLoad": 103,
-        "p95TileLoad": 125,
-        "totalTilesLoaded": 9
+        "timeToFirstTile": 557,
+        "timeToViewportComplete": 661,
+        "p50TileLoad": 116,
+        "p95TileLoad": 181,
+        "totalTilesLoaded": 9,
+        "cacheHitRate": 0,
+        "cacheStats": {
+          "total": 9,
+          "cacheHits": 0,
+          "networkLoads": 9,
+          "hitRate": 0
+        },
+        "zTransitions": [],
+        "zTransitionP50": 0,
+        "zTransitionP95": 0,
+        "operations": []
       }
     },
     {
@@ -121,25 +209,47 @@
         "viewport": "mobile"
       },
       "metrics": {
-        "timeToFirstTile": 1696,
-        "timeToViewportComplete": 2457,
-        "p50TileLoad": 727,
+        "timeToFirstTile": 1886,
+        "timeToViewportComplete": 2644,
+        "p50TileLoad": 779,
+        "p95TileLoad": 1514,
+        "totalTilesLoaded": 9,
+        "cacheHitRate": 0,
+        "cacheStats": {
+          "total": 9,
+          "cacheHits": 0,
+          "networkLoads": 9,
+          "hitRate": 0
+        },
+        "zTransitions": [],
+        "zTransitionP50": 0,
+        "zTransitionP95": 0,
+        "operations": []
+      }
+    },
+    {
+      "conditions": {
+        "network": "fast-3g",
+        "cache": "warm",
+        "viewport": "mobile"
+      },
+      "metrics": {
+        "timeToFirstTile": 1491,
+        "timeToViewportComplete": 2407,
+        "p50TileLoad": 547,
         "p95TileLoad": 1513,
-        "totalTilesLoaded": 9
-      }
-    },
-    {
-      "conditions": {
-        "network": "fast-3g",
-        "cache": "warm",
-        "viewport": "mobile"
-      },
-      "metrics": {
-        "timeToFirstTile": 1684,
-        "timeToViewportComplete": 2449,
-        "p50TileLoad": 723,
-        "p95TileLoad": 1509,
-        "totalTilesLoaded": 9
+        "totalTilesLoaded": 9,
+        "cacheHitRate": 0,
+        "cacheStats": {
+          "total": 9,
+          "cacheHits": 0,
+          "networkLoads": 9,
+          "hitRate": 0
+        },
+        "zTransitions": [],
+        "zTransitionP50": 0,
+        "zTransitionP95": 0,
+        "operations": []
       }
     },
     {
@@ -149,11 +259,22 @@
         "viewport": "mobile"
       },
       "metrics": {
-        "timeToFirstTile": 6236,
-        "timeToViewportComplete": 9241,
-        "p50TileLoad": 3043,
-        "p95TileLoad": 6016,
-        "totalTilesLoaded": 7
+        "timeToFirstTile": 5356,
+        "timeToViewportComplete": 9387,
+        "p50TileLoad": 3263,
+        "p95TileLoad": 6325,
+        "totalTilesLoaded": 9,
+        "cacheHitRate": 0,
+        "cacheStats": {
+          "total": 9,
+          "cacheHits": 0,
+          "networkLoads": 9,
+          "hitRate": 0
+        },
+        "zTransitions": [],
+        "zTransitionP50": 0,
+        "zTransitionP95": 0,
+        "operations": []
       }
     },
     {
@@ -163,11 +284,22 @@
         "viewport": "mobile"
       },
       "metrics": {
-        "timeToFirstTile": 6207,
-        "timeToViewportComplete": 9198,
-        "p50TileLoad": 3007,
-        "p95TileLoad": 5979,
-        "totalTilesLoaded": 7
+        "timeToFirstTile": 5826,
+        "timeToViewportComplete": 9297,
+        "p50TileLoad": 2628,
+        "p95TileLoad": 6071,
+        "totalTilesLoaded": 7,
+        "cacheHitRate": 0,
+        "cacheStats": {
+          "total": 7,
+          "cacheHits": 0,
+          "networkLoads": 7,
+          "hitRate": 0
+        },
+        "zTransitions": [],
+        "zTransitionP50": 0,
+        "zTransitionP95": 0,
+        "operations": []
       }
     }
   ]

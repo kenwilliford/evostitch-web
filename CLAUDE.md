@@ -14,9 +14,13 @@ JavaScript viewer for displaying stitched microscopy mosaics with Z-plane naviga
 |------|---------|
 | `index.html` | Catalog page listing available mosaics |
 | `viewer.html` | Main viewer page with OpenSeadragon |
+| `sw.js` | Service worker for tile caching (W1) |
 | `js/catalog.js` | Catalog loading and display logic |
 | `js/viewer.js` | Viewer initialization and Z-navigation |
 | `js/telemetry.js` | Tile load performance measurement |
+| `js/tile-prioritizer.js` | Request prioritization and Z-prefetch (W2) |
+| `js/network-detect.js` | Network speed detection (W3) |
+| `js/quality-adapt.js` | Adaptive quality based on network (W4) |
 | `css/style.css` | Shared styles |
 | `CNAME` | GitHub Pages custom domain (evostitch.net) |
 
@@ -162,6 +166,35 @@ evostitch.telemetry.flushToStorage()
 - Only measures tiles loaded via OpenSeadragon events
 - Browser cache behavior varies by browser/settings
 - No server-side aggregation (local to each browser)
+
+## Performance Modules (W1-W4)
+
+The performance optimization modules are documented in detail in `docs/architecture.md`. Quick reference for console debugging:
+
+### Tile Prioritizer (W2)
+
+```javascript
+evostitch.tilePrioritizer.getState()   // { enabled, currentZ, pendingJobs, isAnimating }
+evostitch.tilePrioritizer.setDebug(true) // Enable debug logging
+```
+
+### Network Detection (W3)
+
+```javascript
+evostitch.networkDetect.getSpeed()    // 'fast' | 'medium' | 'slow' | 'unknown'
+evostitch.networkDetect.getInfo()     // { speed, effectiveType, downlink, ... }
+evostitch.networkDetect.setDebug(true)
+```
+
+### Quality Adaptation (W4)
+
+```javascript
+evostitch.qualityAdapt.getQuality()          // 'auto' | 'high' | 'medium' | 'low'
+evostitch.qualityAdapt.getEffectiveQuality() // What's actually being used
+evostitch.qualityAdapt.setQuality('high')    // Manual override
+evostitch.qualityAdapt.getState()            // Full debugging state
+evostitch.qualityAdapt.setDebug(true)
+```
 
 ## GitHub Pages
 
