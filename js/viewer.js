@@ -177,6 +177,14 @@
         document.getElementById('viewer').viewer = viewer;
 
         setupViewerHandlers();
+
+        // Initialize quality adaptation for network-aware loading (W4)
+        // and blur-up loader for progressive tile resolution
+        // Wait for viewer to open before initializing
+        viewer.addOnceHandler('open', function() {
+            initQualityAdapt();
+            initBlurUpLoader();
+        });
     }
 
     // Initialize 3D viewer (Z-stack)
@@ -224,10 +232,103 @@
                 }
                 // Initialize Z-slider UI
                 initZSliderUI();
+
+                // Initialize tile prioritizer for request optimization (W2)
+                if (window.evostitch && window.evostitch.tilePrioritizer) {
+                    try {
+                        window.evostitch.tilePrioritizer.init(viewer, {
+                            currentZ: 0,
+                            zCount: zCount
+                        });
+                    } catch (err) {
+                        console.warn('[evostitch] Failed to initialize tile-prioritizer (W2):', err.message);
+                    }
+                } else {
+                    console.warn('[evostitch] tile-prioritizer module not loaded - Z-prefetch optimization disabled');
+                }
+
+                // Initialize quality adaptation for network-aware loading (W4)
+                initQualityAdapt();
+
+                // Initialize blur-up loader for progressive tile resolution
+                initBlurUpLoader();
             }
         });
 
         setupViewerHandlers();
+    }
+
+    // Initialize blur-up loader for progressive tile resolution
+    function initBlurUpLoader() {
+        if (!window.evostitch || !window.evostitch.blurUpLoader) {
+            console.warn('[evostitch] blur-up-loader module not loaded - progressive tile resolution disabled');
+            return;
+        }
+
+        try {
+            window.evostitch.blurUpLoader.init(viewer);
+        } catch (err) {
+            console.warn('[evostitch] Failed to initialize blur-up-loader:', err.message);
+        }
+    }
+
+    // Initialize quality adaptation (W4)
+    function initQualityAdapt() {
+        if (!window.evostitch || !window.evostitch.qualityAdapt) {
+            console.warn('[evostitch] quality-adapt module not loaded - adaptive quality disabled');
+            return;
+        }
+
+        try {
+            window.evostitch.qualityAdapt.init(viewer);
+        } catch (err) {
+            console.warn('[evostitch] Failed to initialize quality-adapt (W4):', err.message);
+            return;
+        }
+
+        // Check for network-detect dependency (W3)
+        if (!window.evostitch.networkDetect) {
+            console.warn('[evostitch] network-detect module not loaded - network speed detection disabled');
+        }
+
+        // Set up quality selector UI
+        const qualitySelect = document.getElementById('quality-select');
+        const qualityIndicator = document.getElementById('quality-indicator');
+
+        if (qualitySelect) {
+            qualitySelect.addEventListener('change', function(e) {
+                window.evostitch.qualityAdapt.setQuality(e.target.value);
+            });
+        }
+
+        // Update indicator to show current network/quality status
+        function updateQualityIndicator() {
+            if (!qualityIndicator) return;
+
+            const effectiveQuality = window.evostitch.qualityAdapt.getEffectiveQuality();
+            const networkInfo = window.evostitch.networkDetect ?
+                window.evostitch.networkDetect.getInfo() : { speed: 'unknown' };
+
+            // Show network speed indicator
+            qualityIndicator.className = 'quality-indicator ' + networkInfo.speed;
+            qualityIndicator.textContent = '(' + networkInfo.speed + ')';
+        }
+
+        // Listen for quality changes
+        window.evostitch.qualityAdapt.addChangeListener(function(newQuality, oldQuality) {
+            console.log('[evostitch] Quality changed: ' + oldQuality + ' -> ' + newQuality);
+            updateQualityIndicator();
+        });
+
+        // Listen for network changes
+        if (window.evostitch.networkDetect) {
+            window.evostitch.networkDetect.addChangeListener(function() {
+                updateQualityIndicator();
+            });
+        }
+
+        // Initial update
+        updateQualityIndicator();
     }
 
     // Set up common event handlers
@@ -314,6 +415,11 @@
 
         currentZ = newZ;
         updateZDisplay();
+
+        // Update tile prioritizer with new Z-plane (W2)
+        if (window.evostitch && window.evostitch.tilePrioritizer) {
+            window.evostitch.tilePrioritizer.setCurrentZ(newZ);
+        }
 
         // Preload adjacent planes for smoother navigation
         preloadAdjacentPlanes(newZ);

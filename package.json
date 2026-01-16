@@ -4,6 +4,7 @@
   "private": true,
   "description": "evostitch web viewer",
   "scripts": {
+    "test": "node tests/tile-prioritizer.test.js && node tests/network-detect.test.js && node tests/quality-adapt.test.js && node tests/sw.test.js",
     "perf-test": "node tests/perf/run-harness.js",
     "perf-test:quick": "node tests/perf/run-harness.js --quick"
   },

@@ -35,7 +35,39 @@
         <span id="z-index" class="z-index">(1/1)</span>
     </div>
 
+    <div id="quality-selector" class="quality-selector">
+        <label class="quality-label">Quality:</label>
+        <select id="quality-select" class="quality-select">
+            <option value="auto">Auto</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+        </select>
+        <span id="quality-indicator" class="quality-indicator"></span>
+    </div>
+
     <script src="js/telemetry.js"></script>
+    <script src="js/network-detect.js"></script>
+    <script src="js/tile-prioritizer.js"></script>
+    <script src="js/quality-adapt.js"></script>
+    <script src="js/blur-up-loader.js"></script>
     <script src="js/viewer.js"></script>
+    <script>
+    // Service Worker registration for tile caching
+    (function() {
+        'use strict';
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                    .then(function(registration) {
+                        console.log('[evostitch] Service Worker registered with scope:', registration.scope);
+                    })
+                    .catch(function(error) {
+                        console.warn('[evostitch] Service Worker registration failed:', error);
+                    });
+            });
+        }
+    })();
+    </script>
 </body>
 </html>

@@ -23,10 +23,15 @@ User browses catalog → Clicks mosaic card → Viewer loads DZI tiles from R2
 web/
 ├── index.html          # Catalog page
 ├── viewer.html         # Viewer page (loads OpenSeadragon)
+├── sw.js               # Service worker for tile caching (W1)
 ├── js/
 │   ├── catalog.js      # Catalog loading and card rendering
 │   ├── viewer.js       # Viewer initialization, scale bar, Z-navigation
-│   └── telemetry.js    # Tile load performance measurement
+│   ├── telemetry.js    # Tile load performance measurement
+│   ├── tile-prioritizer.js  # Request prioritization and Z-prefetch (W2)
+│   ├── network-detect.js    # Network speed detection (W3)
+│   ├── quality-adapt.js     # Adaptive quality based on network (W4)
+│   └── blur-up-loader.js    # Progressive tile resolution (blur-up loading)
 ├── css/
 │   └── style.css       # Shared styles (dark theme)
 ├── mosaics/
@@ -75,6 +80,32 @@ Initializes OpenSeadragon and handles 2D/3D viewing modes.
 | 2D | `zCount == 1` | Single DZI tile source |
 | 3D | `zCount > 1` | All Z-planes loaded, opacity switching |
 
+### tile-prioritizer.js
+
+Optimizes tile loading order for 3D mosaics (W2 request prioritization).
+
+| Function | Purpose |
+|----------|---------|
+| `init(viewer, options)` | Initialize prioritizer with OSD viewer |
+| `setCurrentZ(z)` | Update current Z-plane (triggers reprioritization) |
+| `clearQueue()` | Clear pending tile requests |
+| `destroy()` | Disable prioritizer and restore original behavior |
+| `getState()` | Get debugging state info |
+
+**How it works:**
+
+1. **Priority Queue:** Wraps `ImageLoader.addJob` to queue requests by priority
+2. **Priority Levels:** VIEWPORT_CURRENT_Z (1) > VIEWPORT_ADJACENT_Z (2) > PREFETCH (3)
+3. **Animation Throttling:** Reduces concurrent requests during pan/zoom (2 vs 6)
+4. **Z-Plane Awareness:** Reprioritizes queue when user changes Z-plane
+
+**Console API:**
+
+```javascript
+evostitch.tilePrioritizer.getState()   // { enabled, currentZ, pendingJobs, isAnimating, ... }
+evostitch.tilePrioritizer.setDebug(true) // Enable debug logging
+```
+
 ### telemetry.js
 
 Measures tile load performance to distinguish cold (network) vs warm (browser cache) loads.
@@ -100,6 +131,199 @@ Measures tile load performance to distinguish cold (network) vs warm (browser ca
 evostitch.telemetry.getStats()    // View stats: { byZoom, totals: { coldCount, coldAvgMs, warmCount, warmAvgMs } }
 evostitch.telemetry.logSummary()  // Log: "cold=206 tiles (avg 135ms), warm=72 tiles (avg 1ms)"
 evostitch.telemetry.clearStats()  // Reset all data
+```
+
+### sw.js (Service Worker)
+
+Caches tiles for offline access and improved repeat-visit performance (W1).
+
+**Caching strategies:**
+
+| Request Type | Strategy | Rationale |
+|-------------|----------|-----------|
+| Tiles (`_files/{level}/{x}_{y}.{ext}`) | Cache-first | Tiles are immutable once created |
+| DZI descriptors (`.dzi`) | Cache-first | Also immutable |
+| Static assets (HTML, JS, CSS) | Network-first | Allow code updates |
+| Other requests | Pass through | No caching |
+
+**Configuration:**
+
+| Setting | Value | Purpose |
+|---------|-------|---------|
+| `MAX_TILE_CACHE_ENTRIES` | 5000 | Maximum tiles in SW cache |
+| `CACHE_TRIM_BATCH_SIZE` | 500 | Entries evicted when trimming |
+| `SW_VERSION` | 1.2.0 | Cache name version |
+
+**LRU eviction:** When cache exceeds `MAX_TILE_CACHE_ENTRIES`, oldest entries are evicted. Access tracking done by delete+put on cache hit.
+
+**Registration:** Service worker is registered in `viewer.html` via inline script tag.
+
+### network-detect.js
+
+Detects network speed conditions for adaptive quality decisions (W3).
+
+| Function | Purpose |
+|----------|---------|
+| `init()` | Initialize detection, set up change listeners |
+| `getSpeed()` | Get current classification: `fast`, `medium`, `slow`, `unknown` |
+| `isSlow()` / `isFast()` | Convenience checks |
+| `recordTileLoad(ms)` | Record tile load time (fallback detection) |
+| `addChangeListener(fn)` | Subscribe to speed changes |
+| `getInfo()` | Get detailed diagnostics |
+
+**Detection methods (in priority order):**
+
+1. **Navigator.connection API** (if supported): Uses `effectiveType` (4g/3g/2g) or `downlink` Mbps
+2. **Tile load timing fallback**: Averages recent tile loads to classify speed
+
+**Speed thresholds:**
+
+| Source | Fast | Medium | Slow |
+|--------|------|--------|------|
+| Navigator.connection effectiveType | 4g | 3g | 2g, slow-2g |
+| Navigator.connection downlink | ≥5 Mbps | ≥1 Mbps | <1 Mbps |
+| Tile load timing (fallback) | ≤150ms | ≤500ms | >500ms |
+
+**Console API:**
+
+```javascript
+evostitch.networkDetect.getSpeed()    // 'fast' | 'medium' | 'slow' | 'unknown'
+evostitch.networkDetect.getInfo()     // { speed, effectiveType, downlink, rtt, ... }
+evostitch.networkDetect.setDebug(true) // Enable debug logging
+```
+
+### quality-adapt.js
+
+Adjusts tile quality based on network conditions to improve slow-network UX (W4).
+
+| Function | Purpose |
+|----------|---------|
+| `init(viewer, options)` | Initialize with OSD viewer |
+| `setQuality(level)` | Manually set quality: `high`, `medium`, `low`, `auto` |
+| `getQuality()` | Get current setting |
+| `getEffectiveQuality()` | Get actual quality being used |
+| `isManualOverride()` | Check if user overrode auto quality |
+| `addChangeListener(fn)` | Subscribe to quality changes |
+| `getState()` | Get debugging state |
+
+**Quality levels:**
+
+| Level | Zoom Reduction | Effect |
+|-------|---------------|--------|
+| `high` | 0 levels | Full resolution |
+| `medium` | 2 levels | Skip top 2 DZI levels (1/4 resolution) |
+| `low` | 4 levels | Skip top 4 DZI levels (1/16 resolution) |
+| `auto` | Varies | Network-adaptive |
+
+**Network-to-quality mapping:**
+
+| Network Speed | Auto Quality |
+|---------------|-------------|
+| fast | high |
+| medium | medium |
+| slow | low |
+| unknown | medium |
+
+**Progressive enhancement:** After loading tiles at reduced quality, checks if network improved and upgrades quality if possible (delay: 5s, requires 20+ tiles loaded).
+
+**Console API:**
+
+```javascript
+evostitch.qualityAdapt.getQuality()          // 'auto' | 'high' | 'medium' | 'low'
+evostitch.qualityAdapt.getEffectiveQuality() // What's actually being used
+evostitch.qualityAdapt.setQuality('high')    // Manual override
+evostitch.qualityAdapt.getState()            // Full debugging state
+evostitch.qualityAdapt.setDebug(true)        // Enable debug logging
+```
+
+### blur-up-loader.js
+
+Shows low-resolution placeholder tiles while high-res tiles load, improving perceived performance on slow networks.
+
+| Function | Purpose |
+|----------|---------|
+| `init(viewer, options)` | Initialize with OSD viewer |
+| `destroy()` | Disable loader and clean up |
+| `getState()` | Get debugging state |
+| `clearAllPlaceholders()` | Remove all active placeholders |
+
+**How it works:**
+
+1. **Intercept tile-loading:** When OSD starts loading a tile, schedule a placeholder display
+2. **Delay before showing:** Only show placeholder if tile takes longer than 100ms (configurable)
+3. **Lower-level tile:** Request tile from 3 levels lower (8x smaller) as placeholder
+4. **Position overlay:** Display placeholder as absolute-positioned image over the loading tile area
+5. **Remove on load:** When full-res tile loads, remove placeholder
+
+**Configuration:**
+
+| Setting | Default | Purpose |
+|---------|---------|---------|
+| `placeholderLevelOffset` | 3 | Levels below target for placeholder (3 = 8x smaller) |
+| `minPlaceholderLevel` | 0 | Don't create placeholders for very low zoom levels |
+| `placeholderDelayMs` | 100 | Only show placeholder if tile takes longer than this |
+| `maxConcurrentPlaceholders` | 4 | Limit concurrent placeholder requests |
+
+**Expected impact:** -88% time-to-first-visual on slow networks.
+
+**Console API:**
+
+```javascript
+evostitch.blurUpLoader.getState()              // { enabled, activePlaceholders, pendingPlaceholderCount }
+evostitch.blurUpLoader.setDebug(true)          // Enable debug logging
+evostitch.blurUpLoader.clearAllPlaceholders()  // Remove all placeholders
+```
+
+---
+
+## Performance Optimization Modules (W1-W4)
+
+The W1-W4 modules work together to optimize viewer performance, particularly for 3D mosaics and slow networks.
+
+### Module Dependency Graph
+
+```
+┌─────────────────┐
+│  network-detect │ ◄── Loaded first (no dependencies)
+└────────┬────────┘
+         │ speed changes
+         ▼
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│  quality-adapt  │     │ tile-prioritizer│     │ blur-up-loader  │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+         │                      │                       │
+         │ zoom constraints     │ request priority      │ placeholder overlays
+         ▼                      ▼                       ▼
+┌───────────────────────────────────────────────────────────────────┐
+│                          viewer.js                                │
+│                     (OpenSeadragon viewer)                        │
+└────────────────────────────────┬──────────────────────────────────┘
+                                 │ fetch requests
+                                 ▼
+                          ┌─────────────┐
+                          │    sw.js    │ ◄── Intercepts all requests
+                          └─────────────┘
+```
+
+### Initialization Order
+
+1. **sw.js** - Registered on page load (viewer.html inline script)
+2. **network-detect** - Initialized by quality-adapt.init()
+3. **tile-prioritizer** - Initialized after OSD viewer ready
+4. **quality-adapt** - Initialized after OSD viewer ready, listens to network-detect
+5. **blur-up-loader** - Initialized after OSD viewer ready, hooks tile-loading events
+
+### Data Flow
+
+```
+1. User navigates viewer
+2. OpenSeadragon requests tiles
+3. tile-prioritizer reorders requests by Z-plane priority
+4. Requests go to sw.js:
+   - Cache hit → immediate response
+   - Cache miss → fetch from R2 CDN, cache result
+5. Tile loads reported to network-detect (fallback classification)
+6. quality-adapt adjusts zoom constraints based on network speed
 ```
 
 ---

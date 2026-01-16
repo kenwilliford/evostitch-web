@@ -69,9 +69,44 @@ Pre-optimization baseline metrics captured before W1-W6 improvements.
 | Tile Batching (W3) | Reduce p95 variance, improve slow-3G | Throttled conditions |
 | Adaptive Quality (W4) | Reduce slow-3G viewport time by 50%+ | Throttled conditions |
 
+## Scenario Baselines
+
+Scenario-based tests simulate realistic usage patterns. See `performance-scenarios.json` for raw data.
+
+### Scenario A: Navigate-then-Z
+
+Pan and zoom first, then Z-slide through planes. Measures Z-transition latency.
+
+| Network | Z-trans p50 | Z-trans avg | Tiles/Z-change | Total tiles |
+|---------|-------------|-------------|----------------|-------------|
+| Unthrottled | | | | |
+| Fast 3G | | | | |
+| Slow 3G | | | | |
+
+### Scenario B: Z-then-explore
+
+Z-slide to middle first, then pan around. Measures cache hit rate.
+
+| Network | Cache hit % | Pan p50 | Pan avg | Total tiles |
+|---------|-------------|---------|---------|-------------|
+| Unthrottled | | | | |
+| Fast 3G | | | | |
+| Slow 3G | | | | |
+
+### Scenario C: Mixed browsing
+
+Realistic mixed session: pan, zoom, Z-slide interleaved. Overall performance.
+
+| Network | p50 latency | p95 latency | Z-trans avg | Total tiles |
+|---------|-------------|-------------|-------------|-------------|
+| Unthrottled | | | | |
+| Fast 3G | | | | |
+| Slow 3G | | | | |
+
 ## Raw Data
 
-See `performance-baseline.json` for complete metrics including all 12 test conditions.
+See `performance-baseline.json` for matrix test metrics.
+See `performance-scenarios.json` for scenario test metrics.
 
 ## Methodology
 
@@ -79,3 +114,7 @@ See `performance-baseline.json` for complete metrics including all 12 test condi
 - **Mosaic**: 3x3x3-test (small 3D mosaic for consistent testing)
 - **Metrics**: PerformanceResourceTiming API for accurate tile latency
 - **Viewport completion**: OpenSeadragon's `fully-loaded-change` event (accurate detection)
+- **Scenarios**: Run via `npm run perf-test -- --scenario <A|B|C|all>`
+  - Scenario A: Navigate-then-Z (pan/zoom, then Z-slide through 5 planes)
+  - Scenario B: Z-then-explore (Z-slide to middle, then pan to 4 areas)
+  - Scenario C: Mixed browsing (realistic interleaved pan/zoom/Z operations)

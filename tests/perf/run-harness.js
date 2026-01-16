@@ -5,6 +5,7 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
 const CONFIG = require('./config');
+const { runScenario, runAllScenarios } = require('./scenarios');
 
 // Read metrics collector source to inject into browser
 const metricsCollectorSource = fs.readFileSync(
@@ -195,12 +196,169 @@ async function runTestMatrix(options = {}) {
     return results;
 }
 
+/**
+ * Run scenario-based tests with network throttling
+ * Scenarios exercise realistic usage patterns (A, B, C)
+ */
+async function runScenarioTests(options = {}) {
+    const { scenario = 'all', quick = false } = options;
+    const mosaicId = CONFIG.TEST_MOSAIC;
+
+    const results = {
+        timestamp: new Date().toISOString(),
+        mosaic: mosaicId,
+        testType: 'scenario',
+        scenarios: []
+    };
+
+    // Determine which scenarios to run
+    const scenariosToRun = scenario.toUpperCase() === 'ALL'
+        ? ['A', 'B', 'C']
+        : [scenario.toUpperCase()];
+
+    // Network conditions to test
+    let networks = Object.keys(CONFIG.NETWORK_PROFILES);
+    if (quick) {
+        networks = ['unthrottled', 'fast-3g'];
+    }
+
+    console.log(`Running scenario tests on mosaic: ${mosaicId}`);
+    console.log(`Scenarios: ${scenariosToRun.join(', ')}`);
+    console.log(`Networks: ${networks.join(', ')}`);
+    console.log('');
+
+    for (const scenarioName of scenariosToRun) {
+        console.log(`Scenario ${scenarioName}:`);
+
+        for (const network of networks) {
+            console.log(`  Network: ${network}`);
+
+            const browser = await chromium.launch({ headless: true });
+            try {
+                const context = await browser.newContext({
+                    viewport: CONFIG.VIEWPORTS['desktop']
+                });
+
+                const page = await context.newPage();
+
+                // Set up CDP for network throttling
+                const cdpSession = await context.newCDPSession(page);
+                await cdpSession.send('Network.enable');
+
+                const networkProfile = CONFIG.NETWORK_PROFILES[network];
+                if (networkProfile) {
+                    await cdpSession.send('Network.emulateNetworkConditions', {
+                        offline: false,
+                        downloadThroughput: networkProfile.downloadThroughput,
+                        uploadThroughput: networkProfile.uploadThroughput,
+                        latency: networkProfile.latency
+                    });
+                }
+
+                // Navigate to viewer
+                const url = `${CONFIG.VIEWER_BASE_URL}?mosaic=${mosaicId}`;
+
+                // Inject metrics collector before page loads
+                await page.addInitScript(metricsCollectorSource + `
+                    window.__perfMetrics = createMetricsCollector();
+                `);
+
+                // Hook into viewer initialization
+                await page.addInitScript(`
+                    const checkViewer = setInterval(() => {
+                        if (window.OpenSeadragon && document.querySelector('.openseadragon-container')) {
+                            const container = document.getElementById('viewer');
+                            if (container && container.viewer) {
+                                window.__perfMetrics.attachToViewer(container.viewer);
+                                clearInterval(checkViewer);
+                            }
+                        }
+                    }, 100);
+                `);
+
+                await page.goto(url, { waitUntil: 'domcontentloaded' });
+
+                // Wait for viewer to be ready before running scenario
+                await page.waitForFunction(() => {
+                    const container = document.getElementById('viewer');
+                    return container && container.viewer && container.viewer.world;
+                }, { timeout: 30000 });
+
+                // Run the scenario
+                const scenarioResult = await runScenario(page, scenarioName);
+
+                // Get final metrics from collector
+                const collectorMetrics = await page.evaluate(() => {
+                    return window.__perfMetrics ? window.__perfMetrics.getResults() : null;
+                });
+
+                results.scenarios.push({
+                    scenario: scenarioName,
+                    network,
+                    result: scenarioResult,
+                    metrics: collectorMetrics ? {
+                        totalTilesLoaded: collectorMetrics.totalTilesLoaded,
+                        cacheHitRate: collectorMetrics.cacheHitRate,
+                        zTransitionP50: collectorMetrics.zTransitionP50,
+                        zTransitionP95: collectorMetrics.zTransitionP95,
+                        p50TileLoad: collectorMetrics.p50TileLoad,
+                        p95TileLoad: collectorMetrics.p95TileLoad
+                    } : null
+                });
+
+                // Log summary
+                const summary = scenarioResult.summary;
+                console.log(`    -> ${scenarioResult.name}: ` +
+                    (summary.avgZTransitionMs ? `Z-trans avg: ${Math.round(summary.avgZTransitionMs)}ms, ` : '') +
+                    (summary.cacheHitRate !== undefined ? `Cache hit: ${summary.cacheHitRate.toFixed(1)}%, ` : '') +
+                    `Total tiles: ${collectorMetrics?.totalTilesLoaded || 0}`);
+
+            } catch (error) {
+                console.error(`    -> ERROR: ${error.message}`);
+                results.scenarios.push({
+                    scenario: scenarioName,
+                    network,
+                    error: error.message
+                });
+            } finally {
+                await browser.close();
+            }
+        }
+    }
+
+    return results;
+}
+
 async function main() {
     const args = process.argv.slice(2);
     const quick = args.includes('--quick');
 
+    // Parse --scenario flag (A, B, C, or "all")
+    const scenarioIndex = args.indexOf('--scenario');
+    const scenario = scenarioIndex !== -1 && args[scenarioIndex + 1]
+        ? args[scenarioIndex + 1]
+        : null;
+
     try {
-        const results = await runTestMatrix({ quick });
+        let results;
+        let outputFilename;
+
+        if (scenario) {
+            // Run scenario-based tests
+            const validScenarios = ['A', 'B', 'C', 'ALL'];
+            const scenarioUpper = scenario.toUpperCase();
+            if (!validScenarios.includes(scenarioUpper)) {
+                console.error(`Invalid scenario: ${scenario}. Valid options: A, B, C, all`);
+                process.exit(1);
+            }
+
+            results = await runScenarioTests({ scenario: scenarioUpper, quick });
+            outputFilename = 'performance-scenarios.json';
+        } else {
+            // Run traditional matrix tests
+            results = await runTestMatrix({ quick });
+            outputFilename = CONFIG.BASELINE_JSON;
+        }
 
         // Output JSON to stdout
         console.log('\n--- Results JSON ---');
@@ -209,7 +367,7 @@ async function main() {
         // Also save to file
         const outputPath = path.join(
             __dirname, '..', '..', 'docs',
-            CONFIG.BASELINE_JSON
+            outputFilename
         );
         fs.writeFileSync(outputPath, JSON.stringify(results, null, 2));
         console.log(`\nResults saved to: ${outputPath}`);
