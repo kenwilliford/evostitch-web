@@ -484,6 +484,7 @@
 
     // Track progressive load animation state
     let progressiveLoadInterval = null;
+    let zoomBackTimeout = null;
 
     /**
      * Force OSD to load tiles for the current viewport after Z-change.
@@ -501,6 +502,10 @@
         if (progressiveLoadInterval) {
             clearInterval(progressiveLoadInterval);
             progressiveLoadInterval = null;
+        }
+        if (zoomBackTimeout) {
+            clearTimeout(zoomBackTimeout);
+            zoomBackTimeout = null;
         }
 
         const vp = viewer.viewport;
@@ -530,7 +535,8 @@
         const zoomOutTarget = maxZoom * 0.3;
 
         vp.zoomTo(zoomOutTarget, null, false);  // Animated zoom out
-        setTimeout(() => {
+        zoomBackTimeout = setTimeout(() => {
+            zoomBackTimeout = null;
             vp.zoomTo(targetZoom, null, false);  // Animated zoom back
         }, 1500);
     }
