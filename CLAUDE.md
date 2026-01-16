@@ -201,3 +201,31 @@ evostitch.qualityAdapt.setDebug(true)
 Deployed from `web/` directory to evostitch.net
 - CNAME file configures custom domain
 - Static files only, no server-side code
+
+## Playwright Browser Testing
+
+### Ubuntu 24.04 Setup
+
+Chrome sandbox requires AppArmor exception on Ubuntu 24.04+:
+
+```bash
+# Create Chrome-specific AppArmor profile (persists across reboots)
+echo 'abi <abi/4.0>,
+include <tunables/global>
+
+profile playwright-chrome /home/*/.cache/ms-playwright/*/chrome-linux/chrome flags=(unconfined) {
+  userns,
+}' | sudo tee /etc/apparmor.d/playwright-chrome
+
+sudo apparmor_parser -r /etc/apparmor.d/playwright-chrome
+```
+
+This enables Chromium's sandbox without disabling system-wide unprivileged user namespace restrictions.
+
+### Unit Tests
+
+```bash
+node tests/tile-prioritizer.test.js  # 45 tests
+node tests/network-detect.test.js    # 37 tests
+node tests/quality-adapt.test.js     # 51 tests
+```
