@@ -33,6 +33,15 @@
                          || (window.innerWidth < 768 && 'ontouchstart' in window);
         const deviceMemory = navigator.deviceMemory || 4; // Default 4GB if API unavailable
 
+        // HTTP/2 detection heuristic: modern browsers on decent connections
+        // HTTP/2 multiplexing allows higher concurrency without head-of-line blocking
+        const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        const isSlowConnection = connection && (
+            connection.effectiveType === 'slow-2g' ||
+            connection.effectiveType === '2g'
+        );
+        const supportsHttp2 = !isSlowConnection;
+
         if (isMobile || deviceMemory < 4) {
             // Mobile / Low memory: conservative settings
             return {
@@ -40,7 +49,7 @@
                 cacheBase: 150,
                 cachePlaneMultiplier: 50,
                 preloadRadius: 1,
-                imageLoaderLimit: 2
+                imageLoaderLimit: supportsHttp2 ? 4 : 2
             };
         } else if (deviceMemory < 8) {
             // Standard desktop: moderate settings
@@ -49,16 +58,16 @@
                 cacheBase: 200,
                 cachePlaneMultiplier: 80,
                 preloadRadius: 2,
-                imageLoaderLimit: 4
+                imageLoaderLimit: supportsHttp2 ? 8 : 4
             };
         } else {
-            // High memory desktop: aggressive settings
+            // High memory desktop: aggressive settings (HTTP/2 allows 10-12)
             return {
                 tier: 'high',
                 cacheBase: 300,
                 cachePlaneMultiplier: 100,
                 preloadRadius: 2,
-                imageLoaderLimit: 6
+                imageLoaderLimit: supportsHttp2 ? 12 : 6
             };
         }
     }
@@ -164,13 +173,15 @@
         const dziName = metadata.name || metadata.title || mosaicId;
         const dziUrl = `${TILES_BASE_URL}/${mosaicId}/${dziName}.dzi`;
 
-        // Set device tier for telemetry (2D uses default config)
+        // Device-aware configuration (same as 3D but simpler cache needs)
         const config = getDeviceConfig();
         window.evostitch.telemetry.setDeviceTier(config.tier);
+        console.log(`[evostitch] Device tier: ${config.tier}, imageLoaderLimit: ${config.imageLoaderLimit}`);
 
         viewer = OpenSeadragon({
             ...OSD_CONFIG,
             tileSources: dziUrl,
+            imageLoaderLimit: config.imageLoaderLimit,
         });
 
         // Expose viewer for external instrumentation (performance testing)
@@ -205,7 +216,7 @@
         const preloadPlanes = Math.min(zCount, preloadWindow);
         const dynamicCacheCount = deviceConfig.cacheBase + (preloadPlanes * deviceConfig.cachePlaneMultiplier);
 
-        console.log(`[evostitch] Device tier: ${deviceConfig.tier}, cache: ${dynamicCacheCount}, preload radius: ±${deviceConfig.preloadRadius}`);
+        console.log(`[evostitch] Device tier: ${deviceConfig.tier}, imageLoaderLimit: ${deviceConfig.imageLoaderLimit}, cache: ${dynamicCacheCount}, preload radius: ±${deviceConfig.preloadRadius}`);
         window.evostitch.telemetry.setDeviceTier(deviceConfig.tier);
 
         viewer = OpenSeadragon({
@@ -247,6 +258,9 @@
                     console.warn('[evostitch] tile-prioritizer module not loaded - Z-prefetch optimization disabled');
                 }
 
+                // Initialize worker tile source for off-thread decoding (W5)
+                initWorkerTileSource();
+
                 // Initialize quality adaptation for network-aware loading (W4)
                 initQualityAdapt();
 
@@ -269,6 +283,25 @@
             window.evostitch.blurUpLoader.init(viewer);
         } catch (err) {
             console.warn('[evostitch] Failed to initialize blur-up-loader:', err.message);
+        }
+    }
+
+    // Initialize worker tile source for off-thread decoding (W5)
+    function initWorkerTileSource() {
+        if (!window.evostitch || !window.evostitch.workerTileSource) {
+            console.warn('[evostitch] worker-tile-source module not loaded - off-thread decoding disabled');
+            return;
+        }
+
+        try {
+            const success = window.evostitch.workerTileSource.init(viewer, {
+                poolSize: deviceConfig ? deviceConfig.imageLoaderLimit : 4
+            });
+            if (!success) {
+                console.warn('[evostitch] Worker tile source initialization failed - using standard decode');
+            }
+        } catch (err) {
+            console.warn('[evostitch] Failed to initialize worker-tile-source:', err.message);
         }
     }
 
@@ -360,6 +393,37 @@
             window.evostitch.telemetry.recordTileLoad(zoomLevel, latencyMs, isWarm);
         });
 
+        // Loading indicator integration
+        if (window.evostitch && window.evostitch.loadingIndicator) {
+            // Show indicator when viewport starts animating (pan/zoom)
+            viewer.addHandler('animation-start', function() {
+                resetTileCounters();
+                window.evostitch.loadingIndicator.show();
+            });
+
+            // Track tile loading progress
+            viewer.addHandler('tile-loaded', function() {
+                onTileLoadingComplete();
+                updateLoadingProgress();
+            });
+
+            // Also track tile load failures
+            viewer.addHandler('tile-load-failed', function() {
+                onTileLoadingComplete();
+                updateLoadingProgress();
+            });
+
+            // Track fully loaded state per TiledImage for accurate completion detection
+            viewer.world.addHandler('add-item', function(event) {
+                const tiledImage = event.item;
+                tiledImage.addHandler('fully-loaded-change', function(e) {
+                    if (e.fullyLoaded) {
+                        updateLoadingProgress();
+                    }
+                });
+            });
+        }
+
         // Mouse move for coordinates
         viewer.addHandler('canvas-press', updateCoordinates);
 
@@ -423,6 +487,9 @@
 
         // Preload adjacent planes for smoother navigation
         preloadAdjacentPlanes(newZ);
+
+        // Update loading indicator - Z window has shifted
+        updateLoadingProgress();
     }
 
     function handleKeyboardZ(e) {
@@ -503,6 +570,89 @@
 
         // Plane index (1-based for humans)
         indexDisplay.textContent = `(${currentZ + 1}/${zCount})`;
+    }
+
+    // Tile loading progress tracking
+    let loadedTileCount = 0;
+    let progressResetTimer = null;
+
+    // Reset counters when viewport animation starts
+    function resetTileCounters() {
+        loadedTileCount = 0;
+    }
+
+    // Calculate Z progress based on ±2 adjacent planes readiness
+    // Returns 0-1 indicating what fraction of the preload window is fully loaded
+    function calculateZProgress() {
+        if (!viewer || zCount <= 1) {
+            return 1;  // No Z-stack, always "complete"
+        }
+
+        const PRELOAD_RADIUS = 2;  // Track ±2 planes
+        let readyCount = 0;
+        let totalInWindow = 0;
+
+        for (let dz = -PRELOAD_RADIUS; dz <= PRELOAD_RADIUS; dz++) {
+            const targetZ = currentZ + dz;
+            if (targetZ >= 0 && targetZ < zCount) {
+                totalInWindow++;
+                const item = viewer.world.getItemAt(targetZ);
+                if (item && typeof item.getFullyLoaded === 'function' && item.getFullyLoaded()) {
+                    readyCount++;
+                }
+            }
+        }
+
+        return totalInWindow > 0 ? readyCount / totalInWindow : 1;
+    }
+
+    // Track tile loading complete (success or failure)
+    function onTileLoadingComplete() {
+        loadedTileCount++;
+
+        // Clear any pending reset since we're actively loading
+        if (progressResetTimer) {
+            clearTimeout(progressResetTimer);
+            progressResetTimer = null;
+        }
+    }
+
+    // Update loading indicator progress based on tile coverage
+    function updateLoadingProgress() {
+        if (!viewer || !window.evostitch || !window.evostitch.loadingIndicator) {
+            return;
+        }
+
+        // Get the current TiledImage (for 3D, use currentZ; for 2D, always index 0)
+        const tiledImage = viewer.world.getItemAt(zCount > 1 ? currentZ : 0);
+        if (!tiledImage) {
+            return;
+        }
+
+        // Calculate XY progress
+        let xyProgress = 0;
+
+        // Check if fully loaded (most reliable indicator)
+        if (typeof tiledImage.getFullyLoaded === 'function' && tiledImage.getFullyLoaded()) {
+            xyProgress = 1;
+        } else {
+            // Estimate progress: each tile adds ~5% progress, capping at 95% until fully loaded
+            // This provides visual feedback without knowing the total tile count
+            xyProgress = Math.min(0.95, loadedTileCount * 0.05);
+        }
+
+        // Calculate Z progress based on adjacent plane readiness (±2 planes)
+        const zProgress = calculateZProgress();
+
+        window.evostitch.loadingIndicator.setProgress(xyProgress, zProgress);
+
+        // Schedule counter reset after loading settles (for next pan/zoom cycle)
+        if (xyProgress >= 1) {
+            if (progressResetTimer) {
+                clearTimeout(progressResetTimer);
+            }
+            progressResetTimer = setTimeout(resetTileCounters, 1000);
+        }
     }
 
     function updateScaleBar() {
