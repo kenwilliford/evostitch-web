@@ -236,10 +236,13 @@
         viewer.world.addHandler('add-item', function() {
             imagesLoaded++;
             if (imagesLoaded === zCount) {
-                // All planes loaded - set visibility
-                for (let z = 1; z < zCount; z++) {
+                // Start at middle Z-plane (more useful default for 3D exploration)
+                currentZ = Math.floor((zCount - 1) / 2);
+
+                // All planes loaded - set visibility (only show initial plane)
+                for (let z = 0; z < zCount; z++) {
                     const item = viewer.world.getItemAt(z);
-                    if (item) item.setOpacity(0);
+                    if (item) item.setOpacity(z === currentZ ? 1 : 0);
                 }
                 // Initialize Z-slider UI
                 initZSliderUI();
@@ -248,7 +251,7 @@
                 if (window.evostitch && window.evostitch.tilePrioritizer) {
                     try {
                         window.evostitch.tilePrioritizer.init(viewer, {
-                            currentZ: 0,
+                            currentZ: currentZ,
                             zCount: zCount
                         });
                     } catch (err) {
@@ -401,16 +404,26 @@
                 window.evostitch.loadingIndicator.show();
             });
 
-            // Track tile loading progress
+            // Update progress after draw cycle completes (when lastDrawn is populated)
+            viewer.addHandler('animation-finish', function() {
+                updateLoadingProgress();
+            });
+
+            // Also update progress during tile loads for responsive feedback
             viewer.addHandler('tile-loaded', function() {
                 onTileLoadingComplete();
-                updateLoadingProgress();
+                // Schedule progress update after next render to get accurate lastDrawn
+                requestAnimationFrame(function() {
+                    updateLoadingProgress();
+                });
             });
 
             // Also track tile load failures
             viewer.addHandler('tile-load-failed', function() {
                 onTileLoadingComplete();
-                updateLoadingProgress();
+                requestAnimationFrame(function() {
+                    updateLoadingProgress();
+                });
             });
 
             // Track fully loaded state per TiledImage for accurate completion detection
@@ -418,7 +431,9 @@
                 const tiledImage = event.item;
                 tiledImage.addHandler('fully-loaded-change', function(e) {
                     if (e.fullyLoaded) {
-                        updateLoadingProgress();
+                        requestAnimationFrame(function() {
+                            updateLoadingProgress();
+                        });
                     }
                 });
             });
@@ -440,7 +455,7 @@
 
         // Configure slider range
         slider.max = zCount - 1;
-        slider.value = 0;
+        slider.value = currentZ;
 
         // Update displays
         updateZDisplay();
@@ -452,7 +467,7 @@
         slider.addEventListener('input', handleZSliderChange);
 
         // Preload adjacent planes for smoother first navigation
-        preloadAdjacentPlanes(0);
+        preloadAdjacentPlanes(currentZ);
 
         // Keyboard navigation for Z-planes
         document.addEventListener('keydown', handleKeyboardZ);
@@ -587,9 +602,88 @@
         loadedTileCount = 0;
     }
 
+    // Calculate XY progress based on actual viewport tile coverage
+    // Returns 0-1 indicating what fraction of needed tiles are drawn at best resolution
+    function calculateXYProgress() {
+        const tiledImage = viewer.world.getItemAt(zCount > 1 ? currentZ : 0);
+        if (!tiledImage) return 0;
+
+        const viewport = viewer.viewport;
+        const source = tiledImage.source;
+        if (!source) return 0;
+
+        // Get viewport bounds
+        const viewportBounds = viewport.getBounds();
+
+        // Find the best level for current zoom (highest resolution needed)
+        // OSD uses levels where 0 = smallest, maxLevel = full resolution
+        const containerWidth = viewport.getContainerSize().x;
+        const viewportWidthInViewport = viewportBounds.width;
+        const pixelsPerViewportUnit = containerWidth / viewportWidthInViewport;
+
+        // Determine which level provides adequate detail
+        // We want scale where level pixels per viewport unit >= screen pixels per viewport unit
+        let bestLevel = 0;
+        for (let level = 0; level <= source.maxLevel; level++) {
+            const levelScale = source.getLevelScale(level);
+            // At this level, how many image pixels per viewport unit?
+            const levelPixelsPerViewportUnit = source.width * levelScale;
+            if (levelPixelsPerViewportUnit >= pixelsPerViewportUnit * 0.5) {
+                bestLevel = level;
+                break;
+            }
+            bestLevel = level;
+        }
+
+        // Check what level OSD actually drew (highest level in lastDrawn)
+        const lastDrawn = tiledImage.lastDrawn || [];
+        if (lastDrawn.length === 0) return 0;
+
+        const drawnLevel = Math.max(...lastDrawn.map(t => t.level));
+
+        // If drawn level is lower than what we need, we're still loading
+        if (drawnLevel < bestLevel) {
+            // Return partial progress based on how close the drawn level is
+            return 0.5 * (drawnLevel / bestLevel);
+        }
+
+        // OSD drew at adequate or better resolution - check coverage at that level
+        let corners;
+        try {
+            corners = tiledImage._getCornerTiles(
+                drawnLevel,
+                viewportBounds.getTopLeft(),
+                viewportBounds.getBottomRight()
+            );
+        } catch (e) {
+            // Fallback if _getCornerTiles fails
+            return Math.min(0.95, loadedTileCount * 0.05);
+        }
+
+        // Count needed tiles at the drawn level
+        const neededTileCount = (corners.bottomRight.x - corners.topLeft.x + 1) *
+                                (corners.bottomRight.y - corners.topLeft.y + 1);
+
+        if (neededTileCount <= 0) return 1;
+
+        // Count drawn tiles at the drawn level within viewport bounds
+        let drawnInViewport = 0;
+
+        for (const tile of lastDrawn) {
+            if (tile.level === drawnLevel &&
+                tile.x >= corners.topLeft.x && tile.x <= corners.bottomRight.x &&
+                tile.y >= corners.topLeft.y && tile.y <= corners.bottomRight.y) {
+                drawnInViewport++;
+            }
+        }
+
+        return drawnInViewport / neededTileCount;
+    }
+
     // Calculate Z progress based on ±2 adjacent planes readiness
     // Returns 0-1 indicating what fraction of the preload window is fully loaded
-    function calculateZProgress() {
+    // Takes currentXYProgress to avoid redundant calculation for the current plane
+    function calculateZProgress(currentXYProgress) {
         if (!viewer || zCount <= 1) {
             return 1;  // No Z-stack, always "complete"
         }
@@ -602,9 +696,20 @@
             const targetZ = currentZ + dz;
             if (targetZ >= 0 && targetZ < zCount) {
                 totalInWindow++;
-                const item = viewer.world.getItemAt(targetZ);
-                if (item && typeof item.getFullyLoaded === 'function' && item.getFullyLoaded()) {
-                    readyCount++;
+
+                if (targetZ === currentZ) {
+                    // For current Z-plane, use viewport-based progress
+                    // Don't trust getFullyLoaded() which lies after Z-changes
+                    if (currentXYProgress >= 0.95) {
+                        readyCount++;
+                    }
+                } else {
+                    // For adjacent planes, use getFullyLoaded() as proxy
+                    // (we can't check lastDrawn for planes not being rendered)
+                    const item = viewer.world.getItemAt(targetZ);
+                    if (item && typeof item.getFullyLoaded === 'function' && item.getFullyLoaded()) {
+                        readyCount++;
+                    }
                 }
             }
         }
@@ -635,20 +740,13 @@
             return;
         }
 
-        // Calculate XY progress
-        let xyProgress = 0;
-
-        // Check if fully loaded (most reliable indicator)
-        if (typeof tiledImage.getFullyLoaded === 'function' && tiledImage.getFullyLoaded()) {
-            xyProgress = 1;
-        } else {
-            // Estimate progress: each tile adds ~5% progress, capping at 95% until fully loaded
-            // This provides visual feedback without knowing the total tile count
-            xyProgress = Math.min(0.95, loadedTileCount * 0.05);
-        }
+        // Calculate XY progress based on actual viewport tile coverage
+        // This doesn't trust getFullyLoaded() which can lie after Z-plane changes
+        const xyProgress = calculateXYProgress();
 
         // Calculate Z progress based on adjacent plane readiness (±2 planes)
-        const zProgress = calculateZProgress();
+        // Pass xyProgress so current plane uses viewport-based check, not getFullyLoaded()
+        const zProgress = calculateZProgress(xyProgress);
 
         window.evostitch.loadingIndicator.setProgress(xyProgress, zProgress);
 
