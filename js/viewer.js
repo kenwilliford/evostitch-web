@@ -498,7 +498,7 @@
             depthDisplay.textContent = normalizeUnit(zLabels[currentZ]);
         } else {
             const spacing = metadata.zSpacing || 1;
-            depthDisplay.textContent = `+${(currentZ * spacing).toFixed(1)} µm`;
+            depthDisplay.textContent = `${(currentZ * spacing).toFixed(1)} µm`;
         }
 
         // Plane index (1-based for humans)
@@ -569,7 +569,7 @@
 
         if (zCount > 1) {
             // Include Z coordinate and plane index for 3D mosaics
-            let zLabel = zLabels?.[currentZ] || `+${(currentZ * (metadata.zSpacing || 1)).toFixed(1)} µm`;
+            let zLabel = zLabels?.[currentZ] || `${(currentZ * (metadata.zSpacing || 1)).toFixed(1)} µm`;
             zLabel = normalizeUnit(zLabel);
             const planeIndex = `(plane ${currentZ + 1}/${zCount})`;
             display.textContent = `X: ${umX.toFixed(1)} µm, Y: ${umY.toFixed(1)} µm, Z: ${zLabel} ${planeIndex}`;
