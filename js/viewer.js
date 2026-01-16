@@ -488,6 +488,12 @@
         // Preload adjacent planes for smoother navigation
         preloadAdjacentPlanes(newZ);
 
+        // Show loading indicator for Z-plane change (tiles need to load)
+        if (window.evostitch && window.evostitch.loadingIndicator) {
+            resetTileCounters();
+            window.evostitch.loadingIndicator.show();
+        }
+
         // Update loading indicator - Z window has shifted
         updateLoadingProgress();
     }
