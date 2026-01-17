@@ -66,6 +66,16 @@
     let heartbeatIntervalId = null;
     const HEARTBEAT_INTERVAL_MS = 500;
 
+    // Resolution fix state to prevent infinite loops
+    // Tracks last fix attempt per Z-plane and zoom level
+    let resolutionFixState = {
+        lastAttemptZ: -1,
+        lastAttemptZoom: -1,
+        lastAttemptTime: 0,
+        // Minimum time between fix attempts for same Z/zoom (ms)
+        cooldownMs: 2000
+    };
+
     /**
      * Initialize the tile prioritizer with an OpenSeadragon viewer
      * @param {OpenSeadragon.Viewer} osdViewer - The OpenSeadragon viewer instance
@@ -325,6 +335,145 @@
     }
 
     /**
+     * Get the current tile level being drawn for a TiledImage
+     * Returns the highest level that has tiles currently drawn in the viewport
+     */
+    function getDrawnTileLevel(tiledImage) {
+        if (!tiledImage || !tiledImage.lastDrawn) {
+            return -1;
+        }
+        let maxLevel = -1;
+        for (let i = 0; i < tiledImage.lastDrawn.length; i++) {
+            const tile = tiledImage.lastDrawn[i];
+            if (tile && tile.level > maxLevel) {
+                maxLevel = tile.level;
+            }
+        }
+        return maxLevel;
+    }
+
+    /**
+     * Calculate the needed tile level for current viewport zoom
+     * This is the level that would provide ~1:1 pixel mapping
+     */
+    function getNeededTileLevel(tiledImage) {
+        if (!tiledImage || !tiledImage.source || !viewer || !viewer.viewport) {
+            return -1;
+        }
+        const source = tiledImage.source;
+        const maxLevel = source.maxLevel;
+
+        // Get viewport zoom
+        const viewportZoom = viewer.viewport.getZoom(true);
+
+        // Calculate what level gives us 1:1 pixels
+        // At zoom=1, the image fits the container. Each level doubles resolution.
+        const containerWidth = viewer.container.clientWidth;
+        const imageWidth = source.width;
+
+        // Pixels per viewport unit at current zoom
+        const viewportWidth = viewer.viewport.getBounds(true).width;
+        const pixelsPerUnit = containerWidth / viewportWidth;
+
+        // Image units per viewport unit
+        const imageUnitsPerViewportUnit = imageWidth;
+
+        // Needed level: log2 of (pixels we need / pixels at level 0)
+        const level0Size = source.getTileWidth ? source.getTileWidth(0) : 256;
+        const neededScale = pixelsPerUnit / (imageWidth / Math.pow(2, maxLevel));
+        const neededLevel = Math.ceil(Math.log2(neededScale));
+
+        return Math.min(Math.max(0, neededLevel), maxLevel);
+    }
+
+    /**
+     * Check resolution state of current Z-plane
+     * Returns object with drawnLevel, neededLevel, and whether there's a mismatch
+     */
+    function checkResolutionState() {
+        if (!viewer || !viewer.world) {
+            return { drawnLevel: -1, neededLevel: -1, mismatch: false };
+        }
+
+        const tiledImage = viewer.world.getItemAt(currentZPlane);
+        if (!tiledImage) {
+            return { drawnLevel: -1, neededLevel: -1, mismatch: false };
+        }
+
+        const drawnLevel = getDrawnTileLevel(tiledImage);
+        const neededLevel = getNeededTileLevel(tiledImage);
+        const mismatch = drawnLevel >= 0 && neededLevel >= 0 && drawnLevel < neededLevel;
+
+        return {
+            drawnLevel: drawnLevel,
+            neededLevel: neededLevel,
+            maxLevel: tiledImage.source ? tiledImage.source.maxLevel : -1,
+            mismatch: mismatch,
+            fullyLoaded: tiledImage.getFullyLoaded ? tiledImage.getFullyLoaded() : false
+        };
+    }
+
+    /**
+     * Trigger resolution fix when mismatch detected
+     * Clears OSD's coverage tracking to force re-request of higher-res tiles
+     * Returns true if fix was triggered, false if skipped (cooldown or no viewer)
+     */
+    function triggerResolutionFix() {
+        if (!viewer || !viewer.world || !viewer.viewport) {
+            return false;
+        }
+
+        const tiledImage = viewer.world.getItemAt(currentZPlane);
+        if (!tiledImage) {
+            return false;
+        }
+
+        const currentZoom = viewer.viewport.getZoom(true);
+        const now = performance.now();
+
+        // Check cooldown: don't retry same Z/zoom within cooldown period
+        const sameZ = resolutionFixState.lastAttemptZ === currentZPlane;
+        const sameZoom = Math.abs(resolutionFixState.lastAttemptZoom - currentZoom) < 0.5;
+        const withinCooldown = (now - resolutionFixState.lastAttemptTime) < resolutionFixState.cooldownMs;
+
+        if (sameZ && sameZoom && withinCooldown) {
+            logDiagnostic('triggerResolutionFix SKIPPED', {
+                reason: 'cooldown',
+                z: currentZPlane,
+                zoom: currentZoom.toFixed(2),
+                timeSinceLastAttempt: Math.round(now - resolutionFixState.lastAttemptTime) + 'ms'
+            });
+            return false;
+        }
+
+        // Record this attempt
+        resolutionFixState.lastAttemptZ = currentZPlane;
+        resolutionFixState.lastAttemptZoom = currentZoom;
+        resolutionFixState.lastAttemptTime = now;
+
+        // Clear OSD's coverage tracking to force tile re-requests
+        // Coverage is a nested dict: coverage[level][x][y] = boolean
+        // Clearing it makes OSD think no tiles are loaded, triggering new requests
+        if (tiledImage._coverage) {
+            tiledImage._coverage = {};
+        }
+
+        // Mark TiledImage as needing redraw
+        tiledImage._needsDraw = true;
+
+        // Trigger OSD to recalculate and request tiles
+        viewer.forceRedraw();
+
+        logDiagnostic('triggerResolutionFix TRIGGERED', {
+            z: currentZPlane,
+            zoom: currentZoom.toFixed(2),
+            action: 'cleared coverage, forced redraw'
+        });
+
+        return true;
+    }
+
+    /**
      * Start heartbeat interval to process queue when no OSD events fire
      * Called when jobs are added to ensure queue gets processed
      */
@@ -334,11 +483,36 @@
         }
 
         heartbeatIntervalId = setInterval(function() {
+            // Always check resolution state for diagnostics
+            const resState = checkResolutionState();
+
             if (pendingJobs.length > 0) {
-                logDiagnostic('heartbeat TICK', { pendingJobs: pendingJobs.length });
+                logDiagnostic('heartbeat TICK', {
+                    pendingJobs: pendingJobs.length,
+                    resolution: resState
+                });
                 processQueue();
             } else {
-                // Queue drained, stop heartbeat
+                // Queue is empty - check for resolution mismatch
+                if (resState.mismatch) {
+                    logDiagnostic('heartbeat RESOLUTION_MISMATCH', {
+                        currentZ: currentZPlane,
+                        drawnLevel: resState.drawnLevel,
+                        neededLevel: resState.neededLevel,
+                        maxLevel: resState.maxLevel,
+                        fullyLoaded: resState.fullyLoaded
+                    });
+
+                    // Attempt to fix resolution mismatch
+                    const fixTriggered = triggerResolutionFix();
+                    if (fixTriggered) {
+                        // Keep heartbeat running to monitor if fix worked
+                        // Don't stop yet - give OSD time to request new tiles
+                        return;
+                    }
+                    // Fix was skipped (cooldown) - stop heartbeat
+                }
+                // Queue drained and no mismatch (or fix on cooldown), stop heartbeat
                 stopHeartbeat();
             }
         }, HEARTBEAT_INTERVAL_MS);
@@ -461,8 +635,25 @@
 
         log('Z-plane changed from ' + oldZ + ' to ' + z + ', velocity=' + zVelocity.toFixed(1) + ' planes/sec');
 
+        // Log resolution state for new Z-plane
+        const resState = checkResolutionState();
+        logDiagnostic('setCurrentZ RESOLUTION', {
+            newZ: z,
+            oldZ: oldZ,
+            drawnLevel: resState.drawnLevel,
+            neededLevel: resState.neededLevel,
+            maxLevel: resState.maxLevel,
+            mismatch: resState.mismatch,
+            fullyLoaded: resState.fullyLoaded,
+            pendingJobs: pendingJobs.length
+        });
+
         // Clear prefetched planes since current Z changed
         prefetchedZPlanes.clear();
+
+        // Reset resolution fix state for new Z-plane
+        // This allows immediate fix attempt if mismatch detected
+        resolutionFixState.lastAttemptZ = -1;
 
         // Re-prioritize pending jobs
         reprioritizeQueue();
@@ -730,6 +921,15 @@
                 lastPrefetchBounds: lastPrefetchBounds,
                 zVelocity: zVelocity,
                 predictedPlanes: predictPrefetchPlanes()
+            },
+            resolution: checkResolutionState(),
+            resolutionFix: {
+                lastAttemptZ: resolutionFixState.lastAttemptZ,
+                lastAttemptZoom: resolutionFixState.lastAttemptZoom,
+                timeSinceAttempt: resolutionFixState.lastAttemptTime > 0
+                    ? Math.round(performance.now() - resolutionFixState.lastAttemptTime) + 'ms'
+                    : 'never',
+                cooldownMs: resolutionFixState.cooldownMs
             }
         };
     }
@@ -771,6 +971,9 @@
         schedulePrefetch: schedulePrefetch,
         cancelPrefetch: cancelPrefetch,
         triggerZPrefetch: triggerZPrefetch,
+        // Resolution detection and fix API (for Z-plane resolution fix)
+        checkResolutionState: checkResolutionState,
+        triggerResolutionFix: triggerResolutionFix,
         // Expose constants for testing
         PRIORITY: PRIORITY,
         CONFIG: CONFIG

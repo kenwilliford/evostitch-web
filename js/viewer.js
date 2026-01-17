@@ -189,6 +189,9 @@
 
         setupViewerHandlers();
 
+        // Initialize coordinate display to show correct format (2D vs 3D)
+        displayCoordinates(0, 0);
+
         // Initialize quality adaptation for network-aware loading (W4)
         // and blur-up loader for progressive tile resolution
         // Wait for viewer to open before initializing
@@ -246,6 +249,9 @@
                 }
                 // Initialize Z-slider UI
                 initZSliderUI();
+
+                // Initialize coordinate display to show 3D format
+                displayCoordinates(0, 0);
 
                 // Initialize tile prioritizer for request optimization (W2)
                 if (window.evostitch && window.evostitch.tilePrioritizer) {

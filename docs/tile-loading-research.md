@@ -145,6 +145,82 @@ Playwright test confirms:
 - Before fix: 0 tiles loaded in 30s at max zoom after Z-change
 - After fix: 57+ tiles loaded during stationary phase, heartbeat active until queue drains
 
+### 3.5 Resolution Detection and Fix
+
+After the heartbeat ensures tiles load, a secondary problem remains: OSD may display low-resolution tiles (preloaded from adjacent planes) when zoomed in, even after tiles finish loading. This happens because OSD's coverage tracking thinks the viewport is covered with tiles, not knowing they're at the wrong resolution.
+
+**Detection functions:**
+
+```javascript
+// Get highest tile level currently drawn on screen
+function getDrawnTileLevel() {
+    const ti = viewer.world.getItemAt(currentZ);
+    let maxLevel = 0;
+    for (const level in ti.tilesMatrix) {
+        const tiles = ti.tilesMatrix[level];
+        for (const x in tiles) {
+            for (const y in tiles[x]) {
+                if (tiles[x][y] && tiles[x][y].loaded) {
+                    maxLevel = Math.max(maxLevel, parseInt(level));
+                }
+            }
+        }
+    }
+    return maxLevel;
+}
+
+// Get tile level needed for ~1:1 pixel mapping at current zoom
+function getNeededTileLevel() {
+    const ti = viewer.world.getItemAt(currentZ);
+    const zoom = viewer.viewport.getZoom(true);
+    const containerWidth = viewer.container.clientWidth;
+    const imageWidth = ti.source.width;
+    const visiblePixels = containerWidth / zoom;
+    const neededLevel = Math.ceil(Math.log2(imageWidth / visiblePixels));
+    return Math.min(neededLevel, ti.source.maxLevel);
+}
+
+// Compare drawn vs needed level
+function checkResolutionState() {
+    const drawnLevel = getDrawnTileLevel();
+    const neededLevel = getNeededTileLevel();
+    return {
+        drawnLevel,
+        neededLevel,
+        mismatch: drawnLevel < neededLevel
+    };
+}
+```
+
+**Fix mechanism:**
+
+When heartbeat detects `drawnLevel < neededLevel`, it triggers a resolution fix:
+
+```javascript
+function triggerResolutionFix() {
+    const ti = viewer.world.getItemAt(currentZ);
+
+    // Clear OSD's coverage tracking (makes OSD think tiles are needed)
+    ti._coverage = {};
+
+    // Force redraw (triggers OSD to recalculate and request tiles)
+    viewer.forceRedraw();
+}
+```
+
+**Loop prevention:**
+
+A 2-second cooldown prevents infinite loops. State resets on Z-plane change to allow immediate fix for the new plane.
+
+```javascript
+const resolutionFixState = {
+    lastFixZ: -1,
+    lastFixZoom: -1,
+    lastFixTime: 0,
+    cooldownMs: 2000
+};
+```
+
 ---
 
 ## 4. Related Fixes
@@ -172,22 +248,23 @@ function getZPlaneFromUrl(url) {
 
 **Problem**: OSD preloading fills TiledImage cache with edge tiles (for pan), not viewport center tiles. After Z-change, OSD draws low-resolution tiles because correct high-res center tiles aren't loaded.
 
-**Fix**: Reset TiledImage cache and trigger zoom animation:
+**Original workaround** (deprecated): Reset TiledImage cache and trigger zoom animation. This worked but caused visible zoom-out/zoom-in animation on every Z-change.
+
+**Current fix** (via `triggerResolutionFix`): Clear OSD's coverage tracking and force redraw. This makes OSD recalculate tile needs without any visible animation:
 
 ```javascript
-function triggerProgressiveTileLoad() {
+function triggerResolutionFix() {
     const ti = viewer.world.getItemAt(currentZ);
 
-    // Reset tile cache to force fresh loading
-    ti.tilesMatrix = {};
-    ti._needsDraw = true;
+    // Clear OSD's coverage tracking (makes OSD think tiles are needed)
+    ti._coverage = {};
 
-    // Zoom-out-zoom-in cycle triggers proper tile loading
-    const targetZoom = vp.getZoom();
-    vp.zoomTo(maxZoom * 0.3, null, false);
-    setTimeout(() => vp.zoomTo(targetZoom, null, false), 1500);
+    // Force redraw (triggers OSD to recalculate and request tiles)
+    viewer.forceRedraw();
 }
 ```
+
+See Section 3.5 for the complete resolution detection and fix mechanism.
 
 ### 4.3 Loading Indicator Accuracy
 
