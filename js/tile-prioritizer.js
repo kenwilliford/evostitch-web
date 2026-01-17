@@ -494,7 +494,9 @@
                 processQueue();
             } else {
                 // Queue is empty - check for resolution mismatch
-                if (resState.mismatch) {
+                // Only trigger fix when fully loaded (no in-flight tiles)
+                // Otherwise mismatch is expected during normal loading
+                if (resState.mismatch && resState.fullyLoaded) {
                     logDiagnostic('heartbeat RESOLUTION_MISMATCH', {
                         currentZ: currentZPlane,
                         drawnLevel: resState.drawnLevel,
