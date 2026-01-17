@@ -117,11 +117,49 @@ The depth of prefetch scales with navigation speed: `depth = min(5, ceil(velocit
 
 **Expected improvement:** -94% Z-transition wait time on fast scroll.
 
+**Heartbeat System:**
+
+The heartbeat ensures tile requests are processed even when OpenSeadragon stops firing events:
+
+| Component | Purpose |
+|-----------|---------|
+| `startHeartbeat()` | Starts 500ms interval when jobs are queued |
+| `stopHeartbeat()` | Stops interval when queue is empty and no mismatch |
+| `processQueue()` | Dispatches pending jobs to OSD loader by priority |
+
+**How it works:**
+
+1. Jobs are added via wrapped `ImageLoader.addJob` → queued by priority
+2. Heartbeat ticks every 500ms while jobs are pending
+3. Each tick: dispatches jobs up to available loader slots
+4. When queue empties: checks resolution state, stops if OK
+
+**Resolution Detection and Fix:**
+
+After tiles stop loading, there can be a resolution mismatch: OSD displays low-res (preloaded) tiles when zoomed in, but doesn't request higher-res tiles because it thinks it has coverage.
+
+| Function | Purpose |
+|----------|---------|
+| `getDrawnTileLevel()` | Returns highest tile level currently rendered |
+| `getNeededTileLevel()` | Calculates level needed for ~1:1 pixel mapping at current zoom |
+| `checkResolutionState()` | Compares drawn vs needed, returns `{ drawnLevel, neededLevel, mismatch }` |
+| `triggerResolutionFix()` | Clears OSD coverage cache and forces redraw |
+
+**Fix mechanism:**
+
+1. Heartbeat detects `drawnLevel < neededLevel` (mismatch)
+2. `triggerResolutionFix()` clears `tiledImage._coverage` (OSD's tile tracking)
+3. `viewer.forceRedraw()` triggers OSD to recalculate needed tiles
+4. OSD requests higher-res tiles since it no longer thinks area is covered
+5. Cooldown (2s) prevents infinite loops for same Z-plane/zoom level
+
 **Console API:**
 
 ```javascript
 evostitch.tilePrioritizer.getState()   // { enabled, currentZ, pendingJobs, isAnimating, zVelocity, predictedPlanes, ... }
 evostitch.tilePrioritizer.setDebug(true) // Enable debug logging
+evostitch.tilePrioritizer.setDiagnostic(true) // Enable heartbeat/resolution diagnostic logging
+evostitch.tilePrioritizer.checkResolutionState() // { drawnLevel, neededLevel, mismatch, fullyLoaded }
 ```
 
 ### telemetry.js
