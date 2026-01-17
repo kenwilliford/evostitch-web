@@ -567,9 +567,6 @@
             newItem.update();
             viewer.forceRedraw();
 
-            // Trigger a zoom animation to drive progressive tile loading
-            // OSD loads tiles progressively during viewport changes
-            triggerProgressiveTileLoad();
         }
 
         updateZDisplay();
@@ -1006,9 +1003,9 @@
             let zLabel = zLabels?.[currentZ] || `${(currentZ * (metadata.zSpacing || 1)).toFixed(1)} µm`;
             zLabel = normalizeUnit(zLabel);
             const planeIndex = `(plane ${currentZ + 1}/${zCount})`;
-            display.textContent = `X: ${umX.toFixed(1)} µm, Y: ${umY.toFixed(1)} µm, Z: ${zLabel} ${planeIndex}`;
+            display.textContent = `X: ${umX.toFixed(1)} µm  Y: ${umY.toFixed(1)} µm  Z: ${zLabel} ${planeIndex}`;
         } else {
-            display.textContent = `X: ${umX.toFixed(1)} µm, Y: ${umY.toFixed(1)} µm`;
+            display.textContent = `X: ${umX.toFixed(1)} µm  Y: ${umY.toFixed(1)} µm`;
         }
     }
 
