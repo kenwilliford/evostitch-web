@@ -96,6 +96,7 @@
     const OSD_CONFIG = {
         id: 'viewer',
         prefixUrl: 'https://cdn.jsdelivr.net/npm/openseadragon@4.1/build/openseadragon/images/',
+        showNavigationControl: false,  // Hide default nav buttons (redundant with mouse/keyboard)
         showNavigator: true,
         navigatorPosition: 'TOP_RIGHT',
         navigatorSizeRatio: 0.15,
