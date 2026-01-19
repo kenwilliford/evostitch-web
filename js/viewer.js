@@ -477,6 +477,12 @@
             compareLink.style.display = '';
         }
 
+        // Show quality selector for Z-stack mosaics (more useful for 3D)
+        const qualitySelector = document.getElementById('quality-selector');
+        if (qualitySelector) {
+            qualitySelector.style.display = '';
+        }
+
         // Handle slider changes
         slider.addEventListener('input', handleZSliderChange);
 
