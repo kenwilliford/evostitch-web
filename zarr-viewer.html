@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Zarr Viewer - evostitch</title>
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Local bundle includes Viv and deck.gl with all dependencies -->
+    <!-- Built via: npm run build:zarr -->
+    <script type="importmap">
+    {
+        "imports": {
+            "zarr-viewer-bundle": "./dist/zarr-viewer-bundle.js"
+        }
+    }
+    </script>
+</head>
+<body class="viewer-page">
+    <header class="viewer-header">
+        <a href="index.html" class="back-link">&larr; Back to catalog</a>
+        <div class="title-group">
+            <h1 id="mosaic-title">OME-Zarr 3D Explorer</h1>
+            <p id="mosaic-description" class="viewer-description">Loading...</p>
+        </div>
+        <a href="viewer.html?mosaic=3x3x3-test" class="compare-link" title="Compare with DZI viewer">Compare DZI &rarr;</a>
+        <button id="fullscreen-btn" class="fullscreen-btn" title="Toggle fullscreen">&#x26F6;</button>
+    </header>
+
+    <div id="viewer" class="viewer-container"></div>
+
+    <div id="scale-bar" class="scale-bar">
+        <div class="scale-bar-line"></div>
+        <span class="scale-bar-label">100 µm</span>
+    </div>
+
+    <div id="coordinates" class="coordinates">
+        <span id="coord-display">X: 0 µm, Y: 0 µm</span>
+    </div>
+
+    <div id="zoom-controls" class="zoom-controls">
+        <button id="zoom-in-btn" class="zoom-btn" title="Zoom in (+)">+</button>
+        <button id="zoom-out-btn" class="zoom-btn" title="Zoom out (-)">−</button>
+        <button id="home-btn" class="zoom-btn" title="Reset view (H)">⌂</button>
+    </div>
+
+    <div id="channel-controls" class="channel-controls">
+        <div class="channel-controls-header">
+            <span class="channel-controls-title">Channels</span>
+            <button id="channel-controls-toggle" class="channel-controls-toggle" title="Expand/collapse">▼</button>
+        </div>
+        <div id="channel-list" class="channel-list"></div>
+    </div>
+
+    <div id="z-slider-container" class="z-slider-container">
+        <label class="z-label">Z:</label>
+        <input type="range" id="z-slider" class="z-slider" min="0" max="0" value="0" step="1">
+        <span id="z-depth" class="z-depth">0 µm</span>
+        <span id="z-index" class="z-index">(1/1)</span>
+    </div>
+
+    <script src="js/loading-indicator.js"></script>
+    <script type="module" src="js/zarr-viewer.js"></script>
+</body>
+</html>

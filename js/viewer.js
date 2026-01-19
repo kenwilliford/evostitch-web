@@ -470,6 +470,12 @@
         // Show container
         container.style.display = 'flex';
 
+        // Show comparison link for Z-stack mosaics
+        const compareLink = document.getElementById('compare-link');
+        if (compareLink) {
+            compareLink.style.display = '';
+        }
+
         // Handle slider changes
         slider.addEventListener('input', handleZSliderChange);
 
