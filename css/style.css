@@ -443,7 +443,7 @@ footer {
 /* Quality selector */
 .quality-selector {
     position: fixed;
-    top: 60px;
+    top: 220px;  /* Below OSD navigator/overview map */
     right: 20px;
     background: rgba(0, 0, 0, 0.7);
     padding: 8px 12px;
@@ -505,10 +505,10 @@ footer {
     }
 }
 
-/* Fullscreen: show quality selector */
+/* Fullscreen: show quality selector below navigator */
 .viewer-page:fullscreen .quality-selector,
 .viewer-page:-webkit-full-screen .quality-selector {
-    top: 20px;
+    top: 180px;
 }
 
 /* Loading indicator - dual-arc progress ring */
