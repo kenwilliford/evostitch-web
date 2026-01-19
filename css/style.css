@@ -443,7 +443,7 @@ footer {
 /* Quality selector */
 .quality-selector {
     position: fixed;
-    top: 60px;
+    top: 70px;  /* Below header, aligned with navigator top edge */
     left: 20px;
     background: rgba(0, 0, 0, 0.7);
     padding: 8px 12px;
