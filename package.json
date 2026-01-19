@@ -6,9 +6,16 @@
   "scripts": {
     "test": "node tests/tile-prioritizer.test.js && node tests/network-detect.test.js && node tests/quality-adapt.test.js && node tests/sw.test.js",
     "perf-test": "node tests/perf/run-harness.js",
-    "perf-test:quick": "node tests/perf/run-harness.js --quick"
+    "perf-test:quick": "node tests/perf/run-harness.js --quick",
+    "build:zarr": "node build/bundle-zarr-viewer.js"
+  },
+  "dependencies": {
+    "@hms-dbmi/viv": "^0.15.0",
+    "deck.gl": "^8.8.27",
+    "@luma.gl/core": "^8.5.21"
   },
   "devDependencies": {
+    "esbuild": "^0.20.0",
     "playwright": "^1.40.0"
   }
 }

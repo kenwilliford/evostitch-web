@@ -20,6 +20,16 @@
       "physicalHeight": 522,
       "zCount": 3,
       "thumbnail": "thumbnail.jpg"
+    },
+    {
+      "id": "zarr-3d-demo",
+      "title": "OME-Zarr 3D Explorer",
+      "description": "WebGL-powered 3D microscopy viewer using Viv/deck.gl. Demonstrates smooth Z-navigation with 236 planes. Fluorescence: LaminB1 (blue) and DAPI (yellow).",
+      "width": 271,
+      "height": 275,
+      "zCount": 236,
+      "format": "zarr",
+      "thumbnail": null
     }
   ]
 }

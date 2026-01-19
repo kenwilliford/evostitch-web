@@ -39,7 +39,18 @@
     function createMosaicCard(mosaic) {
         const card = document.createElement('a');
         card.className = 'mosaic-card';
-        card.href = `viewer.html?mosaic=${encodeURIComponent(mosaic.id)}`;
+
+        // Use zarr-viewer for OME-Zarr format mosaics
+        if (mosaic.format === 'zarr') {
+            // If mosaic has a zarrUrl, pass it; otherwise use default demo
+            if (mosaic.zarrUrl) {
+                card.href = `zarr-viewer.html?zarr=${encodeURIComponent(mosaic.zarrUrl)}`;
+            } else {
+                card.href = 'zarr-viewer.html';
+            }
+        } else {
+            card.href = `viewer.html?mosaic=${encodeURIComponent(mosaic.id)}`;
+        }
 
         // Format dimensions
         let dimensions = '';
