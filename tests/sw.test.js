@@ -254,8 +254,8 @@ test('sw.js trimCacheIfNeeded logs trimming activity', () => {
 });
 
 test('sw.js cacheFirstStrategy calls trimCacheIfNeeded after caching', () => {
-    // Verify trim is triggered after adding new entries
-    assert.ok(swSource.includes('trimCacheIfNeeded(cacheName, MAX_TILE_CACHE_ENTRIES)'),
+    // Verify trim is triggered after adding new entries (uses maxEntries parameter)
+    assert.ok(swSource.includes('trimCacheIfNeeded(cacheName, maxEntries)'),
         'cacheFirstStrategy should trigger cache trimming');
 });
 

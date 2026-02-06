@@ -49,7 +49,9 @@ let state = {
     pixelSizeZ: 1,  // µm per Z-plane
     initialViewState: null,  // Stored for reset view
     zTransitionEnabled: true,  // Enable smooth Z-plane transitions
-    zTransitionDuration: 200,  // Transition duration in ms
+    zTransitionDuration: 100,  // Transition duration in ms (quick fade-in on swap)
+    zSwitchGeneration: 0,      // Generation counter for stale Z-switch detection
+    zLoadingTimerId: null,       // Delayed loading indicator timer
     // Jank prevention: throttling state for DOM updates during zoom/pan
     scaleBarUpdatePending: false,
     scaleBarLastUpdate: 0,
@@ -251,8 +253,14 @@ function initDeck() {
         views: [new OrthographicView({ id: 'ortho', controller: true })],
         initialViewState: state.viewState,
         onViewStateChange: ({ viewState }) => {
-            state.viewState = viewState;
-            state.deck.setProps({ viewState });
+            // Apply zoom clamping if render-opt module is active
+            if (window.evostitch?.zarrRenderOpt?.isInitialized?.()) {
+                viewState = window.evostitch.zarrRenderOpt.handleViewStateChange(state.deck, viewState);
+                state.viewState = viewState;
+            } else {
+                state.viewState = viewState;
+                state.deck.setProps({ viewState });
+            }
             updateScaleBar();
         },
         layers: []
@@ -657,6 +665,7 @@ function updateScaleBar() {
  */
 async function loadZarr(url) {
     log('Loading OME-Zarr from: ' + url);
+    state.zarrStoreUrl = url;
 
     // Show loading indicator
     loadingUI.show();
@@ -768,6 +777,9 @@ async function loadZarr(url) {
             updateScaleBar();
         }
 
+        // Initialize optimization modules if available
+        initOptimizationModules();
+
         // Mark load progress complete (tiles will trigger final completion)
         loadingUI.setProgress(0.8, 0.8);
         return true;
@@ -778,6 +790,60 @@ async function loadZarr(url) {
             elements.description.textContent = 'Error loading Zarr: ' + error.message;
         }
         return false;
+    }
+}
+
+/**
+ * Initialize optimization modules (prefetch, render-opt, cache) if available.
+ * These are loaded as IIFE scripts and attach to window.evostitch.
+ */
+function initOptimizationModules() {
+    const loaderData = state.loader?.data || state.loader;
+
+    // Initialize zarr cache layer
+    if (window.evostitch?.zarrCache) {
+        try {
+            window.evostitch.zarrCache.init({
+                baseUrl: CONFIG.evositchBaseUrl,
+                maxCacheSize: 500 * 1024 * 1024, // 500MB
+                maxConcurrent: 8
+            });
+            log('Zarr cache module initialized');
+        } catch (e) {
+            console.warn('[evostitch] Failed to init zarr-cache:', e);
+        }
+    }
+
+    // Initialize zarr prefetch engine
+    // Pass the full zarr store URL so prefetch URLs match Viv's actual fetch URLs
+    if (window.evostitch?.zarrPrefetch) {
+        try {
+            window.evostitch.zarrPrefetch.init({
+                zarrStoreUrl: state.zarrStoreUrl || CONFIG.evositchBaseUrl,
+                baseUrl: CONFIG.evositchBaseUrl,
+                zCount: state.zCount,
+                axes: state.axes,
+                loaderData: loaderData
+            });
+            log('Zarr prefetch module initialized');
+        } catch (e) {
+            console.warn('[evostitch] Failed to init zarr-prefetch:', e);
+        }
+    }
+
+    // Initialize render optimization (debounce, zoom cap, RAF batching)
+    if (window.evostitch?.zarrRenderOpt) {
+        try {
+            window.evostitch.zarrRenderOpt.init({
+                deck: state.deck,
+                loader: loaderData,
+                metadata: state.metadata,
+                axes: state.axes
+            });
+            log('Zarr render-opt module initialized');
+        } catch (e) {
+            console.warn('[evostitch] Failed to init zarr-render-opt:', e);
+        }
     }
 }
 
@@ -858,6 +924,9 @@ function updateLayer() {
         }
     }
 
+    // Capture generation at layer creation time for stale detection
+    const generation = state.zSwitchGeneration;
+
     const layer = new MultiscaleImageLayer({
         id: 'zarr-layer',
         loader: loaderData,
@@ -867,12 +936,24 @@ function updateLayer() {
         channelsVisible: channelsVisible,
         dtype: 'Uint16',
         onViewportLoad: () => {
+            // Ignore stale callbacks — user already moved to a different Z-plane
+            if (generation !== state.zSwitchGeneration) {
+                log('Viewport load ignored (stale generation ' + generation + ' != ' + state.zSwitchGeneration + ')');
+                return;
+            }
+
+            // Cancel delayed loading indicator if tiles arrived fast
+            if (state.zLoadingTimerId !== null) {
+                clearTimeout(state.zLoadingTimerId);
+                state.zLoadingTimerId = null;
+            }
+
             // Tiles for current viewport finished loading
             loadingUI.setProgress(1, 1);  // Complete
             loadingUI.hide();
             // End Z-switch timing (if one was in progress)
             perfEndZSwitch();
-            // Complete fade-in transition
+            // Quick fade-in to smooth the tile swap
             endZTransition();
             log('Viewport tiles loaded');
         }
@@ -916,16 +997,49 @@ function setZ(z) {
     z = Math.max(0, Math.min(state.zCount - 1, z));
     if (z === state.currentZ) return;
 
+    // Notify prefetch engine of Z-change for predictive fetching
+    if (window.evostitch?.zarrPrefetch) {
+        window.evostitch.zarrPrefetch.onZChange(z);
+    }
+
+    // Use render-opt debouncing if available (drops intermediate Z values during rapid scroll)
+    if (window.evostitch?.zarrRenderOpt?.isInitialized?.()) {
+        window.evostitch.zarrRenderOpt.updateZ(z, state.channelSettings, function(finalZ) {
+            executeZSwitch(finalZ);
+        });
+    } else {
+        executeZSwitch(z);
+    }
+}
+
+/**
+ * Execute the actual Z-plane switch (called directly or via debounce)
+ * @param {number} z - Z-plane index
+ */
+function executeZSwitch(z) {
     // Start Z-switch timing
     perfStartZSwitch();
 
-    // Start fade-out transition
-    startZTransition();
+    // Increment generation counter — stale onViewportLoad callbacks will be ignored
+    state.zSwitchGeneration++;
 
     state.currentZ = z;
-    // Show loading for Z-plane change (new tiles need loading)
-    loadingUI.show();
-    loadingUI.setProgress(0.3, z / Math.max(1, state.zCount - 1));
+
+    // Smart loading indicator: only show if tiles take >150ms to load
+    // This prevents the loading indicator from flashing during rapid scrubbing
+    // or when tiles load quickly from the service worker cache.
+    if (state.zLoadingTimerId !== null) {
+        clearTimeout(state.zLoadingTimerId);
+    }
+    state.zLoadingTimerId = setTimeout(function() {
+        state.zLoadingTimerId = null;
+        // Only show loading if tiles haven't already arrived
+        if (perfStats.pendingZSwitch) {
+            loadingUI.show();
+            loadingUI.setProgress(0.3, z / Math.max(1, state.zCount - 1));
+        }
+    }, 150);
+
     updateZSlider();
     updateLayer();
     updateCoordinatesZOnly();  // Update Z in coordinate display
@@ -1050,6 +1164,49 @@ function setupEventHandlers() {
 }
 
 /**
+ * Wait for service worker to be ready and controlling the page.
+ * This ensures zarr fetch requests are intercepted by the SW cache.
+ */
+async function waitForServiceWorker() {
+    if (!window._swReady) {
+        log('No service worker registration pending');
+        return false;
+    }
+    try {
+        var reg = await window._swReady;
+        if (reg) {
+            log('Service worker ready and controlling page');
+            return true;
+        }
+        return false;
+    } catch (e) {
+        log('Service worker wait failed: ' + e.message);
+        return false;
+    }
+}
+
+/**
+ * Send a message to the service worker and get a response via MessageChannel
+ * @param {Object} msg - Message to send
+ * @returns {Promise<Object>} Response from SW
+ */
+function swMessage(msg) {
+    return new Promise(function(resolve, reject) {
+        if (!navigator.serviceWorker.controller) {
+            reject(new Error('No active service worker'));
+            return;
+        }
+        var channel = new MessageChannel();
+        channel.port1.onmessage = function(event) {
+            resolve(event.data);
+        };
+        navigator.serviceWorker.controller.postMessage(msg, [channel.port2]);
+        // Timeout after 5s
+        setTimeout(function() { reject(new Error('SW message timeout')); }, 5000);
+    });
+}
+
+/**
  * Main initialization
  */
 async function init() {
@@ -1062,6 +1219,9 @@ async function init() {
     }
 
     setupEventHandlers();
+
+    // Wait for service worker to be controlling the page before loading data
+    await waitForServiceWorker();
 
     const zarrUrl = getZarrUrl();
     const loaded = await loadZarr(zarrUrl);
@@ -1124,28 +1284,31 @@ function setupCanvasTransition() {
 }
 
 /**
- * Start fade-out transition when changing Z-plane
+ * Start fade-out transition when changing Z-plane.
+ * NOTE: No longer fades out. The old frame stays at full opacity until
+ * new tiles are ready. This eliminates the visible "flicker" on Z-switch.
  */
 function startZTransition() {
-    if (!state.zTransitionEnabled) return;
-
-    const canvas = getDeckCanvas();
-    if (canvas) {
-        // Fade to partial opacity during Z-switch
-        canvas.style.opacity = '0.6';
-        log('Z transition: fade out started');
-    }
+    // Intentionally empty — old frame stays visible at full opacity
+    // until onViewportLoad fires. See endZTransition() for the swap.
 }
 
 /**
- * End fade-in transition when Z-plane tiles are loaded
+ * End fade-in transition when Z-plane tiles are loaded.
+ * Applies a quick opacity pulse (1 -> 0.95 -> 1) to give subtle
+ * visual feedback that the frame changed, without jarring flicker.
  */
 function endZTransition() {
     if (!state.zTransitionEnabled) return;
 
     const canvas = getDeckCanvas();
     if (canvas) {
-        // Restore full opacity
+        // Quick subtle pulse: dip slightly then restore
+        canvas.style.transition = 'none';
+        canvas.style.opacity = '0.92';
+        // Force reflow so the opacity change takes effect before transition
+        void canvas.offsetHeight;
+        canvas.style.transition = `opacity ${state.zTransitionDuration}ms ease-out`;
         canvas.style.opacity = '1';
         log('Z transition: fade in complete');
     }
@@ -1157,11 +1320,9 @@ function endZTransition() {
  */
 function setZTransition(enabled) {
     state.zTransitionEnabled = enabled;
-    const canvas = getDeckCanvas();
-    if (canvas) {
-        if (enabled) {
-            canvas.style.transition = `opacity ${state.zTransitionDuration}ms ease-out`;
-        } else {
+    if (!enabled) {
+        const canvas = getDeckCanvas();
+        if (canvas) {
             canvas.style.transition = 'none';
             canvas.style.opacity = '1';
         }
@@ -1236,8 +1397,24 @@ function resetChannels() {
     log('All channels reset to defaults');
 }
 
-// Expose public API for debugging (matches IIFE pattern)
+// Expose SW communication API
 window.evostitch = window.evostitch || {};
+window.evostitch.sw = {
+    getStats: function() {
+        return swMessage({ type: 'getZarrCacheStats' });
+    },
+    clearCache: function() {
+        return swMessage({ type: 'clearZarrCache' });
+    },
+    getCacheContents: function() {
+        return swMessage({ type: 'getCacheContents' });
+    },
+    isActive: function() {
+        return !!navigator.serviceWorker.controller;
+    }
+};
+
+// Expose public API for debugging (matches IIFE pattern)
 window.evostitch.zarrViewer = {
     init,
     setZ,
