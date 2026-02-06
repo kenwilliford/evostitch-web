@@ -764,6 +764,7 @@ footer {
 
 /* Channel controls panel */
 .channel-controls {
+    display: none;
     position: fixed;
     top: 80px;
     left: 20px;

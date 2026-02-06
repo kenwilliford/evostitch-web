@@ -448,8 +448,7 @@ function updateChannelControls(metadata) {
         elements.channelControlsToggle.addEventListener('click', toggleChannelControls);
     }
 
-    // Show the controls
-    elements.channelControls.style.display = 'block';
+    // Channel controls hidden - not needed for this application
     log(`Channel controls updated: ${omero.channels.length} channels`);
 }
 
