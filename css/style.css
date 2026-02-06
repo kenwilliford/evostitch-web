@@ -323,8 +323,8 @@ footer {
     }
 }
 
-/* Z-slider */
-.z-slider-container {
+/* Z-controls container (Load 3D button, progress bar, Z-slider) */
+.z-controls-container {
     position: fixed;
     bottom: 20px;
     left: 50%;
@@ -339,6 +339,131 @@ footer {
     font-family: monospace;
     /* iOS: Prevent zoom on double-tap */
     touch-action: manipulation;
+}
+
+/* Load 3D button */
+.load-3d-btn {
+    background: var(--accent);
+    color: #fff;
+    border: 1px solid var(--accent-light);
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: monospace;
+    cursor: pointer;
+    transition: background 0.15s, opacity 0.15s;
+    white-space: nowrap;
+}
+
+.load-3d-btn:hover:not(:disabled) {
+    background: var(--accent-light);
+}
+
+.load-3d-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#load-3d-estimate {
+    font-size: 10px;
+    opacity: 0.7;
+}
+
+/* Loading progress bar */
+.load-3d-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.load-3d-bar {
+    width: 120px;
+    height: 6px;
+    background: #333;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+#load-3d-fill {
+    height: 100%;
+    width: 0;
+    background: var(--accent-light);
+    border-radius: 3px;
+    transition: width 0.15s ease-out;
+}
+
+#load-3d-text {
+    color: #fff;
+    font-size: 11px;
+    min-width: 80px;
+}
+
+.load-3d-cancel,
+.load-3d-retry {
+    background: none;
+    border: 1px solid #666;
+    color: #ccc;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-family: monospace;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+}
+
+.load-3d-cancel:hover,
+.load-3d-retry:hover {
+    color: #fff;
+    border-color: var(--accent-light);
+}
+
+/* Exit 3D button */
+.exit-3d-btn {
+    background: none;
+    border: 1px solid #666;
+    color: #ccc;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-family: monospace;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+    margin-left: 4px;
+}
+
+.exit-3d-btn:hover {
+    color: #fff;
+    border-color: #e74c3c;
+}
+
+/* Z-slider wrapper (inside z-controls-container, shown in 3D_READY) */
+#z-slider-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Toast notification for auto-exit */
+.load-3d-toast {
+    position: fixed;
+    bottom: 70px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: monospace;
+    z-index: 1001;
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none;
+}
+
+.load-3d-toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
 }
 
 .z-label {
@@ -404,7 +529,7 @@ footer {
 
 /* Mobile & touch devices */
 @media (max-width: 768px), (pointer: coarse) {
-    .z-slider-container {
+    .z-controls-container {
         bottom: 50px;  /* Above scale bar and coordinates */
         padding: 10px 14px;
         gap: 8px;
@@ -425,16 +550,24 @@ footer {
         width: 22px;
         height: 22px;
     }
+
+    .load-3d-bar {
+        width: 100px;
+    }
+
+    .load-3d-toast {
+        bottom: 100px;
+    }
 }
 
 /* iOS safe area inset (notch/home indicator) */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
-    .z-slider-container {
+    .z-controls-container {
         bottom: calc(20px + env(safe-area-inset-bottom));
     }
 
     @media (max-width: 768px) {
-        .z-slider-container {
+        .z-controls-container {
             bottom: calc(50px + env(safe-area-inset-bottom));
         }
     }

@@ -262,6 +262,10 @@ function initDeck() {
                 state.deck.setProps({ viewState });
             }
             updateScaleBar();
+            // Notify 3D loader of viewport changes (containment check, budget update)
+            if (window.evostitch?.zarr3DLoader) {
+                window.evostitch.zarr3DLoader.onViewStateChange(viewState);
+            }
         },
         layers: []
     });
@@ -845,6 +849,39 @@ function initOptimizationModules() {
             console.warn('[evostitch] Failed to init zarr-render-opt:', e);
         }
     }
+
+    // Initialize 3D loader (Load 3D mode)
+    if (window.evostitch?.zarr3DLoader && window.evostitch?.zarrPrefetch) {
+        try {
+            var prefetch = window.evostitch.zarrPrefetch;
+            var channelCount = 1;
+            if (state.axes?.includes('c') && loaderData?.[0]) {
+                channelCount = loaderData[0].shape[state.axes.indexOf('c')] || 1;
+            }
+
+            window.evostitch.zarr3DLoader.init({
+                zarrStoreUrl: state.zarrStoreUrl || CONFIG.evositchBaseUrl,
+                zCount: state.zCount,
+                axes: prefetch.getAxes(),
+                resolutionLevels: prefetch.getResolutionLevels(),
+                dimensionSeparator: prefetch.getDimensionSeparator(),
+                channelCount: channelCount,
+                getViewState: function() { return state.viewState; },
+                getContainerSize: function() {
+                    var el = elements.viewer;
+                    if (!el) return null;
+                    return { width: el.offsetWidth, height: el.offsetHeight };
+                },
+                onModeChange: function(newMode, oldMode, reason) {
+                    log('3D mode: ' + oldMode + ' -> ' + newMode +
+                        (reason ? ' (' + reason + ')' : ''));
+                }
+            });
+            log('Zarr 3D loader module initialized');
+        } catch (e) {
+            console.warn('[evostitch] Failed to init zarr-3d-loader:', e);
+        }
+    }
 }
 
 /**
@@ -982,8 +1019,9 @@ function updateZSlider() {
         elements.zDepth.textContent = `${zMicrons.toFixed(1)} µm`;
     }
 
-    // Show slider container if we have multiple Z-planes
-    const container = document.getElementById('z-slider-container');
+    // Show z-controls container if we have multiple Z-planes
+    // The 3D loader module manages visibility of individual sub-elements
+    const container = document.getElementById('z-controls-container');
     if (container && state.zCount > 1) {
         container.style.display = 'flex';
     }

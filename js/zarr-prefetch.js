@@ -552,6 +552,38 @@
         }
     }
 
+    /**
+     * Get resolution level metadata (needed by zarr-3d-loader)
+     * @returns {Array} Array of { level, shape, chunks, zChunkSize, yChunks, xChunks, yChunkSize, xChunkSize }
+     */
+    function getResolutionLevels() {
+        return state.resolutionLevels.slice();
+    }
+
+    /**
+     * Get axes order (needed by zarr-3d-loader)
+     * @returns {Array} e.g., ['t', 'c', 'z', 'y', 'x']
+     */
+    function getAxes() {
+        return state.axes.slice();
+    }
+
+    /**
+     * Get zarr store URL (needed by zarr-3d-loader)
+     * @returns {string}
+     */
+    function getStoreUrl() {
+        return state.zarrStoreUrl;
+    }
+
+    /**
+     * Get dimension separator (needed by zarr-3d-loader)
+     * @returns {string} '/' or '.'
+     */
+    function getDimensionSeparator() {
+        return state.dimensionSeparator;
+    }
+
     // Expose public API
     window.evostitch = window.evostitch || {};
     window.evostitch.zarrPrefetch = {
@@ -562,6 +594,11 @@
         getStats: getStats,
         setDebug: setDebug,
         destroy: destroy,
+        getChunkUrlsForZ: getChunkUrlsForZ,
+        getResolutionLevels: getResolutionLevels,
+        getAxes: getAxes,
+        getStoreUrl: getStoreUrl,
+        getDimensionSeparator: getDimensionSeparator,
         // Expose for testing
         CONFIG: CONFIG
     };
