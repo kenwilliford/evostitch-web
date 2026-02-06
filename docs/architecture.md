@@ -32,6 +32,9 @@ web/
 │   ├── network-detect.js    # Network speed detection (W3)
 │   ├── quality-adapt.js     # Adaptive quality based on network (W4)
 │   ├── blur-up-loader.js    # Progressive tile resolution (blur-up loading)
+│   ├── zarr-prefetch.js     # Predictive Z-plane prefetching for OME-Zarr viewer
+│   ├── zarr-render-opt.js   # Z-debounce, zoom capping, RAF batching for Zarr viewer
+│   ├── zarr-3d-loader.js    # Explicit "Load 3D" mode with viewport-scoped prefetch
 │   ├── loading-indicator.js # Dual-arc progress ring for tile loading
 │   ├── browser-decode.js    # Browser detection for decode strategy
 │   ├── worker-pool.js       # Web Worker pool management
@@ -364,6 +367,66 @@ evostitch.loadingIndicator.show()           // Show with 300ms delay
 evostitch.loadingIndicator.setProgress(0.5, 0.8)  // 50% XY, 80% Z
 evostitch.loadingIndicator.hide()           // Hide and reset
 evostitch.loadingIndicator.getState()       // { initialized, isLoading, visible, xyProgress, zProgress }
+```
+
+### zarr-3d-loader.js
+
+Explicit "Load 3D" mode for the OME-Zarr viewer. Instead of fighting Viv's tile cache invalidation on Z-switches, this module prefetches all visible chunks across all Z-planes at the current viewport, then enables smooth Z-scrubbing via SW cache hits.
+
+| Function | Purpose |
+|----------|---------|
+| `init(config)` | Initialize with zarr metadata, viewport callbacks |
+| `startLoad()` | Begin prefetching all Z-planes for current viewport |
+| `cancelLoad(reason)` | Cancel in-progress prefetch, return to 2D |
+| `exit3D(reason)` | Exit 3D mode, return to 2D |
+| `onViewStateChange(viewState)` | Hook for deck.gl viewport changes |
+| `calculateBudget()` | Compute chunk count for current viewport |
+| `getMode()` | Current state: `2D`, `LOADING`, or `3D_READY` |
+| `getProgress()` | Loading progress: `{ completed, total, percent }` |
+| `is3DReady()` | Whether Z-slider should be shown |
+
+**State machine:**
+
+```
+[2D] --click Load 3D--> [LOADING] --all cached--> [3D_READY]
+ ^                          |                          |
+ |     cancel/pan/zoom      |     pan outside region   |
+ +--------------------------+     or zoom level change  |
+ +----------------------------------------------------------+
+```
+
+**How it works:**
+
+1. In 2D mode, "Load 3D" button shows chunk estimate for current viewport
+2. User clicks button → viewport is captured, all Z-plane chunks are prefetched
+3. Fetches go through normal `fetch()` → SW intercepts and caches automatically
+4. On completion, Z-slider appears. Every Z-switch is a SW cache hit
+5. Containment check on every pan/zoom: exits 3D if viewport leaves cached region
+
+**Viewport math:**
+
+| Step | Function | Purpose |
+|------|----------|---------|
+| 1 | `zoomToLevel(zoom, numLevels)` | Map deck.gl zoom to zarr resolution level |
+| 2 | `viewStateToBounds(viewState, containerSize)` | Compute visible data bounds |
+| 3 | `boundsToTileRange(bounds, levelInfo, margin)` | Convert to tile coordinates with 1-tile margin |
+| 4 | `generateChunkUrls(level, range, zCount, channels)` | Build all chunk URLs |
+
+**Configuration:**
+
+| Setting | Default | Purpose |
+|---------|---------|---------|
+| `maxChunks` | 5000 | Budget limit; button disabled when exceeded |
+| `concurrency` | 6 | Parallel prefetch requests |
+| `consecutiveErrorLimit` | 5 | Pause and show retry after N consecutive errors |
+
+**Console API:**
+
+```javascript
+evostitch.zarr3DLoader.getMode()          // '2D' | 'LOADING' | '3D_READY'
+evostitch.zarr3DLoader.getProgress()      // { completed, total, percent }
+evostitch.zarr3DLoader.calculateBudget()  // { total, tilesPerPlane, withinBudget, levelIdx }
+evostitch.zarr3DLoader.setDebug(true)     // Enable debug logging
 ```
 
 ### browser-decode.js
