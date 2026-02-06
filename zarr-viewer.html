@@ -59,7 +59,44 @@
         <span id="z-index" class="z-index">(1/1)</span>
     </div>
 
+    <script>
+    // Register service worker before any data loading begins.
+    // The SW must be controlling the page so zarr fetch requests are intercepted.
+    (function() {
+        if (!('serviceWorker' in navigator)) return;
+
+        window._swReady = navigator.serviceWorker.register('sw.js').then(function(reg) {
+            // If already controlling, resolve immediately
+            if (navigator.serviceWorker.controller) {
+                return navigator.serviceWorker.ready;
+            }
+            // Wait for the SW to activate and claim this client
+            return new Promise(function(resolve) {
+                var sw = reg.installing || reg.waiting || reg.active;
+                if (!sw) {
+                    resolve(navigator.serviceWorker.ready);
+                    return;
+                }
+                if (sw.state === 'activated') {
+                    resolve(navigator.serviceWorker.ready);
+                    return;
+                }
+                sw.addEventListener('statechange', function() {
+                    if (sw.state === 'activated') {
+                        resolve(navigator.serviceWorker.ready);
+                    }
+                });
+            });
+        }).catch(function(err) {
+            console.warn('[evostitch] Service worker registration failed:', err);
+            return null;
+        });
+    })();
+    </script>
     <script src="js/loading-indicator.js"></script>
+    <script src="js/zarr-cache.js"></script>
+    <script src="js/zarr-prefetch.js"></script>
+    <script src="js/zarr-render-opt.js"></script>
     <script type="module" src="js/zarr-viewer.js"></script>
 </body>
 </html>
