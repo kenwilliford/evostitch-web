@@ -13,9 +13,10 @@
     {
       "id": "mosaic_3d_zarr",
       "title": "3D Zarr Explorer",
-      "description": "OME-Zarr volumetric mosaic with Z-plane navigation and multi-channel support.",
+      "description": "OME-Zarr volumetric mosaic with Z-plane navigation.",
       "format": "zarr",
-      "zarrUrl": "mosaic_3d_zarr"
+      "zarrUrl": "mosaic_3d_zarr",
+      "thumbnail": "thumbnail.jpg"
     }
   ]
 }
