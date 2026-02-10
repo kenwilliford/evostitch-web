@@ -145,8 +145,9 @@
         }
 
         Promise.all(fetches).then(function() {
-            state.resolutionLevels = levels.filter(function(l) { return l != null; });
-            log('Resolution levels extracted via .zarray: ' + state.resolutionLevels.length +
+            state.resolutionLevels = levels;  // preserve index→level mapping (nulls = failed fetches)
+            var populated = levels.filter(function(l) { return l != null; }).length;
+            log('Resolution levels extracted via .zarray: ' + populated + '/' + levelCount +
                 ', sep=' + state.dimensionSeparator);
             // Re-schedule prefetch now that we have resolution data
             schedulePrefetch();
@@ -446,6 +447,7 @@
         // Finest level (largest, full detail) - only if few chunks
         if (count > 1) {
             var finest = state.resolutionLevels[0];
+            if (!finest) return levels;
             var totalChunks = finest.yChunks * finest.xChunks;
             if (totalChunks <= 64) {
                 levels.push(0);
