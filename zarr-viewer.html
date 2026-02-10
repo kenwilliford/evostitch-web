@@ -20,10 +20,11 @@
     <header class="viewer-header">
         <a href="index.html" class="back-link">&larr; Back to catalog</a>
         <div class="title-group">
-            <h1 id="mosaic-title">3D prototype: SCH-55-22B Gunflint Fm stromatolite</h1>
+            <h1 id="mosaic-title">OME-Zarr 3D Explorer</h1>
             <p id="mosaic-description" class="viewer-description">Loading...</p>
         </div>
-<button id="fullscreen-btn" class="fullscreen-btn" title="Toggle fullscreen">&#x26F6;</button>
+        <a href="viewer.html?mosaic=3x3x3-test" class="compare-link" title="Compare with DZI viewer">Compare DZI &rarr;</a>
+        <button id="fullscreen-btn" class="fullscreen-btn" title="Toggle fullscreen">&#x26F6;</button>
     </header>
 
     <div id="viewer" class="viewer-container"></div>
@@ -110,7 +111,7 @@
     })();
     </script>
     <script src="js/loading-indicator.js"></script>
-    <script src="js/zarr-cache.js"></script>
+    <script src="js/zarr-viewport-math.js"></script>
     <script src="js/zarr-prefetch.js"></script>
     <script src="js/zarr-render-opt.js"></script>
     <script src="js/zarr-3d-loader.js"></script>

@@ -122,41 +122,28 @@ test('exit3D transitions from 3D_READY to 2D', () => {
     assert.ok(loaderSource.includes("state.mode !== STATE_3D_READY"), 'exit3D should check 3D_READY mode');
 });
 
-// ========== Viewport math tests (static analysis) ==========
+// ========== Viewport math tests (shared module delegation) ==========
 
-console.log('\nViewport Math');
+console.log('\nViewport Math (Shared Module)');
 
-test('zoomToLevel function exists', () => {
-    assert.ok(loaderSource.includes('function zoomToLevel('), 'Should define zoomToLevel');
+test('uses shared viewportMath module (not local definitions)', () => {
+    assert.ok(!loaderSource.includes('function zoomToLevel('), 'Should NOT define local zoomToLevel');
+    assert.ok(!loaderSource.includes('function viewStateToBounds('), 'Should NOT define local viewStateToBounds');
+    assert.ok(!loaderSource.includes('function boundsToTileRange('), 'Should NOT define local boundsToTileRange');
 });
 
-test('zoomToLevel uses Math.round(-zoom)', () => {
-    assert.ok(loaderSource.includes('Math.round(-zoom)'), 'Should round -zoom for level');
+test('imports from window.evostitch.viewportMath', () => {
+    assert.ok(loaderSource.includes('window.evostitch.viewportMath'), 'Should reference shared module');
 });
 
-test('zoomToLevel clamps to valid range', () => {
-    assert.ok(loaderSource.includes('Math.max(0, Math.min(numLevels - 1'), 'Should clamp level');
+test('creates local aliases for viewport math functions', () => {
+    assert.ok(loaderSource.includes('var zoomToLevel'), 'Should alias zoomToLevel');
+    assert.ok(loaderSource.includes('var viewStateToBounds'), 'Should alias viewStateToBounds');
+    assert.ok(loaderSource.includes('var boundsToTileRange'), 'Should alias boundsToTileRange');
 });
 
-test('viewStateToBounds function exists', () => {
-    assert.ok(loaderSource.includes('function viewStateToBounds('), 'Should define viewStateToBounds');
-});
-
-test('viewStateToBounds uses 2^zoom for scale', () => {
-    assert.ok(loaderSource.includes('Math.pow(2, viewState.zoom)'), 'Should use 2^zoom');
-});
-
-test('boundsToTileRange function exists', () => {
-    assert.ok(loaderSource.includes('function boundsToTileRange('), 'Should define boundsToTileRange');
-});
-
-test('boundsToTileRange adds margin tiles', () => {
-    assert.ok(loaderSource.includes('- margin'), 'Should subtract margin from min');
-    assert.ok(loaderSource.includes('+ margin'), 'Should add margin to max');
-});
-
-test('boundsToTileRange scales bounds by resolution level', () => {
-    assert.ok(loaderSource.includes('Math.pow(2, level)'), 'Should scale by 2^level');
+test('provides fallbacks if shared module missing', () => {
+    assert.ok(loaderSource.includes('console.error'), 'Should log error if module missing');
 });
 
 test('generateChunkUrls function exists', () => {
@@ -478,15 +465,21 @@ test('HTML references expected element IDs', () => {
     });
 });
 
-test('HTML loads zarr-3d-loader.js before zarr-viewer.js', () => {
+test('HTML loads zarr-viewport-math.js before zarr-3d-loader.js and zarr-prefetch.js', () => {
     const htmlPath = path.join(__dirname, '..', 'zarr-viewer.html');
     const html = fs.readFileSync(htmlPath, 'utf8');
 
+    const mathPos = html.indexOf('zarr-viewport-math.js');
+    const prefetchPos = html.indexOf('zarr-prefetch.js');
     const loaderPos = html.indexOf('zarr-3d-loader.js');
     const viewerPos = html.indexOf('zarr-viewer.js');
 
+    assert.ok(mathPos > 0, 'zarr-viewport-math.js should be referenced in HTML');
+    assert.ok(prefetchPos > 0, 'zarr-prefetch.js should be referenced in HTML');
     assert.ok(loaderPos > 0, 'zarr-3d-loader.js should be referenced in HTML');
     assert.ok(viewerPos > 0, 'zarr-viewer.js should be referenced in HTML');
+    assert.ok(mathPos < prefetchPos, 'zarr-viewport-math.js should load before zarr-prefetch.js');
+    assert.ok(mathPos < loaderPos, 'zarr-viewport-math.js should load before zarr-3d-loader.js');
     assert.ok(loaderPos < viewerPos, 'zarr-3d-loader.js should load before zarr-viewer.js');
 });
 

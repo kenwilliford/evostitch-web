@@ -1,7 +1,7 @@
 // evostitch Service Worker - Tile caching for improved 3D performance
 // W1: Service Worker Caching
 
-const SW_VERSION = '1.3.0';
+const SW_VERSION = '1.4.0';
 const TILE_CACHE_NAME = `evostitch-tiles-v${SW_VERSION}`;
 const STATIC_CACHE_NAME = `evostitch-static-v${SW_VERSION}`;
 const ZARR_CACHE_NAME = `evostitch-zarr-v${SW_VERSION}`;
@@ -11,8 +11,11 @@ const MAX_TILE_CACHE_ENTRIES = 5000;
 const MAX_ZARR_CACHE_ENTRIES = 10000;
 const CACHE_TRIM_BATCH_SIZE = 500; // Number of entries to evict when trimming
 
-// R2 CDN domain for evostitch data
-const R2_DOMAIN = 'pub-db7ffa4b7df04b76aaae379c13562977.r2.dev';
+// R2 CDN domains for evostitch data (dual-domain for HTTP/2 transition)
+const R2_DOMAINS = [
+    'pub-db7ffa4b7df04b76aaae379c13562977.r2.dev',  // Original R2 public URL (HTTP/1.1)
+    'data.evostitch.net'                              // Custom domain via Cloudflare (HTTP/2)
+];
 
 // Zarr metadata file names
 const ZARR_META_FILES = ['.zarray', '.zattrs', '.zgroup'];
@@ -40,7 +43,7 @@ function isDziRequest(url) {
 function isZarrChunkRequest(url) {
     try {
         var parsed = new URL(url);
-        if (parsed.hostname !== R2_DOMAIN) return false;
+        if (R2_DOMAINS.indexOf(parsed.hostname) === -1) return false;
         // Zarr chunk paths: after the resolution level, segments are all numeric
         // e.g., /mosaic_3d_zarr/0/3/0/0/0/0/0 or /mosaic_3d_zarr/0/3/0.0.0.0.0
         var path = parsed.pathname;
@@ -75,7 +78,7 @@ function isZarrChunkRequest(url) {
 function isZarrMetadataRequest(url) {
     try {
         var parsed = new URL(url);
-        if (parsed.hostname !== R2_DOMAIN) return false;
+        if (R2_DOMAINS.indexOf(parsed.hostname) === -1) return false;
         for (var i = 0; i < ZARR_META_FILES.length; i++) {
             if (parsed.pathname.endsWith(ZARR_META_FILES[i])) return true;
         }

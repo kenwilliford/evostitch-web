@@ -34,13 +34,17 @@
         zarrStoreUrl: '',   // Full zarr store URL (e.g., https://...r2.dev/dataset/0/)
         resolutionLevels: [],   // Array of { level, zChunkSize, yChunks, xChunks }
         axes: [],
-        loaderData: null,
+        levelCount: 0,
         dimensionSeparator: '/',  // Zarr dimension separator ('/' for OME-Zarr, '.' for older)
 
         // Velocity tracking
         lastZChangeTime: 0,
         lastZ: 0,
         velocity: 0,            // planes/sec, positive = forward
+
+        // Viewport callbacks (same pattern as zarr-3d-loader)
+        getViewState: null,         // Function returning current deck.gl viewState
+        getContainerSize: null,     // Function returning { width, height }
 
         // Track which Z-planes have been prefetched this session
         prefetchedPlanes: new Set(),
@@ -55,7 +59,10 @@
             misses: 0,
             prefetched: 0,
             aborted: 0,
-            errors: 0
+            errors: 0,
+            lateFetchCount: 0,
+            prefetchedBytes: 0,
+            zSwitchCount: 0
         }
     };
 
@@ -66,7 +73,7 @@
      * @param {string} config.baseUrl - Base R2 URL (fallback)
      * @param {number} config.zCount - Total number of Z-planes
      * @param {Array} config.axes - Axes names (e.g., ['t', 'c', 'z', 'y', 'x'])
-     * @param {Array} config.loaderData - Viv loader data array (ZarrPixelSource[])
+     * @param {number} [config.levelCount] - Number of resolution levels (from loader.data.length)
      * @param {number} [config.currentZ=0] - Starting Z-plane
      * @param {Object} [config.options] - Override default CONFIG values
      */
@@ -81,7 +88,9 @@
         state.zCount = config.zCount;
         state.currentZ = config.currentZ || 0;
         state.axes = config.axes || ['t', 'c', 'z', 'y', 'x'];
-        state.loaderData = config.loaderData || null;
+        state.levelCount = config.levelCount || 0;
+        state.getViewState = config.getViewState || null;
+        state.getContainerSize = config.getContainerSize || null;
         state.lastZ = state.currentZ;
         state.lastZChangeTime = 0;
         state.velocity = 0;
@@ -96,29 +105,31 @@
             });
         }
 
-        // Extract resolution level info and dimension separator from loader data
-        extractResolutionInfo();
+        // Fetch resolution level info from .zarray metadata (async)
+        extractResolutionInfo(state.levelCount);
 
         state.initialized = true;
         log('Initialized: zarrStoreUrl=' + state.zarrStoreUrl + ', zCount=' + state.zCount +
-            ', levels=' + state.resolutionLevels.length + ', sep=' + state.dimensionSeparator);
+            ', levels pending, sep=' + state.dimensionSeparator);
 
-        // Prefetch adjacent planes for initial position
+        // Prefetch adjacent planes for initial position (will re-run after .zarray loads)
         schedulePrefetch();
 
         return true;
     }
 
     /**
-     * Extract resolution level metadata from Viv loader data.
-     * ZarrPixelSource wraps ZarrArray via ._data. We need shape/chunks
-     * from the underlying ZarrArray, plus the dimension separator.
+     * Extract resolution level metadata by fetching .zarray for each level.
+     * Replaces the old approach of accessing Viv's private _data API.
+     * Fetches {zarrStoreUrl}/{level}/.zarray and parses shape, chunks,
+     * and dimension_separator from the JSON response.
+     * @param {number} levelCount - Number of resolution levels to fetch
      */
-    function extractResolutionInfo() {
+    function extractResolutionInfo(levelCount) {
         state.resolutionLevels = [];
 
-        if (!state.loaderData || !Array.isArray(state.loaderData)) {
-            log('No loader data available, using fallback resolution info');
+        if (levelCount === 0 || !state.zarrStoreUrl) {
+            log('No level count or store URL, skipping .zarray fetch');
             return;
         }
 
@@ -126,39 +137,77 @@
         var yIdx = state.axes.indexOf('y');
         var xIdx = state.axes.indexOf('x');
 
-        for (var i = 0; i < state.loaderData.length; i++) {
-            var pixelSource = state.loaderData[i];
-            // ZarrPixelSource has .shape getter, but .chunks is on ._data (ZarrArray)
-            var shape = pixelSource.shape;
-            var zarr = pixelSource._data;
-            var chunks = zarr ? zarr.chunks : null;
-
-            // Extract dimension separator from the first level's metadata
-            if (i === 0 && zarr && zarr.meta) {
-                state.dimensionSeparator = zarr.meta.dimension_separator || '/';
-            }
-
-            if (!shape || !chunks) continue;
-
-            var ySize = yIdx >= 0 ? shape[yIdx] : 0;
-            var xSize = xIdx >= 0 ? shape[xIdx] : 0;
-            var yChunkSize = yIdx >= 0 ? chunks[yIdx] : 256;
-            var xChunkSize = xIdx >= 0 ? chunks[xIdx] : 256;
-            var zChunkSize = zIdx >= 0 ? chunks[zIdx] : 1;
-
-            state.resolutionLevels.push({
-                level: i,
-                shape: shape,
-                chunks: chunks,
-                zChunkSize: zChunkSize,
-                yChunks: ySize > 0 ? Math.ceil(ySize / yChunkSize) : 0,
-                xChunks: xSize > 0 ? Math.ceil(xSize / xChunkSize) : 0,
-                yChunkSize: yChunkSize,
-                xChunkSize: xChunkSize
-            });
+        // Pre-allocate to maintain level ordering despite async fetches
+        var levels = new Array(levelCount);
+        var fetches = [];
+        for (var i = 0; i < levelCount; i++) {
+            fetches.push(fetchZarrayForLevel(i, levels, zIdx, yIdx, xIdx));
         }
 
-        log('Resolution levels extracted: ' + state.resolutionLevels.length);
+        Promise.all(fetches).then(function() {
+            state.resolutionLevels = levels.filter(function(l) { return l != null; });
+            log('Resolution levels extracted via .zarray: ' + state.resolutionLevels.length +
+                ', sep=' + state.dimensionSeparator);
+            // Re-schedule prefetch now that we have resolution data
+            schedulePrefetch();
+        }).catch(function(err) {
+            log('Error fetching .zarray metadata: ' + err.message);
+        });
+    }
+
+    /**
+     * Fetch and parse .zarray metadata for a single resolution level.
+     * @param {number} level - Resolution level index
+     * @param {Array} levels - Pre-allocated array to store results by index
+     * @param {number} zIdx - Index of z axis
+     * @param {number} yIdx - Index of y axis
+     * @param {number} xIdx - Index of x axis
+     * @returns {Promise}
+     */
+    function fetchZarrayForLevel(level, levels, zIdx, yIdx, xIdx) {
+        var url = state.zarrStoreUrl + '/' + level + '/.zarray';
+
+        return fetch(url, { mode: 'cors', credentials: 'omit' })
+            .then(function(response) {
+                if (!response.ok) {
+                    log('.zarray fetch failed for level ' + level + ': ' + response.status);
+                    return null;
+                }
+                return response.json();
+            })
+            .then(function(zarray) {
+                if (!zarray) return;
+
+                var shape = zarray.shape;
+                var chunks = zarray.chunks;
+
+                // Extract dimension separator from the first level
+                if (level === 0 && zarray.dimension_separator) {
+                    state.dimensionSeparator = zarray.dimension_separator;
+                }
+
+                if (!shape || !chunks) return;
+
+                var ySize = yIdx >= 0 ? shape[yIdx] : 0;
+                var xSize = xIdx >= 0 ? shape[xIdx] : 0;
+                var yChunkSize = yIdx >= 0 ? chunks[yIdx] : 256;
+                var xChunkSize = xIdx >= 0 ? chunks[xIdx] : 256;
+                var zChunkSize = zIdx >= 0 ? chunks[zIdx] : 1;
+
+                levels[level] = {
+                    level: level,
+                    shape: shape,
+                    chunks: chunks,
+                    zChunkSize: zChunkSize,
+                    yChunks: ySize > 0 ? Math.ceil(ySize / yChunkSize) : 0,
+                    xChunks: xSize > 0 ? Math.ceil(xSize / xChunkSize) : 0,
+                    yChunkSize: yChunkSize,
+                    xChunkSize: xChunkSize
+                };
+            })
+            .catch(function(err) {
+                log('.zarray fetch error for level ' + level + ': ' + err.message);
+            });
     }
 
     /**
@@ -172,9 +221,14 @@
      *
      * @param {number} z - Z-plane index
      * @param {number} levelIdx - Resolution level index
+     * @param {Object} [tileRange] - Optional viewport tile range to constrain x/y loops
+     * @param {number} tileRange.minTileX
+     * @param {number} tileRange.maxTileX
+     * @param {number} tileRange.minTileY
+     * @param {number} tileRange.maxTileY
      * @returns {string[]} Array of chunk URLs
      */
-    function getChunkUrlsForZ(z, levelIdx) {
+    function getChunkUrlsForZ(z, levelIdx, tileRange) {
         var urls = [];
         var info = state.resolutionLevels[levelIdx];
         if (!info) return urls;
@@ -188,9 +242,15 @@
         var cIdx = state.axes.indexOf('c');
         var cCount = cIdx >= 0 && info.shape ? info.shape[cIdx] : 1;
 
+        // Use viewport tile range if provided, otherwise fetch all chunks
+        var yMin = tileRange ? tileRange.minTileY : 0;
+        var yMax = tileRange ? tileRange.maxTileY : info.yChunks - 1;
+        var xMin = tileRange ? tileRange.minTileX : 0;
+        var xMax = tileRange ? tileRange.maxTileX : info.xChunks - 1;
+
         for (var c = 0; c < cCount; c++) {
-            for (var y = 0; y < info.yChunks; y++) {
-                for (var x = 0; x < info.xChunks; x++) {
+            for (var y = yMin; y <= yMax; y++) {
+                for (var x = xMin; x <= xMax; x++) {
                     // Build chunk coordinate array following axes order
                     var coords = [];
                     for (var a = 0; a < state.axes.length; a++) {
@@ -216,6 +276,27 @@
     }
 
     /**
+     * Compute visible tile range for a resolution level using viewport math.
+     * Returns null if viewport info is unavailable (graceful fallback to all chunks).
+     * @param {number} levelIdx - Resolution level index
+     * @returns {Object|null} { minTileX, maxTileX, minTileY, maxTileY } or null
+     */
+    function getViewportTileRange(levelIdx) {
+        var vpm = window.evostitch && window.evostitch.viewportMath;
+        if (!vpm || !state.getViewState || !state.getContainerSize) return null;
+
+        var viewState = state.getViewState();
+        var containerSize = state.getContainerSize();
+        if (!viewState || !containerSize) return null;
+
+        var info = state.resolutionLevels[levelIdx];
+        if (!info) return null;
+
+        var bounds = vpm.viewStateToBounds(viewState, containerSize);
+        return vpm.boundsToTileRange(bounds, info, 2);  // 2-tile margin
+    }
+
+    /**
      * Called when Z-plane changes - triggers velocity tracking and prefetch
      * @param {number} newZ - New Z-plane index
      */
@@ -238,6 +319,7 @@
         state.lastZChangeTime = now;
         state.lastZ = state.currentZ;
         state.currentZ = newZ;
+        state.stats.zSwitchCount++;
 
         log('Z changed to ' + newZ + ', velocity=' + state.velocity.toFixed(1) + ' planes/sec');
 
@@ -306,6 +388,7 @@
 
     /**
      * Execute prefetch for predicted Z-planes.
+     * Filters to viewport-visible chunks + 2-tile margin when viewport info is available.
      * Just issues fetch() calls — the Service Worker intercepts and caches them.
      */
     function executePrefetch() {
@@ -319,6 +402,12 @@
         // Determine which resolution level(s) to prefetch
         var levelsToFetch = choosePrefetchLevels();
 
+        // Compute viewport tile ranges per level (null = no filtering, fetch all)
+        var tileRanges = {};
+        for (var l = 0; l < levelsToFetch.length; l++) {
+            tileRanges[levelsToFetch[l]] = getViewportTileRange(levelsToFetch[l]);
+        }
+
         for (var p = 0; p < planes.length; p++) {
             var z = planes[p];
 
@@ -330,7 +419,7 @@
             state.stats.misses++;
 
             for (var l = 0; l < levelsToFetch.length; l++) {
-                prefetchPlane(z, levelsToFetch[l]);
+                prefetchPlane(z, levelsToFetch[l], tileRanges[levelsToFetch[l]]);
             }
         }
     }
@@ -367,13 +456,15 @@
     }
 
     /**
-     * Prefetch all chunks for a Z-plane at a given resolution level.
+     * Prefetch chunks for a Z-plane at a given resolution level.
+     * When tileRange is provided, only fetches viewport-visible chunks.
      * Just issues fetch() requests — the SW intercepts and caches them.
      * @param {number} z - Z-plane index
      * @param {number} levelIdx - Resolution level index
+     * @param {Object} [tileRange] - Optional viewport tile range from getViewportTileRange
      */
-    function prefetchPlane(z, levelIdx) {
-        var urls = getChunkUrlsForZ(z, levelIdx);
+    function prefetchPlane(z, levelIdx, tileRange) {
+        var urls = getChunkUrlsForZ(z, levelIdx, tileRange);
         if (urls.length === 0) return;
 
         // Limit concurrent requests
@@ -407,6 +498,13 @@
 
                 state.stats.prefetched++;
                 state.prefetchedPlanes.add(z);
+
+                // Track prefetched bytes from Content-Length header
+                var contentLength = response.headers.get('Content-Length');
+                if (contentLength) {
+                    state.stats.prefetchedBytes += parseInt(contentLength, 10) || 0;
+                }
+
                 log('Prefetched: ' + url);
             }).catch(function(err) {
                 state.pendingFetches.delete(url);
@@ -486,16 +584,34 @@
     }
 
     /**
+     * Called when onViewportLoad fires (tiles for current viewport finished loading).
+     * Increments lateFetchCount if there are still pending prefetch requests,
+     * meaning the viewer loaded tiles before prefetch completed.
+     */
+    function onViewportLoad() {
+        if (!state.initialized) return;
+        if (state.pendingFetches.size > 0) {
+            state.stats.lateFetchCount++;
+            log('Late fetch detected: ' + state.pendingFetches.size + ' prefetches still pending at viewport load');
+        }
+    }
+
+    /**
      * Get prefetch statistics
      * @returns {Object} Stats including hits, misses, cache size, velocity
      */
     function getStats() {
+        var zSwitches = state.stats.zSwitchCount;
         return {
             hits: state.stats.hits,
             misses: state.stats.misses,
             prefetched: state.stats.prefetched,
             aborted: state.stats.aborted,
             errors: state.stats.errors,
+            lateFetchCount: state.stats.lateFetchCount,
+            totalZSwitches: zSwitches,
+            prefetchedBytes: state.stats.prefetchedBytes,
+            prefetchedBytesPerZSwitch: zSwitches > 0 ? Math.round(state.stats.prefetchedBytes / zSwitches) : 0,
             prefetchedPlanes: Array.from(state.prefetchedPlanes),
             pendingFetches: state.pendingFetches.size,
             velocity: Math.round(state.velocity * 10) / 10,
@@ -537,7 +653,9 @@
         state.prefetchedPlanes.clear();
         state.initialized = false;
         state.velocity = 0;
-        state.stats = { hits: 0, misses: 0, prefetched: 0, aborted: 0, errors: 0 };
+        state.getViewState = null;
+        state.getContainerSize = null;
+        state.stats = { hits: 0, misses: 0, prefetched: 0, aborted: 0, errors: 0, lateFetchCount: 0, prefetchedBytes: 0, zSwitchCount: 0 };
 
         log('Destroyed');
     }
@@ -589,6 +707,7 @@
     window.evostitch.zarrPrefetch = {
         init: init,
         onZChange: onZChange,
+        onViewportLoad: onViewportLoad,
         getPrefetchState: getPrefetchState,
         warmPlane: warmPlane,
         getStats: getStats,

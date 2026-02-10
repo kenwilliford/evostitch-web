@@ -9,8 +9,10 @@ const CONFIG = {
     // Default demo data URL - IDR v0.3 dataset (known to work with Viv/vizarr)
     // See: http://viv.gehlenborglab.org
     defaultZarrUrl: 'https://minio-dev.openmicroscopy.org/idr/v0.3/idr0062-blin-nuclearsegmentation/6001240.zarr',
-    // evostitch data URL
-    evositchBaseUrl: 'https://pub-db7ffa4b7df04b76aaae379c13562977.r2.dev/',
+    // evostitch data URL (custom domain via Cloudflare, HTTP/2)
+    // Old R2 URL kept for reference during 2-week dual-domain transition:
+    // 'https://pub-db7ffa4b7df04b76aaae379c13562977.r2.dev/'
+    evositchBaseUrl: 'https://data.evostitch.net/',
     // Debug logging
     debug: true
 };
@@ -797,25 +799,11 @@ async function loadZarr(url) {
 }
 
 /**
- * Initialize optimization modules (prefetch, render-opt, cache) if available.
+ * Initialize optimization modules (prefetch, render-opt) if available.
  * These are loaded as IIFE scripts and attach to window.evostitch.
  */
 function initOptimizationModules() {
     const loaderData = state.loader?.data || state.loader;
-
-    // Initialize zarr cache layer
-    if (window.evostitch?.zarrCache) {
-        try {
-            window.evostitch.zarrCache.init({
-                baseUrl: CONFIG.evositchBaseUrl,
-                maxCacheSize: 500 * 1024 * 1024, // 500MB
-                maxConcurrent: 8
-            });
-            log('Zarr cache module initialized');
-        } catch (e) {
-            console.warn('[evostitch] Failed to init zarr-cache:', e);
-        }
-    }
 
     // Initialize zarr prefetch engine
     // Pass the full zarr store URL so prefetch URLs match Viv's actual fetch URLs
@@ -826,7 +814,13 @@ function initOptimizationModules() {
                 baseUrl: CONFIG.evositchBaseUrl,
                 zCount: state.zCount,
                 axes: state.axes,
-                loaderData: loaderData
+                levelCount: loaderData ? loaderData.length : 0,
+                getViewState: function() { return state.viewState; },
+                getContainerSize: function() {
+                    var el = elements.viewer;
+                    if (!el) return null;
+                    return { width: el.offsetWidth, height: el.offsetHeight };
+                }
             });
             log('Zarr prefetch module initialized');
         } catch (e) {
@@ -971,6 +965,7 @@ function updateLayer() {
         colors: colors,
         channelsVisible: channelsVisible,
         dtype: 'Uint16',
+        refinementStrategy: 'best-available',
         onViewportLoad: () => {
             // Ignore stale callbacks — user already moved to a different Z-plane
             if (generation !== state.zSwitchGeneration) {
@@ -982,6 +977,11 @@ function updateLayer() {
             if (state.zLoadingTimerId !== null) {
                 clearTimeout(state.zLoadingTimerId);
                 state.zLoadingTimerId = null;
+            }
+
+            // Notify prefetch engine (tracks late fetch rate)
+            if (window.evostitch && window.evostitch.zarrPrefetch) {
+                window.evostitch.zarrPrefetch.onViewportLoad();
             }
 
             // Tiles for current viewport finished loading

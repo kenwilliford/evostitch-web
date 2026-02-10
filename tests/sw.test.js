@@ -284,6 +284,51 @@ test('sw.js clears old caches on activate', () => {
     assert.ok(swSource.includes('caches.delete(name)'), 'Should delete old version caches');
 });
 
+// ========== W12 dual-domain tests ==========
+
+test('sw.js defines R2_DOMAINS as an array', () => {
+    assert.ok(swSource.includes('const R2_DOMAINS'), 'Should define R2_DOMAINS constant');
+    assert.ok(swSource.includes('R2_DOMAINS = ['), 'R2_DOMAINS should be an array');
+});
+
+test('sw.js R2_DOMAINS contains old R2 public domain', () => {
+    assert.ok(swSource.includes('pub-db7ffa4b7df04b76aaae379c13562977.r2.dev'),
+        'Should include original R2 public domain');
+});
+
+test('sw.js R2_DOMAINS contains new custom domain', () => {
+    assert.ok(swSource.includes('data.evostitch.net'),
+        'Should include custom domain for HTTP/2');
+});
+
+test('sw.js isZarrChunkRequest checks R2_DOMAINS array', () => {
+    assert.ok(swSource.includes('R2_DOMAINS.indexOf(parsed.hostname)'),
+        'isZarrChunkRequest should check hostname against R2_DOMAINS array');
+});
+
+test('sw.js isZarrMetadataRequest checks R2_DOMAINS array', () => {
+    // Both functions should use the same array-based domain check
+    const metadataFnMatch = swSource.match(/function isZarrMetadataRequest[\s\S]*?^}/m);
+    assert.ok(metadataFnMatch, 'Should have isZarrMetadataRequest function');
+    assert.ok(metadataFnMatch[0].includes('R2_DOMAINS.indexOf'),
+        'isZarrMetadataRequest should check hostname against R2_DOMAINS array');
+});
+
+test('sw.js no longer uses single R2_DOMAIN string', () => {
+    // Ensure the old single-string constant is gone
+    assert.ok(!swSource.match(/const R2_DOMAIN\s*=/),
+        'Should not have old single R2_DOMAIN constant (use R2_DOMAINS array)');
+});
+
+test('sw.js version bumped for W12 dual-domain', () => {
+    const versionMatch = swSource.match(/const SW_VERSION\s*=\s*['"]([^'"]+)['"]/);
+    assert.ok(versionMatch, 'Should have SW_VERSION');
+    const version = versionMatch[1];
+    const parts = version.split('.').map(Number);
+    assert.ok(parts[0] >= 1 && (parts[0] > 1 || parts[1] >= 4),
+        `Version should be >= 1.4.0 for W12 dual-domain (got ${version})`);
+});
+
 // Summary
 console.log('\n---');
 console.log(`Passed: ${passed}, Failed: ${failed}`);

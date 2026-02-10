@@ -473,6 +473,118 @@ test('getStats returns comprehensive info', () => {
     assert.ok(statsSection.includes('dimensionSeparator:'), 'Should return dimension separator');
 });
 
+// ========== Monitoring metrics tests (W10 5.4) ==========
+
+console.log('\nMonitoring Metrics (W10 5.4)');
+
+test('Stats has lateFetchCount', () => {
+    assert.ok(prefetchSource.includes('lateFetchCount: 0'), 'Should init lateFetchCount to 0');
+});
+
+test('Stats has prefetchedBytes', () => {
+    assert.ok(prefetchSource.includes('prefetchedBytes: 0'), 'Should init prefetchedBytes to 0');
+});
+
+test('Stats has zSwitchCount', () => {
+    assert.ok(prefetchSource.includes('zSwitchCount: 0'), 'Should init zSwitchCount to 0');
+});
+
+test('onZChange increments zSwitchCount', () => {
+    const onZSection = prefetchSource.substring(
+        prefetchSource.indexOf('function onZChange'),
+        prefetchSource.indexOf('function schedulePrefetch')
+    );
+    assert.ok(onZSection.includes('zSwitchCount++'),
+        'Should increment zSwitchCount on Z change');
+});
+
+test('Prefetch response reads Content-Length header', () => {
+    const prefetchSection = prefetchSource.substring(
+        prefetchSource.indexOf('function prefetchPlane'),
+        prefetchSource.indexOf('function abortStalePrefetches')
+    );
+    assert.ok(prefetchSection.includes("headers.get('Content-Length')"),
+        'Should read Content-Length header from prefetch response');
+    assert.ok(prefetchSection.includes('prefetchedBytes +='),
+        'Should accumulate prefetched bytes');
+});
+
+test('onViewportLoad function exists', () => {
+    assert.ok(prefetchSource.includes('function onViewportLoad('),
+        'Should have onViewportLoad function');
+});
+
+test('onViewportLoad is exposed in public API', () => {
+    assert.ok(prefetchSource.includes('onViewportLoad: onViewportLoad'),
+        'Should expose onViewportLoad in public API');
+});
+
+test('onViewportLoad increments lateFetchCount when fetches pending', () => {
+    const section = prefetchSource.substring(
+        prefetchSource.indexOf('function onViewportLoad'),
+        prefetchSource.indexOf('function getStats')
+    );
+    assert.ok(section.includes('pendingFetches.size'),
+        'Should check pendingFetches.size');
+    assert.ok(section.includes('lateFetchCount++'),
+        'Should increment lateFetchCount when prefetches still pending');
+});
+
+test('getStats returns lateFetchCount', () => {
+    const statsSection = prefetchSource.substring(
+        prefetchSource.indexOf('function getStats'),
+        prefetchSource.indexOf('function setDebug')
+    );
+    assert.ok(statsSection.includes('lateFetchCount:'), 'Should return lateFetchCount');
+});
+
+test('getStats returns totalZSwitches', () => {
+    const statsSection = prefetchSource.substring(
+        prefetchSource.indexOf('function getStats'),
+        prefetchSource.indexOf('function setDebug')
+    );
+    assert.ok(statsSection.includes('totalZSwitches:'), 'Should return totalZSwitches');
+});
+
+test('getStats returns prefetchedBytes', () => {
+    const statsSection = prefetchSource.substring(
+        prefetchSource.indexOf('function getStats'),
+        prefetchSource.indexOf('function setDebug')
+    );
+    assert.ok(statsSection.includes('prefetchedBytes:'), 'Should return prefetchedBytes');
+});
+
+test('getStats returns prefetchedBytesPerZSwitch', () => {
+    const statsSection = prefetchSource.substring(
+        prefetchSource.indexOf('function getStats'),
+        prefetchSource.indexOf('function setDebug')
+    );
+    assert.ok(statsSection.includes('prefetchedBytesPerZSwitch:'),
+        'Should return prefetchedBytesPerZSwitch');
+});
+
+test('prefetchedBytesPerZSwitch handles zero Z-switches', () => {
+    const statsSection = prefetchSource.substring(
+        prefetchSource.indexOf('function getStats'),
+        prefetchSource.indexOf('function setDebug')
+    );
+    assert.ok(statsSection.includes('zSwitches > 0'),
+        'Should guard against division by zero');
+});
+
+test('destroy resets monitoring metrics', () => {
+    const destroySection = prefetchSource.substring(
+        prefetchSource.indexOf('function destroy'),
+        prefetchSource.indexOf('function log')
+    );
+    assert.ok(destroySection.includes('lateFetchCount: 0'),
+        'Should reset lateFetchCount on destroy');
+    assert.ok(destroySection.includes('prefetchedBytes: 0'),
+        'Should reset prefetchedBytes on destroy');
+    assert.ok(destroySection.includes('zSwitchCount: 0'),
+        'Should reset zSwitchCount on destroy');
+});
+
 // ========== Debounce tests ==========
 
 console.log('\nDebounce');
@@ -638,6 +750,129 @@ test('warmPlane calls prefetchPlane', () => {
         prefetchSource.indexOf('function getStats')
     );
     assert.ok(section.includes('prefetchPlane(z'), 'Should call prefetchPlane');
+});
+
+// ========== Viewport filtering tests (W10) ==========
+
+console.log('\nViewport Filtering (W10)');
+
+test('State has getViewState callback', () => {
+    assert.ok(prefetchSource.includes('getViewState: null'),
+        'Should have getViewState state initialized to null');
+});
+
+test('State has getContainerSize callback', () => {
+    assert.ok(prefetchSource.includes('getContainerSize: null'),
+        'Should have getContainerSize state initialized to null');
+});
+
+test('init accepts getViewState and getContainerSize', () => {
+    const initSection = prefetchSource.substring(
+        prefetchSource.indexOf('function init('),
+        prefetchSource.indexOf('function extractResolutionInfo')
+    );
+    assert.ok(initSection.includes('config.getViewState'),
+        'Should read getViewState from config');
+    assert.ok(initSection.includes('config.getContainerSize'),
+        'Should read getContainerSize from config');
+});
+
+test('getViewportTileRange function exists', () => {
+    assert.ok(prefetchSource.includes('function getViewportTileRange('),
+        'Should have getViewportTileRange function');
+});
+
+test('getViewportTileRange uses viewportMath module', () => {
+    const section = prefetchSource.substring(
+        prefetchSource.indexOf('function getViewportTileRange'),
+        prefetchSource.indexOf('function onZChange')
+    );
+    assert.ok(section.includes('viewportMath'),
+        'Should reference viewportMath module');
+    assert.ok(section.includes('viewStateToBounds'),
+        'Should use viewStateToBounds');
+    assert.ok(section.includes('boundsToTileRange'),
+        'Should use boundsToTileRange');
+});
+
+test('getViewportTileRange uses 2-tile margin', () => {
+    const section = prefetchSource.substring(
+        prefetchSource.indexOf('function getViewportTileRange'),
+        prefetchSource.indexOf('function onZChange')
+    );
+    assert.ok(section.includes(', 2)'),
+        'Should pass margin=2 to boundsToTileRange');
+});
+
+test('getViewportTileRange returns null when viewport unavailable', () => {
+    const section = prefetchSource.substring(
+        prefetchSource.indexOf('function getViewportTileRange'),
+        prefetchSource.indexOf('function onZChange')
+    );
+    assert.ok(section.includes('return null'),
+        'Should return null when viewport info unavailable (graceful fallback)');
+});
+
+test('getChunkUrlsForZ accepts optional tileRange parameter', () => {
+    const section = prefetchSource.substring(
+        prefetchSource.indexOf('function getChunkUrlsForZ'),
+        prefetchSource.indexOf('function getViewportTileRange')
+    );
+    assert.ok(section.includes('tileRange'),
+        'Should accept tileRange parameter');
+    assert.ok(section.includes('tileRange.minTileY'),
+        'Should use tileRange.minTileY');
+    assert.ok(section.includes('tileRange.maxTileY'),
+        'Should use tileRange.maxTileY');
+    assert.ok(section.includes('tileRange.minTileX'),
+        'Should use tileRange.minTileX');
+    assert.ok(section.includes('tileRange.maxTileX'),
+        'Should use tileRange.maxTileX');
+});
+
+test('getChunkUrlsForZ falls back to all chunks when no tileRange', () => {
+    const section = prefetchSource.substring(
+        prefetchSource.indexOf('function getChunkUrlsForZ'),
+        prefetchSource.indexOf('function getViewportTileRange')
+    );
+    // When tileRange is null/undefined, should use 0..yChunks-1 and 0..xChunks-1
+    assert.ok(section.includes('tileRange ? tileRange.minTileY : 0'),
+        'Should default yMin to 0 when no tileRange');
+    assert.ok(section.includes('tileRange ? tileRange.maxTileY : info.yChunks - 1'),
+        'Should default yMax to all chunks when no tileRange');
+});
+
+test('executePrefetch computes viewport tile ranges per level', () => {
+    const section = prefetchSource.substring(
+        prefetchSource.indexOf('function executePrefetch'),
+        prefetchSource.indexOf('function choosePrefetchLevels')
+    );
+    assert.ok(section.includes('getViewportTileRange'),
+        'Should call getViewportTileRange in executePrefetch');
+    assert.ok(section.includes('tileRanges'),
+        'Should compute tileRanges object');
+});
+
+test('prefetchPlane accepts tileRange parameter', () => {
+    const section = prefetchSource.substring(
+        prefetchSource.indexOf('function prefetchPlane'),
+        prefetchSource.indexOf('function abortStalePrefetches')
+    );
+    assert.ok(section.includes('tileRange'),
+        'Should accept tileRange parameter');
+    assert.ok(section.includes('getChunkUrlsForZ(z, levelIdx, tileRange)'),
+        'Should pass tileRange to getChunkUrlsForZ');
+});
+
+test('destroy clears viewport callbacks', () => {
+    const destroySection = prefetchSource.substring(
+        prefetchSource.indexOf('function destroy'),
+        prefetchSource.indexOf('function log')
+    );
+    assert.ok(destroySection.includes('getViewState = null'),
+        'Should null getViewState on destroy');
+    assert.ok(destroySection.includes('getContainerSize = null'),
+        'Should null getContainerSize on destroy');
 });
 
 // ========== Performance hypothesis documented ==========

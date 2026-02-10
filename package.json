@@ -10,15 +10,21 @@
     "build:zarr": "node build/bundle-zarr-viewer.js"
   },
   "dependencies": {
-    "@hms-dbmi/viv": "^0.15.0",
-    "deck.gl": "^8.8.27",
-    "@luma.gl/core": "^8.5.21"
+    "@hms-dbmi/viv": "0.19.0",
+    "deck.gl": "~9.1.11",
+    "@deck.gl/core": "~9.1.11",
+    "@deck.gl/geo-layers": "~9.1.11",
+    "@deck.gl/layers": "~9.1.11",
+    "@luma.gl/constants": "~9.1.9",
+    "@luma.gl/shadertools": "~9.1.9",
+    "@luma.gl/core": "~9.1.9",
+    "@luma.gl/engine": "~9.1.9",
+    "@luma.gl/webgl": "~9.1.9",
+    "@math.gl/core": "^4.0.1",
+    "@math.gl/culling": "^4.0.1"
   },
   "devDependencies": {
-    "esbuild": "^0.25.0",
+    "esbuild": "^0.20.0",
     "playwright": "^1.40.0"
-  },
-  "overrides": {
-    "fast-xml-parser": "^5.3.4"
   }
 }

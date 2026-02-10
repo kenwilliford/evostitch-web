@@ -383,30 +383,21 @@
 
         return getSwCacheEntries().then(function(entries) {
             var prefetch = getPrefetchStats();
-            var cacheStats = null;
 
-            var p = Promise.resolve(null);
-            if (window.evostitch.zarrCache) {
-                cacheStats = window.evostitch.zarrCache.getStats();
-            }
-
-            return p.then(function() {
+            return Promise.resolve().then(function() {
                 var measurements = [{
                     swCacheEntries: entries,
                     prefetchCacheSize: prefetch ? prefetch.cacheSize : null,
                     prefetchCachedPlanes: prefetch ? prefetch.cachedPlanes : null,
                     prefetchHits: prefetch ? prefetch.hits : null,
                     prefetchMisses: prefetch ? prefetch.misses : null,
-                    prefetchPending: prefetch ? prefetch.pendingFetches : null,
-                    zarrCacheHitRate: cacheStats ? cacheStats.hitRate : null,
-                    zarrCacheSize: cacheStats ? cacheStats.cacheSize : null
+                    prefetchPending: prefetch ? prefetch.pendingFetches : null
                 }];
 
                 var total = prefetch ? (prefetch.hits + prefetch.misses) : 0;
                 var summary = {
                     swCacheEntries: entries,
                     prefetchHitRate: total > 0 ? Math.round(prefetch.hits / total * 100) + '%' : 'N/A',
-                    zarrCacheHitRate: cacheStats ? cacheStats.hitRate : 'N/A',
                     prefetchedChunks: prefetch ? prefetch.prefetched : 0,
                     cachedPlaneCount: prefetch ? prefetch.cacheSize : 0
                 };
@@ -547,7 +538,6 @@
                 if (s.maxMs !== undefined && s.maxMs !== null) summaryParts.push('max=' + s.maxMs + 'ms');
                 if (s.cacheState) summaryParts.push('cache=' + s.cacheState);
                 if (s.prefetchHitRate) summaryParts.push('prefetchHitRate=' + s.prefetchHitRate);
-                if (s.zarrCacheHitRate) summaryParts.push('cacheHitRate=' + s.zarrCacheHitRate);
                 if (s.requestedSwitches) summaryParts.push('requested=' + s.requestedSwitches);
                 if (s.actualLoads !== undefined) summaryParts.push('actualLoads=' + s.actualLoads);
                 if (s.debouncedCount !== undefined && s.debouncedCount !== null) summaryParts.push('debounced=' + s.debouncedCount);
@@ -579,7 +569,6 @@
             if (s.cacheSpeedup) row['Speedup'] = s.cacheSpeedup;
             if (s.actualLoads !== undefined) row['Loads'] = s.actualLoads;
             if (s.prefetchHitRate && s.prefetchHitRate !== 'N/A') row['Prefetch HR'] = s.prefetchHitRate;
-            if (s.zarrCacheHitRate && s.zarrCacheHitRate !== 'N/A') row['Cache HR'] = s.zarrCacheHitRate;
             tableData.push(row);
         });
         if (tableData.length > 0 && typeof console.table === 'function') {

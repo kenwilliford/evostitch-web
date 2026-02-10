@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>W7 Spike Test - Viv 0.19 + deck.gl 9</title>
+    <script type="importmap">
+    {
+        "imports": {
+            "zarr-viewer-bundle": "./dist/zarr-viewer-bundle.js"
+        }
+    }
+    </script>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #111; color: #0f0; }
+        .pass { color: #0f0; }
+        .fail { color: #f00; }
+        .info { color: #ff0; }
+        #viewer { width: 800px; height: 600px; background: #222; border: 1px solid #333; }
+        pre { white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>W7 Spike Test: Viv 0.19 + deck.gl 9</h1>
+    <pre id="log"></pre>
+    <div id="viewer"></div>
+
+    <script type="module">
+    import { loadOmeZarr, MultiscaleImageLayer, Deck, OrthographicView } from 'zarr-viewer-bundle';
+
+    const log = document.getElementById('log');
+    const results = {};
+
+    function print(msg, cls) {
+        const line = document.createElement('span');
+        line.className = cls || '';
+        line.textContent = msg + '\n';
+        log.appendChild(line);
+    }
+
+    function pass(test) { results[test] = 'PASS'; print(`[PASS] ${test}`, 'pass'); }
+    function fail(test, err) { results[test] = 'FAIL'; print(`[FAIL] ${test}: ${err}`, 'fail'); }
+    function info(msg) { print(`[INFO] ${msg}`, 'info'); }
+
+    async function testLoadOmeZarr(name, url) {
+        try {
+            info(`Loading ${name}: ${url}`);
+            const t0 = performance.now();
+            const result = await loadOmeZarr(url, { type: 'multiscales' });
+            const dt = (performance.now() - t0).toFixed(0);
+            info(`  Loaded in ${dt}ms`);
+
+            if (!result || !result.data || !Array.isArray(result.data)) {
+                fail(`${name}-load`, 'result.data is not an array');
+                return null;
+            }
+
+            const nLevels = result.data.length;
+            info(`  Resolution levels: ${nLevels}`);
+
+            if (result.metadata) {
+                const ms = result.metadata.Multiscales?.[0] || result.metadata.multiscales?.[0];
+                if (ms) {
+                    const axes = ms.axes?.map(a => a.name || a).join(',') || 'unknown';
+                    info(`  Axes: ${axes}`);
+                }
+            }
+
+            // Check shape of first level
+            const l0 = result.data[0];
+            if (l0 && l0.shape) {
+                info(`  Level 0 shape: [${l0.shape.join(', ')}]`);
+            }
+
+            pass(`${name}-load`);
+            return result;
+        } catch (err) {
+            fail(`${name}-load`, err.message || String(err));
+            return null;
+        }
+    }
+
+    async function testDeckCreation() {
+        try {
+            const deck = new Deck({
+                parent: document.getElementById('viewer'),
+                views: [new OrthographicView({ id: 'ortho', controller: true })],
+                initialViewState: { target: [0, 0, 0], zoom: -2 }
+            });
+            pass('deck-creation');
+            return deck;
+        } catch (err) {
+            fail('deck-creation', err.message || String(err));
+            return null;
+        }
+    }
+
+    async function testRender(deck, dataset, name) {
+        if (!deck || !dataset) {
+            fail(`${name}-render`, 'prerequisites missing');
+            return;
+        }
+
+        try {
+            const loader = dataset.data;
+            const nChannels = loader[0].labels?.length > 2 ? loader[0].shape[loader[0].labels.indexOf('c')] : 1;
+            info(`  ${name} channels: ${nChannels}`);
+
+            const selections = [];
+            const colors = [];
+            const contrastLimits = [];
+            const channelsVisible = [];
+            for (let c = 0; c < nChannels; c++) {
+                selections.push({ z: 0, t: 0, c });
+                colors.push(c === 0 ? [0, 255, 0] : [255, 0, 255]);
+                contrastLimits.push([0, 255]);
+                channelsVisible.push(true);
+            }
+
+            let viewportLoaded = false;
+            const layer = new MultiscaleImageLayer({
+                id: `test-${name}`,
+                loader,
+                selections,
+                contrastLimits,
+                colors,
+                channelsVisible,
+                onViewportLoad: () => { viewportLoaded = true; }
+            });
+
+            deck.setProps({ layers: [layer] });
+
+            // Wait up to 10s for onViewportLoad
+            const t0 = performance.now();
+            for (let i = 0; i < 100; i++) {
+                await new Promise(r => setTimeout(r, 100));
+                if (viewportLoaded) break;
+            }
+
+            if (viewportLoaded) {
+                const dt = (performance.now() - t0).toFixed(0);
+                pass(`${name}-render`);
+                info(`  onViewportLoad fired in ${dt}ms`);
+            } else {
+                fail(`${name}-render`, 'onViewportLoad did not fire within 10s');
+            }
+        } catch (err) {
+            fail(`${name}-render`, err.message || String(err));
+        }
+    }
+
+    async function run() {
+        info('=== W7 Spike Test: Viv 0.19 + deck.gl 9 ===');
+        info(`Bundle imports: loadOmeZarr=${typeof loadOmeZarr}, Deck=${typeof Deck}, MultiscaleImageLayer=${typeof MultiscaleImageLayer}`);
+
+        if (typeof loadOmeZarr !== 'function') { fail('import-check', 'loadOmeZarr not a function'); return; }
+        if (typeof Deck !== 'function') { fail('import-check', 'Deck not a function'); return; }
+        if (typeof MultiscaleImageLayer !== 'function') { fail('import-check', 'MultiscaleImageLayer not a function'); return; }
+        pass('import-check');
+
+        // Test 1: Load IDR dataset
+        const idr = await testLoadOmeZarr('idr',
+            'https://minio-dev.openmicroscopy.org/idr/v0.3/idr0062-blin-nuclearsegmentation/6001240.zarr');
+
+        // Test 2: Load R2 dataset
+        const r2 = await testLoadOmeZarr('r2',
+            'https://pub-db7ffa4b7df04b76aaae379c13562977.r2.dev/mosaic_3d_zarr/0/');
+
+        // Test 3: Create Deck
+        const deck = await testDeckCreation();
+
+        // Test 4: Render IDR
+        if (idr) await testRender(deck, idr, 'idr');
+
+        // Test 5: Render R2
+        if (r2) await testRender(deck, r2, 'r2');
+
+        // Summary
+        info('');
+        info('=== SUMMARY ===');
+        const passed = Object.values(results).filter(v => v === 'PASS').length;
+        const failed = Object.values(results).filter(v => v === 'FAIL').length;
+        print(`${passed} passed, ${failed} failed`, failed > 0 ? 'fail' : 'pass');
+
+        // Expose results for Playwright
+        window._spikeResults = results;
+        window._spikeDone = true;
+    }
+
+    run().catch(err => {
+        fail('runner', err.message || String(err));
+        window._spikeResults = results;
+        window._spikeDone = true;
+    });
+    </script>
+</body>
+</html>

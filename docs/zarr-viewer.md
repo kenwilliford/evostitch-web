@@ -10,6 +10,8 @@ WebGL-powered 3D microscopy viewer for OME-Zarr datasets using Viv/deck.gl.
 
 **Custom data:** `zarr-viewer.html?zarr=https://your-server.com/data.zarr`
 
+**evostitch data:** Served from `data.evostitch.net` (Cloudflare R2 custom domain, HTTP/2)
+
 ## Features
 
 | Feature | Description |
@@ -19,8 +21,10 @@ WebGL-powered 3D microscopy viewer for OME-Zarr datasets using Viv/deck.gl.
 | **Scale bar** | Dynamic scale bar in µm (auto-adjusts with zoom) |
 | **Coordinates** | Real-time cursor position in µm |
 | **Channel controls** | Per-channel visibility, brightness, and contrast |
-| **Fade transitions** | Smooth opacity transitions between Z-planes |
-| **Performance stats** | Built-in Z-switch timing instrumentation |
+| **No-blank-flash Z-switches** | Old Z-plane stays visible as placeholder until new data loads (refinementStrategy: 'best-available') |
+| **Viewport-aware prefetch** | Only prefetches chunks in viewport + 2-tile margin, reducing bandwidth |
+| **SW caching** | Service worker caches zarr chunks (cache-first, 10K entry limit) |
+| **Performance stats** | Built-in Z-switch timing + prefetch monitoring instrumentation |
 
 ## Keyboard Shortcuts
 
@@ -132,6 +136,36 @@ evostitch.zarrViewer.logPerfSummary()
 evostitch.zarrViewer.clearPerfStats()
 ```
 
+### Prefetch Monitoring
+
+```javascript
+// Get prefetch stats (viewport-aware prefetch + late fetch tracking)
+evostitch.zarrPrefetch.getStats()
+// Returns: { hits, misses, prefetched, aborted, errors,
+//            lateFetchCount, totalZSwitches, prefetchedBytes,
+//            prefetchedBytesPerZSwitch, prefetchedPlanes, pendingFetches,
+//            velocity, currentZ, zCount, resolutionLevels, ... }
+
+// Toggle debug logging
+evostitch.zarrPrefetch.setDebug(true)
+```
+
+### Service Worker Cache
+
+```javascript
+// Get SW zarr cache stats
+evostitch.sw.getStats()     // Returns: { size, maxEntries, ... }
+
+// List cached URLs
+evostitch.sw.getCacheContents()
+
+// Clear zarr cache (forces re-fetch from CDN)
+evostitch.sw.clearCache()
+
+// Check if SW is active
+evostitch.sw.isActive()     // Returns: true/false
+```
+
 ### Transitions
 
 ```javascript
@@ -153,10 +187,14 @@ evostitch.zarrViewer.setDebug(true)
 
 | Library | Version | Purpose |
 |---------|---------|---------|
-| [@hms-dbmi/viv](https://github.com/hms-dbmi/viv) | 0.18.2 | OME-Zarr loading & rendering |
-| [@deck.gl/core](https://deck.gl/) | 9.0.38 | WebGL layer rendering |
+| [@hms-dbmi/viv](https://github.com/hms-dbmi/viv) | 0.19.0 | OME-Zarr loading & rendering |
+| [deck.gl](https://deck.gl/) | ~9.1.11 | WebGL layer rendering |
+| [@luma.gl/*](https://luma.gl/) | ~9.1.9 | WebGL2 abstraction (peer dep of deck.gl 9) |
+| [@math.gl/*](https://math.gl/) | ^4.0.1 | Math utilities (peer dep of deck.gl 9) |
 
 Dependencies are bundled via esbuild: `npm run build:zarr`
+
+> **Note:** Requires WebGL2 (all modern browsers). deck.gl 9 dropped WebGL1 support.
 
 ### Rendering Pipeline
 
@@ -184,25 +222,43 @@ The viewer extracts from OME-Zarr `.zattrs`:
 
 | Optimization | Purpose |
 |--------------|---------|
+| **refinementStrategy: 'best-available'** | Old Z-plane tiles stay visible as placeholders during Z-switch (no blank flash) |
+| **Viewport-aware prefetch** | Only prefetches chunks in viewport + 2-tile margin, not the entire Z-plane |
+| **SW cache-first** | Service worker (v1.4.0) intercepts zarr chunk fetches, serves from cache before network |
+| **Z-switch debounce** | 50ms debounce prevents redundant tile reloads during rapid Z-slider dragging |
+| **Smart loading indicator** | 150ms delay prevents flash on fast loads |
 | **Throttled scale bar** | 100ms minimum update interval during zoom/pan |
 | **RAF batching** | Coordinate display uses requestAnimationFrame |
 | **Chunked loading** | Only visible Z-plane data is loaded |
-| **Fade transitions** | Opacity transitions mask tile loading latency |
+| **HTTP/2 + custom domain** | `data.evostitch.net` via Cloudflare with immutable chunk caching (1yr TTL) |
 
 ### File Structure
 
 ```
 web/
-├── zarr-viewer.html        # Main viewer page
+├── zarr-viewer.html           # Main viewer page (IIFE script tags + ES module)
+├── sw.js                      # Service worker v1.4.0 (zarr chunk caching)
 ├── js/
-│   └── zarr-viewer.js      # ES module (bundled entry point)
+│   ├── zarr-viewer.js         # ES module: init, Z-nav, channel controls, deck.gl setup
+│   ├── zarr-prefetch.js       # IIFE: viewport-aware Z-plane prefetching
+│   ├── zarr-render-opt.js     # IIFE: Z-debounce (50ms), zoom capping
+│   ├── zarr-viewport-math.js  # IIFE: shared viewport math (zoomToLevel, viewStateToBounds, boundsToTileRange)
+│   ├── zarr-3d-loader.js      # IIFE: "Load 3D" mode (viewport-scoped prefetch)
+│   ├── zarr-perf-test.js      # Performance test runner
+│   └── loading-indicator.js   # IIFE: smart loading indicator (150ms delay)
 ├── dist/
-│   └── zarr-viewer-bundle.js  # Built bundle (Viv + deck.gl)
-├── package.json            # Build configuration
+│   └── zarr-viewer-bundle.js  # Built bundle (Viv 0.19 + deck.gl 9)
+├── build/
+│   └── bundle-zarr-viewer.js  # esbuild script
+├── package.json               # Build configuration + dependencies
 └── docs/
-    ├── zarr-viewer.md      # This file
-    └── zarr-evaluation.md  # Performance comparison vs DZI
+    ├── zarr-viewer.md         # This file
+    ├── zarr-evaluation.md     # Performance comparison vs DZI
+    ├── performance.md         # Benchmark results, numeric gates
+    └── metadata-runbook.md    # CDN/SW cache invalidation procedures
 ```
+
+**IIFE load order** (zarr-viewer.html): loading-indicator → zarr-viewport-math → zarr-prefetch → zarr-render-opt → zarr-3d-loader → zarr-viewer (ES module)
 
 ## Building
 
@@ -215,18 +271,32 @@ npm run build:zarr  # Creates dist/zarr-viewer-bundle.js
 ## Performance vs DZI Viewer
 
 See [zarr-evaluation.md](zarr-evaluation.md) for detailed comparison.
+See [performance.md](performance.md) for W7-W12 benchmark results and numeric gates.
 
 **Summary:**
 - **Zarr:** Better for large Z-stacks, random Z-access, memory efficiency
 - **DZI:** Better for sequential Z-navigation with prefetch
 
-| Metric | Zarr | DZI |
-|--------|------|-----|
-| Cold Z-switch | 485-514ms | 400-1000ms* |
-| Warm Z-switch | 39-57ms | Near-instant† |
+| Metric | Zarr (W7-W12) | DZI |
+|--------|---------------|-----|
+| Cold Z-switch | avg 368ms, p95 458ms | 400-1000ms* |
+| Warm Z-switch | avg ~65ms, p50 88ms | Near-instant† |
 
 \* DZI varies by visible tile count
 † DZI uses opacity toggle with prefetched tiles
+
+## Caching Architecture
+
+Two-layer cache: CDN (Cloudflare) + Service Worker (browser).
+
+| Layer | Cache Name | Strategy | TTL |
+|-------|-----------|----------|-----|
+| CDN | Cloudflare edge | Chunks: immutable (1yr). Metadata: 1hr | Transform Rules |
+| SW | `evostitch-zarr-v1.4.0` | Cache-first for chunks, network-first for metadata | 10K entry limit |
+
+The SW recognizes both `data.evostitch.net` (primary) and `pub-*.r2.dev` (legacy) domains.
+
+For cache invalidation procedures, see [metadata-runbook.md](metadata-runbook.md).
 
 ## Browser Support
 
@@ -236,7 +306,7 @@ See [zarr-evaluation.md](zarr-evaluation.md) for detailed comparison.
 | Firefox | Expected to work |
 | Safari | Not tested |
 
-Requires WebGL2 support for optimal rendering.
+Requires WebGL2 (deck.gl 9 requirement). All modern browsers support WebGL2.
 
 ## Troubleshooting
 
@@ -251,6 +321,9 @@ Requires WebGL2 support for optimal rendering.
 - Check if `.zattrs` is accessible
 
 ### "Slow Z-navigation"
-- Expected: Cold loads take 400-500ms
-- Warm loads (same Z revisited) should be ~50ms
+- Expected: Cold loads avg ~370ms (p95 < 460ms)
+- Warm loads (SW cached) avg ~65ms
 - Use `evostitch.zarrViewer.logPerfSummary()` to check timing
+- Use `evostitch.zarrPrefetch.getStats()` to check prefetch stats
+- Use `evostitch.sw.getStats()` to check SW cache status
+- Try `evostitch.sw.clearCache()` if stale data suspected

@@ -2,8 +2,8 @@
 // Integration smoke tests for zarr optimization modules
 // Usage: node zarr-integration.test.js
 //
-// Verifies all three optimization modules (zarr-prefetch, zarr-render-opt,
-// zarr-cache) can coexist, expose correct APIs, initialize without errors,
+// Verifies optimization modules (zarr-prefetch, zarr-render-opt)
+// can coexist, expose correct APIs, initialize without errors,
 // and clean up properly. Runs in Node.js vm with simulated browser env.
 
 const assert = require('assert');
@@ -42,7 +42,6 @@ function testAsync(name, fn) {
 const jsDir = path.join(__dirname, '..', 'js');
 const prefetchSrc = fs.readFileSync(path.join(jsDir, 'zarr-prefetch.js'), 'utf8');
 const renderOptSrc = fs.readFileSync(path.join(jsDir, 'zarr-render-opt.js'), 'utf8');
-const cacheSrc = fs.readFileSync(path.join(jsDir, 'zarr-cache.js'), 'utf8');
 
 // ---------- Simulated browser environment ----------
 
@@ -86,15 +85,6 @@ function createBrowserEnv() {
         performance: { now: () => Date.now() },
         console: { log: () => {}, error: () => {}, warn: () => {} },
         fetch: () => Promise.resolve({ ok: true, arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)) }),
-        caches: {
-            open: () => Promise.resolve({
-                match: () => Promise.resolve(undefined),
-                put: () => Promise.resolve(),
-                delete: () => Promise.resolve(true),
-                keys: () => Promise.resolve([])
-            }),
-            delete: () => Promise.resolve(true)
-        },
         AbortController: class {
             constructor() {
                 this.signal = { aborted: false };
@@ -134,15 +124,13 @@ function loadAllModules() {
         performance: env.performance,
         console: env.console,
         fetch: env.fetch,
-        caches: env.caches,
         AbortController: env.AbortController,
         DOMException: env.DOMException,
         Response: env.Response,
         Promise: Promise
     });
 
-    // Load all three modules in order (order should not matter for IIFEs)
-    vm.runInContext(cacheSrc, sandbox);
+    // Load modules in order (order should not matter for IIFEs)
     vm.runInContext(prefetchSrc, sandbox);
     vm.runInContext(renderOptSrc, sandbox);
 
@@ -161,14 +149,46 @@ console.log('');
 
 console.log('--- Module Loading ---');
 
-test('all three source files exist', () => {
+test('source files exist', () => {
     assert.ok(fs.existsSync(path.join(jsDir, 'zarr-prefetch.js')), 'zarr-prefetch.js');
     assert.ok(fs.existsSync(path.join(jsDir, 'zarr-render-opt.js')), 'zarr-render-opt.js');
-    assert.ok(fs.existsSync(path.join(jsDir, 'zarr-cache.js')), 'zarr-cache.js');
 });
 
-test('all three modules use IIFE pattern', () => {
-    [prefetchSrc, renderOptSrc, cacheSrc].forEach(src => {
+test('zarr-cache.js has been removed (W8)', () => {
+    assert.ok(!fs.existsSync(path.join(jsDir, 'zarr-cache.js')), 'zarr-cache.js should not exist');
+});
+
+test('refinementStrategy: best-available set in zarr-viewer.js (W9)', () => {
+    const viewerSrc = fs.readFileSync(path.join(jsDir, 'zarr-viewer.js'), 'utf8');
+    assert.ok(
+        viewerSrc.includes("refinementStrategy: 'best-available'"),
+        'zarr-viewer.js should set refinementStrategy to best-available'
+    );
+});
+
+test('Viv 0.19 MultiscaleImageLayer passes refinementStrategy to TileLayer (W9)', () => {
+    const bundlePath = path.join(__dirname, '..', 'dist', 'zarr-viewer-bundle.js');
+    assert.ok(fs.existsSync(bundlePath), 'bundle exists');
+    const bundleSrc = fs.readFileSync(bundlePath, 'utf8');
+    // Viv's MultiscaleImageLayer defaultProps declares refinementStrategy
+    assert.ok(
+        bundleSrc.includes('refinementStrategy: { type: "string", value: null, compare: true }'),
+        'MultiscaleImageLayer declares refinementStrategy prop'
+    );
+    // Viv passes it through to MultiscaleImageLayerBase (TileLayer)
+    assert.ok(
+        bundleSrc.includes('refinementStrategy: refinementStrategy || (opacity === 1 ? "best-available" : "no-overlap")'),
+        'Viv passes refinementStrategy through to TileLayer sublayer'
+    );
+    // TileLayer passes it to Tileset2D options
+    assert.ok(
+        bundleSrc.includes('refinementStrategy: STRATEGY_DEFAULT'),
+        'TileLayer declares refinementStrategy in defaultProps'
+    );
+});
+
+test('both modules use IIFE pattern', () => {
+    [prefetchSrc, renderOptSrc].forEach(src => {
         assert.ok(src.includes('(function()'), 'IIFE open');
         assert.ok(src.includes("'use strict'"), 'strict mode');
         assert.ok(src.includes('})();'), 'IIFE close');
@@ -197,12 +217,6 @@ test('zarrRenderOpt is on namespace', () => {
     assert.strictEqual(typeof ns.zarrRenderOpt, 'object', 'zarrRenderOpt should be an object');
 });
 
-test('zarrCache is on namespace', () => {
-    const { ns } = loadAllModules();
-    assert.ok(ns.zarrCache, 'zarrCache should exist');
-    assert.strictEqual(typeof ns.zarrCache, 'object', 'zarrCache should be an object');
-});
-
 test('loading order does not matter (reverse order)', () => {
     const env = createBrowserEnv();
     const sandbox = vm.createContext({
@@ -216,7 +230,6 @@ test('loading order does not matter (reverse order)', () => {
         performance: env.performance,
         console: env.console,
         fetch: env.fetch,
-        caches: env.caches,
         AbortController: env.AbortController,
         DOMException: env.DOMException,
         Response: env.Response,
@@ -226,11 +239,9 @@ test('loading order does not matter (reverse order)', () => {
     // Load in reverse order
     vm.runInContext(renderOptSrc, sandbox);
     vm.runInContext(prefetchSrc, sandbox);
-    vm.runInContext(cacheSrc, sandbox);
 
     assert.ok(env.window.evostitch.zarrPrefetch, 'zarrPrefetch after reverse load');
     assert.ok(env.window.evostitch.zarrRenderOpt, 'zarrRenderOpt after reverse load');
-    assert.ok(env.window.evostitch.zarrCache, 'zarrCache after reverse load');
 });
 
 test('modules do not overwrite each other', () => {
@@ -238,12 +249,10 @@ test('modules do not overwrite each other', () => {
     // Each module should have its own distinct API
     assert.ok(ns.zarrPrefetch.onZChange, 'prefetch has onZChange');
     assert.ok(ns.zarrRenderOpt.updateZ, 'renderOpt has updateZ');
-    assert.ok(ns.zarrCache.fetchWithCache, 'cache has fetchWithCache');
 
     // Cross-check: APIs should NOT leak between modules
     assert.strictEqual(ns.zarrPrefetch.updateZ, undefined, 'prefetch should not have updateZ');
     assert.strictEqual(ns.zarrRenderOpt.onZChange, undefined, 'renderOpt should not have onZChange');
-    assert.strictEqual(ns.zarrCache.updateZ, undefined, 'cache should not have updateZ');
 });
 
 // ========== API Surface Tests ==========
@@ -251,7 +260,7 @@ test('modules do not overwrite each other', () => {
 console.log('');
 console.log('--- zarrPrefetch API ---');
 
-const prefetchAPI = ['init', 'onZChange', 'getPrefetchState', 'warmPlane', 'getStats', 'setDebug', 'destroy'];
+const prefetchAPI = ['init', 'onZChange', 'onViewportLoad', 'getPrefetchState', 'warmPlane', 'getStats', 'setDebug', 'destroy'];
 
 prefetchAPI.forEach(fn => {
     test(`zarrPrefetch.${fn} is a function`, () => {
@@ -272,25 +281,6 @@ renderOptAPI.forEach(fn => {
         const { ns } = loadAllModules();
         assert.strictEqual(typeof ns.zarrRenderOpt[fn], 'function', `${fn} should be a function`);
     });
-});
-
-console.log('');
-console.log('--- zarrCache API ---');
-
-const cacheAPI = ['init', 'fetchWithCache', 'prefetchUrls', 'cancelPrefetch', 'getStats',
-    'clearCache', 'setDebug', 'destroy'];
-
-cacheAPI.forEach(fn => {
-    test(`zarrCache.${fn} is a function`, () => {
-        const { ns } = loadAllModules();
-        assert.strictEqual(typeof ns.zarrCache[fn], 'function', `${fn} should be a function`);
-    });
-});
-
-test('zarrCache.PRIORITY is exposed', () => {
-    const { ns } = loadAllModules();
-    assert.ok(ns.zarrCache.PRIORITY, 'PRIORITY should exist');
-    assert.strictEqual(typeof ns.zarrCache.PRIORITY, 'object', 'PRIORITY should be an object');
 });
 
 // ========== Init Tests ==========
@@ -322,19 +312,10 @@ test('zarrPrefetch.init rejects missing zCount', () => {
     assert.strictEqual(result, false, 'Should return false without zCount');
 });
 
-test('zarrCache.init returns a Promise', () => {
-    const { ns } = loadAllModules();
-    const result = ns.zarrCache.init({ baseUrl: 'https://example.com' });
-    assert.ok(result instanceof Promise, 'init should return a Promise');
-});
-
 test('all modules can be initialized in sequence without conflict', () => {
     const { ns } = loadAllModules();
     const mockDeck = { setProps: () => {} };
     const mockLoader = { data: [{ shape: [1, 1, 21, 1024, 1024], tileSize: 256, dtype: 'Uint16' }] };
-
-    // Init cache first (returns Promise but we don't need to await for smoke test)
-    ns.zarrCache.init({ baseUrl: 'https://example.com' });
 
     // Init prefetch
     const prefetchOk = ns.zarrPrefetch.init({
@@ -346,10 +327,9 @@ test('all modules can be initialized in sequence without conflict', () => {
     // Init renderOpt
     ns.zarrRenderOpt.init({ deck: mockDeck, loader: mockLoader, metadata: {} });
 
-    // All should have stats after init
+    // Both should have stats after init
     assert.ok(ns.zarrPrefetch.getStats(), 'prefetch stats available');
     assert.ok(ns.zarrRenderOpt.getStats(), 'renderOpt stats available');
-    assert.ok(ns.zarrCache.getStats(), 'cache stats available');
 });
 
 // ========== getStats consistency ==========
@@ -361,11 +341,9 @@ test('all modules return stats objects', () => {
     const { ns } = loadAllModules();
     const prefetchStats = ns.zarrPrefetch.getStats();
     const renderOptStats = ns.zarrRenderOpt.getStats();
-    const cacheStats = ns.zarrCache.getStats();
 
     assert.strictEqual(typeof prefetchStats, 'object', 'prefetch stats is object');
     assert.strictEqual(typeof renderOptStats, 'object', 'renderOpt stats is object');
-    assert.strictEqual(typeof cacheStats, 'object', 'cache stats is object');
 });
 
 test('renderOpt stats have expected fields', () => {
@@ -377,6 +355,22 @@ test('renderOpt stats have expected fields', () => {
     assert.ok('maxZoom' in stats, 'has maxZoom');
 });
 
+test('prefetch stats have monitoring metrics (W10 5.4)', () => {
+    const { ns } = loadAllModules();
+    const stats = ns.zarrPrefetch.getStats();
+    assert.ok('lateFetchCount' in stats, 'has lateFetchCount');
+    assert.ok('totalZSwitches' in stats, 'has totalZSwitches');
+    assert.ok('prefetchedBytes' in stats, 'has prefetchedBytes');
+    assert.ok('prefetchedBytesPerZSwitch' in stats, 'has prefetchedBytesPerZSwitch');
+});
+
+test('prefetchedBytesPerZSwitch is 0 before any Z-switches', () => {
+    const { ns } = loadAllModules();
+    const stats = ns.zarrPrefetch.getStats();
+    assert.strictEqual(stats.prefetchedBytesPerZSwitch, 0, 'Should be 0 with no Z-switches');
+    assert.strictEqual(stats.totalZSwitches, 0, 'totalZSwitches should be 0 initially');
+});
+
 // ========== setDebug consistency ==========
 
 console.log('');
@@ -386,15 +380,12 @@ test('all modules accept setDebug(true) without throwing', () => {
     const { ns } = loadAllModules();
     ns.zarrPrefetch.setDebug(true);
     ns.zarrRenderOpt.setDebug(true);
-    ns.zarrCache.setDebug(true);
-    // If we got here, none threw
 });
 
 test('all modules accept setDebug(false) without throwing', () => {
     const { ns } = loadAllModules();
     ns.zarrPrefetch.setDebug(false);
     ns.zarrRenderOpt.setDebug(false);
-    ns.zarrCache.setDebug(false);
 });
 
 // ========== Destroy / Cleanup ==========
@@ -408,14 +399,12 @@ test('all modules can be destroyed without throwing', () => {
     const mockLoader = { data: [{ shape: [1, 1, 21, 1024, 1024], tileSize: 256, dtype: 'Uint16' }] };
 
     // Init all
-    ns.zarrCache.init({ baseUrl: 'https://example.com' });
     ns.zarrPrefetch.init({ baseUrl: 'https://example.com/data.zarr', zCount: 21 });
     ns.zarrRenderOpt.init({ deck: mockDeck, loader: mockLoader, metadata: {} });
 
     // Destroy all (should not throw)
     ns.zarrRenderOpt.destroy();
     ns.zarrPrefetch.destroy();
-    ns.zarrCache.destroy();
 });
 
 test('destroy is idempotent (calling twice does not throw)', () => {
@@ -424,8 +413,6 @@ test('destroy is idempotent (calling twice does not throw)', () => {
     ns.zarrRenderOpt.destroy();
     ns.zarrPrefetch.destroy();
     ns.zarrPrefetch.destroy();
-    ns.zarrCache.destroy();
-    ns.zarrCache.destroy();
 });
 
 test('renderOpt state is clean after destroy', () => {
@@ -474,14 +461,48 @@ test('renderOpt debounce + prefetch can be used in sequence', () => {
     assert.ok(prefState, 'Prefetch state accessible after onZChange');
 });
 
-test('cache stats remain independent of renderOpt stats', () => {
-    const { ns } = loadAllModules();
-    const cacheStats = ns.zarrCache.getStats();
-    const renderStats = ns.zarrRenderOpt.getStats();
+// ========== W10: Viewport filtering ==========
 
-    // Verify they're different objects with different keys
-    assert.ok(!('layerRecreations' in cacheStats), 'cache stats should not have layerRecreations');
-    assert.ok(!('fetchWithCache' in renderStats), 'render stats should not have fetch data');
+console.log('');
+console.log('--- W10: Viewport Filtering ---');
+
+test('zarrPrefetch.init accepts getViewState and getContainerSize callbacks', () => {
+    const { ns } = loadAllModules();
+    const result = ns.zarrPrefetch.init({
+        zarrStoreUrl: 'https://example.com/data.zarr',
+        zCount: 21,
+        axes: ['t', 'c', 'z', 'y', 'x'],
+        getViewState: function() { return { target: [512, 512, 0], zoom: -2 }; },
+        getContainerSize: function() { return { width: 1920, height: 1080 }; }
+    });
+    assert.strictEqual(result, true, 'Should accept viewport callbacks');
+});
+
+test('zarr-prefetch.js getChunkUrlsForZ accepts tileRange parameter (source check)', () => {
+    const src = fs.readFileSync(path.join(__dirname, '..', 'js', 'zarr-prefetch.js'), 'utf8');
+    const fnDef = src.substring(src.indexOf('function getChunkUrlsForZ'), src.indexOf('function getViewportTileRange'));
+    assert.ok(fnDef.includes('tileRange'), 'getChunkUrlsForZ should accept tileRange');
+    assert.ok(fnDef.includes('tileRange.minTileX'), 'Should use minTileX from tileRange');
+    assert.ok(fnDef.includes('tileRange.maxTileX'), 'Should use maxTileX from tileRange');
+});
+
+test('zarr-prefetch.js has getViewportTileRange with 2-tile margin (source check)', () => {
+    const src = fs.readFileSync(path.join(__dirname, '..', 'js', 'zarr-prefetch.js'), 'utf8');
+    const fnDef = src.substring(src.indexOf('function getViewportTileRange'), src.indexOf('function onZChange'));
+    assert.ok(fnDef.includes('boundsToTileRange'), 'Should use boundsToTileRange');
+    assert.ok(fnDef.includes(', 2)'), 'Should use 2-tile margin');
+    assert.ok(fnDef.includes('return null'), 'Should return null when viewport unavailable');
+});
+
+test('zarr-viewer.js passes viewport callbacks to prefetch init (source check)', () => {
+    const viewerSrc = fs.readFileSync(path.join(__dirname, '..', 'js', 'zarr-viewer.js'), 'utf8');
+    // Find the prefetch init block
+    const initBlock = viewerSrc.substring(
+        viewerSrc.indexOf('zarrPrefetch.init('),
+        viewerSrc.indexOf('Zarr prefetch module initialized')
+    );
+    assert.ok(initBlock.includes('getViewState:'), 'Should pass getViewState to prefetch init');
+    assert.ok(initBlock.includes('getContainerSize:'), 'Should pass getContainerSize to prefetch init');
 });
 
 // ========== Summary ==========

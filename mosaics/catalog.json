@@ -11,11 +11,14 @@
       "thumbnail": "thumbnail.jpg"
     },
     {
-      "id": "mosaic_3d_zarr",
-      "title": "3D Zarr Explorer",
-      "description": "OME-Zarr volumetric mosaic with Z-plane navigation.",
-      "format": "zarr",
-      "zarrUrl": "mosaic_3d_zarr",
+      "id": "3x3x3-test",
+      "title": "Z-Stack Demo",
+      "description": "Demonstration mosaic with 3 Z-planes. Use arrow keys or slider to navigate depth.",
+      "width": 8404,
+      "height": 5815,
+      "physicalWidth": 755,
+      "physicalHeight": 522,
+      "zCount": 3,
       "thumbnail": "thumbnail.jpg"
     }
   ]
