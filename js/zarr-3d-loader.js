@@ -32,7 +32,7 @@
         zarrStoreUrl: '',
         zCount: 1,
         axes: [],
-        resolutionLevels: [],
+        getResolutionLevels: function() { return []; },
         dimensionSeparator: '/',
         channelCount: 1,
 
@@ -122,13 +122,14 @@
             return { total: 0, tilesPerPlane: 0, withinBudget: false, levelIdx: -1, tileRange: null };
         }
 
-        var numLevels = state.resolutionLevels.length;
+        var levels = state.getResolutionLevels();
+        var numLevels = levels.length;
         if (numLevels === 0) {
             return { total: 0, tilesPerPlane: 0, withinBudget: false, levelIdx: -1, tileRange: null };
         }
 
         var levelIdx = zoomToLevel(viewState.zoom, numLevels);
-        var levelInfo = state.resolutionLevels[levelIdx];
+        var levelInfo = levels[levelIdx];
         if (!levelInfo) {
             return { total: 0, tilesPerPlane: 0, withinBudget: false, levelIdx: -1, tileRange: null };
         }
@@ -253,7 +254,8 @@
         if (state.mode !== STATE_3D_READY) return;
         if (!state.capturedViewState || state.capturedLevel < 0 || !state.capturedTileRange) return;
 
-        var numLevels = state.resolutionLevels.length;
+        var levels = state.getResolutionLevels();
+        var numLevels = levels.length;
         var currentLevel = zoomToLevel(viewState.zoom, numLevels);
 
         // Different resolution level = different tiles needed
@@ -267,7 +269,7 @@
         if (!containerSize) return;
 
         var bounds = viewStateToBounds(viewState, containerSize);
-        var levelInfo = state.resolutionLevels[state.capturedLevel];
+        var levelInfo = levels[state.capturedLevel];
         if (!levelInfo) return;
 
         // Compute current tile range without margin (we want to know actual visible tiles)
@@ -541,7 +543,7 @@
         state.zarrStoreUrl = (config.zarrStoreUrl || '').replace(/\/$/, '');
         state.zCount = config.zCount;
         state.axes = config.axes || ['t', 'c', 'z', 'y', 'x'];
-        state.resolutionLevels = config.resolutionLevels || [];
+        state.getResolutionLevels = config.getResolutionLevels || function() { return config.resolutionLevels || []; };
         state.dimensionSeparator = config.dimensionSeparator || '/';
         state.channelCount = config.channelCount || 1;
         state.getViewState = config.getViewState;
@@ -563,7 +565,7 @@
         updateUI();
 
         log('Initialized: zCount=' + state.zCount +
-            ', levels=' + state.resolutionLevels.length +
+            ', levels=' + state.getResolutionLevels().length +
             ', channels=' + state.channelCount);
 
         return true;

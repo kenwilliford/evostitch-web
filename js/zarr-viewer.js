@@ -856,7 +856,7 @@ function initOptimizationModules() {
                 zarrStoreUrl: state.zarrStoreUrl || CONFIG.evositchBaseUrl,
                 zCount: state.zCount,
                 axes: prefetch.getAxes(),
-                resolutionLevels: prefetch.getResolutionLevels(),
+                getResolutionLevels: function() { return prefetch.getResolutionLevels(); },
                 dimensionSeparator: prefetch.getDimensionSeparator(),
                 channelCount: channelCount,
                 getViewState: function() { return state.viewState; },
