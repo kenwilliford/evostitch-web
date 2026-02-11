@@ -90,7 +90,7 @@ async function run() {
         });
 
         // === Load viewer ===
-        const url = `http://localhost:${PORT}/zarr-viewer.html?zarr=mosaic_3d_zarr`;
+        const url = `http://localhost:${PORT}/zarr-viewer.html?zarr=mosaic_3d_zarr_v2`;
         console.log(`\nLoading ${url} ...`);
         await page.goto(url, { timeout: TIMEOUT });
 

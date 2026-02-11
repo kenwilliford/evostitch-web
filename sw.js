@@ -45,7 +45,7 @@ function isZarrChunkRequest(url) {
         var parsed = new URL(url);
         if (R2_DOMAINS.indexOf(parsed.hostname) === -1) return false;
         // Zarr chunk paths: after the resolution level, segments are all numeric
-        // e.g., /mosaic_3d_zarr/0/3/0/0/0/0/0 or /mosaic_3d_zarr/0/3/0.0.0.0.0
+        // e.g., /mosaic_3d_zarr_v2/0/3/0/0/0/0/0 or /mosaic_3d_zarr_v2/0/3/0.0.0.0.0
         var path = parsed.pathname;
         // Must have at least a dataset name and resolution level
         var segments = path.split('/').filter(function(s) { return s.length > 0; });

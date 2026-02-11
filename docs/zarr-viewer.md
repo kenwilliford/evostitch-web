@@ -39,7 +39,7 @@ WebGL-powered 3D microscopy viewer for OME-Zarr datasets using Viv/deck.gl.
 
 | Parameter | Example | Description |
 |-----------|---------|-------------|
-| `zarr` | `?zarr=mosaic_3d_zarr` | Load evostitch Zarr (relative to CDN) |
+| `zarr` | `?zarr=mosaic_3d_zarr_v2` | Load evostitch Zarr (relative to CDN) |
 | `zarr` | `?zarr=https://...` | Load external OME-Zarr (full URL) |
 
 **Default:** Loads IDR v0.3 OME-Zarr demo when no parameter specified.
