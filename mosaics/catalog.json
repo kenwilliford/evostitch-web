@@ -19,7 +19,9 @@
       "physicalWidth": 755,
       "physicalHeight": 522,
       "zCount": 3,
-      "thumbnail": "thumbnail.jpg"
+      "thumbnail": "thumbnail.jpg",
+      "format": "zarr",
+      "zarrUrl": "mosaic_3d_zarr"
     }
   ]
 }
