@@ -10,3 +10,6 @@ export { MultiscaleImageLayer, ImageLayer } from '@vivjs/layers';
 
 // deck.gl exports
 export { Deck, OrthographicView } from '@deck.gl/core';
+
+// zarrita codec registry (for custom codec registration like JPEG)
+export { registry } from 'zarrita';

@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JPEG Codec Performance Benchmark</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #1a1a2e; color: #e0e0e0; padding: 24px; }
+    h1 { font-size: 1.5rem; margin-bottom: 8px; color: #fff; }
+    .subtitle { color: #888; margin-bottom: 24px; font-size: 0.9rem; }
+    .controls { display: flex; gap: 12px; align-items: center; margin-bottom: 24px; flex-wrap: wrap; }
+    button {
+      background: #3a3a5c; border: 1px solid #555; color: #e0e0e0; padding: 8px 16px;
+      border-radius: 4px; cursor: pointer; font-size: 0.9rem;
+    }
+    button:hover { background: #4a4a6c; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button.primary { background: #2d5a2d; border-color: #4a8a4a; }
+    button.primary:hover { background: #3d6a3d; }
+    select, input[type="number"] {
+      background: #2a2a4e; border: 1px solid #555; color: #e0e0e0;
+      padding: 8px 12px; border-radius: 4px; font-size: 0.9rem;
+    }
+    label { font-size: 0.85rem; color: #aaa; }
+    .config-group { display: flex; flex-direction: column; gap: 4px; }
+    #status { padding: 12px; background: #2a2a4e; border-radius: 4px; margin-bottom: 16px; font-family: monospace; font-size: 0.85rem; min-height: 40px; }
+    .gate-badge {
+      display: inline-block; padding: 4px 12px; border-radius: 4px;
+      font-weight: bold; font-size: 0.85rem; margin-left: 8px;
+    }
+    .gate-pass { background: #2d5a2d; color: #7cfc7c; }
+    .gate-conditional { background: #5a5a2d; color: #fcfc7c; }
+    .gate-fail { background: #5a2d2d; color: #fc7c7c; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 0.85rem; }
+    th { background: #2a2a4e; padding: 8px 12px; text-align: left; border-bottom: 2px solid #444; font-weight: 600; }
+    td { padding: 8px 12px; border-bottom: 1px solid #333; }
+    tr:hover td { background: #252545; }
+    .section { margin-bottom: 32px; }
+    .section-title { font-size: 1.1rem; color: #fff; margin-bottom: 12px; padding-bottom: 4px; border-bottom: 1px solid #444; }
+    .mono { font-family: monospace; }
+    .note { font-size: 0.8rem; color: #888; margin-top: 4px; }
+    .progress-bar { width: 100%; height: 4px; background: #333; border-radius: 2px; margin-top: 8px; overflow: hidden; }
+    .progress-fill { height: 100%; background: #4a8a4a; transition: width 0.2s; }
+    .preview { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 16px; }
+    .preview canvas { border: 1px solid #444; border-radius: 4px; }
+    .preview-info { font-size: 0.8rem; color: #aaa; }
+  </style>
+</head>
+<body>
+  <h1>JPEG Codec Performance Benchmark</h1>
+  <p class="subtitle">Browser decode pipeline: Blob -> createImageBitmap -> OffscreenCanvas -> getImageData -> channel extraction</p>
+
+  <div class="controls">
+    <div class="config-group">
+      <label>Source</label>
+      <select id="source-select">
+        <option value="gradient">Generated gradient (512x512)</option>
+        <option value="noise">Generated noise (512x512)</option>
+        <option value="tissue-like">Generated tissue-like (512x512)</option>
+        <option value="file">Load JPEG file...</option>
+      </select>
+    </div>
+    <div class="config-group">
+      <label>JPEG Quality</label>
+      <select id="quality-select">
+        <option value="75">Q=75</option>
+        <option value="80">Q=80</option>
+        <option value="85">Q=85</option>
+        <option value="90" selected>Q=90</option>
+        <option value="95">Q=95</option>
+      </select>
+    </div>
+    <div class="config-group">
+      <label>Iterations</label>
+      <input type="number" id="iterations" value="100" min="10" max="1000" step="10" style="width:80px">
+    </div>
+    <div class="config-group">
+      <label>Warmup</label>
+      <input type="number" id="warmup" value="10" min="0" max="50" step="5" style="width:80px">
+    </div>
+    <button class="primary" id="run-btn" onclick="runBenchmark()">Run Benchmark</button>
+    <button id="clear-btn" onclick="clearResults()">Clear Results</button>
+    <input type="file" id="file-input" accept="image/jpeg" style="display:none" onchange="handleFileSelect(event)">
+  </div>
+
+  <div id="status">Ready. Select a source and click Run Benchmark.</div>
+  <div class="progress-bar"><div class="progress-fill" id="progress" style="width:0%"></div></div>
+
+  <div class="preview" id="preview-section" style="display:none; margin-top: 16px;">
+    <canvas id="preview-canvas" width="128" height="128"></canvas>
+    <div class="preview-info">
+      <div id="preview-info-text"></div>
+    </div>
+  </div>
+
+  <div class="section" id="results-section" style="display:none; margin-top: 16px;">
+    <div class="section-title">
+      Decode Pipeline Stages
+      <span id="gate-badge"></span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Stage</th>
+          <th>p50 (ms)</th>
+          <th>p95 (ms)</th>
+          <th>p99 (ms)</th>
+          <th>Mean (ms)</th>
+          <th>Min (ms)</th>
+          <th>Max (ms)</th>
+        </tr>
+      </thead>
+      <tbody id="results-body"></tbody>
+    </table>
+  </div>
+
+  <div class="section" id="summary-section" style="display:none;">
+    <div class="section-title">Summary</div>
+    <div id="summary-text" class="mono" style="background:#2a2a4e; padding:12px; border-radius:4px; white-space:pre-wrap; font-size:0.85rem;"></div>
+  </div>
+
+  <div class="section" id="history-section" style="display:none;">
+    <div class="section-title">Run History</div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Source</th>
+          <th>Quality</th>
+          <th>JPEG Size</th>
+          <th>Iterations</th>
+          <th>p50 Total</th>
+          <th>p95 Total</th>
+          <th>Gate 4</th>
+        </tr>
+      </thead>
+      <tbody id="history-body"></tbody>
+    </table>
+  </div>
+
+<script>
+(function() {
+  'use strict';
+
+  let currentJpegBytes = null;
+  let currentSourceName = '';
+  let currentJpegSize = 0;
+  let runHistory = [];
+  let runCount = 0;
+
+  // Expose runBenchmark and other functions globally
+  window.runBenchmark = runBenchmark;
+  window.clearResults = clearResults;
+  window.handleFileSelect = handleFileSelect;
+
+  const sourceSelect = document.getElementById('source-select');
+  sourceSelect.addEventListener('change', function() {
+    if (this.value === 'file') {
+      document.getElementById('file-input').click();
+    }
+  });
+
+  // --- Test image generators ---
+
+  function generateGradient(width, height) {
+    const canvas = new OffscreenCanvas(width, height);
+    const ctx = canvas.getContext('2d');
+    for (let y = 0; y < height; y++) {
+      const v = Math.round((y / height) * 255);
+      ctx.fillStyle = `rgb(${v},${v},${v})`;
+      ctx.fillRect(0, y, width, 1);
+    }
+    return canvas;
+  }
+
+  function generateNoise(width, height) {
+    const canvas = new OffscreenCanvas(width, height);
+    const ctx = canvas.getContext('2d');
+    const imageData = ctx.createImageData(width, height);
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      const v = Math.floor(Math.random() * 256);
+      imageData.data[i] = v;
+      imageData.data[i + 1] = v;
+      imageData.data[i + 2] = v;
+      imageData.data[i + 3] = 255;
+    }
+    ctx.putImageData(imageData, 0, 0);
+    return canvas;
+  }
+
+  function generateTissueLike(width, height) {
+    const canvas = new OffscreenCanvas(width, height);
+    const ctx = canvas.getContext('2d');
+    const imageData = ctx.createImageData(width, height);
+
+    // Base: medium gray with spatially correlated variation
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const idx = (y * width + x) * 4;
+        // Low-frequency spatial variation (simulates tissue structure)
+        const base = 140 + 30 * Math.sin(x * 0.02) * Math.cos(y * 0.015);
+        // Mid-frequency texture
+        const texture = 10 * Math.sin(x * 0.1 + y * 0.08) * Math.cos(x * 0.07 - y * 0.12);
+        // High-frequency noise
+        const noise = (Math.random() - 0.5) * 15;
+        const v = Math.max(0, Math.min(255, Math.round(base + texture + noise)));
+        imageData.data[idx] = v;
+        imageData.data[idx + 1] = v;
+        imageData.data[idx + 2] = v;
+        imageData.data[idx + 3] = 255;
+      }
+    }
+    ctx.putImageData(imageData, 0, 0);
+    return canvas;
+  }
+
+  async function getTestJpeg(source, quality) {
+    let canvas;
+    const width = 512, height = 512;
+
+    if (source === 'gradient') {
+      canvas = generateGradient(width, height);
+    } else if (source === 'noise') {
+      canvas = generateNoise(width, height);
+    } else if (source === 'tissue-like') {
+      canvas = generateTissueLike(width, height);
+    } else {
+      return null;  // file source handled separately
+    }
+
+    const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality: quality / 100 });
+    const buffer = await blob.arrayBuffer();
+    return new Uint8Array(buffer);
+  }
+
+  function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      currentJpegBytes = new Uint8Array(e.target.result);
+      currentSourceName = file.name;
+      currentJpegSize = currentJpegBytes.length;
+      updateStatus(`Loaded: ${file.name} (${formatBytes(currentJpegBytes.length)})`);
+      showPreview(currentJpegBytes);
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  async function showPreview(jpegBytes) {
+    const blob = new Blob([jpegBytes], { type: 'image/jpeg' });
+    const bmp = await createImageBitmap(blob);
+    const canvas = document.getElementById('preview-canvas');
+    const scale = Math.min(128 / bmp.width, 128 / bmp.height);
+    canvas.width = Math.round(bmp.width * scale);
+    canvas.height = Math.round(bmp.height * scale);
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    bmp.close();
+
+    document.getElementById('preview-info-text').textContent =
+      `${bmp.width}x${bmp.height} | ${formatBytes(jpegBytes.length)}`;
+    document.getElementById('preview-section').style.display = 'flex';
+  }
+
+  // --- Benchmark core ---
+
+  function percentile(sorted, p) {
+    const idx = Math.ceil(sorted.length * p / 100) - 1;
+    return sorted[Math.max(0, idx)];
+  }
+
+  function computeStats(values) {
+    const sorted = [...values].sort((a, b) => a - b);
+    const sum = values.reduce((a, b) => a + b, 0);
+    return {
+      p50: percentile(sorted, 50),
+      p95: percentile(sorted, 95),
+      p99: percentile(sorted, 99),
+      mean: sum / values.length,
+      min: sorted[0],
+      max: sorted[sorted.length - 1],
+    };
+  }
+
+  async function benchmarkDecode(jpegBytes, iterations, warmup, onProgress) {
+    // Warmup
+    for (let i = 0; i < warmup; i++) {
+      const blob = new Blob([jpegBytes], { type: 'image/jpeg' });
+      const bmp = await createImageBitmap(blob, { colorSpaceConversion: 'none' });
+      const c = new OffscreenCanvas(bmp.width, bmp.height);
+      const ctx = c.getContext('2d');
+      ctx.drawImage(bmp, 0, 0);
+      ctx.getImageData(0, 0, bmp.width, bmp.height);
+      bmp.close();
+    }
+
+    const stages = { blob: [], decode: [], canvas: [], extract: [], channel: [], total: [] };
+
+    for (let i = 0; i < iterations; i++) {
+      const tTotal = performance.now();
+
+      // Stage 1: Blob creation
+      let t0 = performance.now();
+      const blob = new Blob([jpegBytes], { type: 'image/jpeg' });
+      stages.blob.push(performance.now() - t0);
+
+      // Stage 2: createImageBitmap decode
+      t0 = performance.now();
+      const bmp = await createImageBitmap(blob, { colorSpaceConversion: 'none' });
+      stages.decode.push(performance.now() - t0);
+
+      // Stage 3: OffscreenCanvas draw
+      t0 = performance.now();
+      const canvas = new OffscreenCanvas(bmp.width, bmp.height);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(bmp, 0, 0);
+      stages.canvas.push(performance.now() - t0);
+
+      // Stage 4: getImageData extraction
+      t0 = performance.now();
+      const imageData = ctx.getImageData(0, 0, bmp.width, bmp.height);
+      stages.extract.push(performance.now() - t0);
+
+      // Stage 5: Channel extraction (R channel from RGBA)
+      t0 = performance.now();
+      const pixels = new Uint8Array(bmp.width * bmp.height);
+      const data = imageData.data;
+      for (let j = 0; j < pixels.length; j++) {
+        pixels[j] = data[j * 4];
+      }
+      stages.channel.push(performance.now() - t0);
+
+      stages.total.push(performance.now() - tTotal);
+
+      bmp.close();
+
+      if (onProgress) {
+        onProgress((i + 1) / iterations);
+      }
+
+      // Yield to prevent UI freeze
+      if (i % 10 === 0) {
+        await new Promise(r => setTimeout(r, 0));
+      }
+    }
+
+    const result = {};
+    for (const [name, values] of Object.entries(stages)) {
+      result[name] = computeStats(values);
+    }
+    return result;
+  }
+
+  // --- UI ---
+
+  function updateStatus(msg) {
+    document.getElementById('status').textContent = msg;
+  }
+
+  function formatMs(ms) {
+    if (ms < 0.01) return '<0.01';
+    if (ms < 1) return ms.toFixed(3);
+    if (ms < 10) return ms.toFixed(2);
+    return ms.toFixed(1);
+  }
+
+  function formatBytes(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    return (bytes / 1024).toFixed(1) + ' KB';
+  }
+
+  function getGate4Assessment(p95Total) {
+    if (p95Total <= 10) return { text: 'PASS', cls: 'gate-pass', desc: 'p95 <= 10ms' };
+    if (p95Total <= 20) return { text: 'CONDITIONAL', cls: 'gate-conditional', desc: 'p95 10-20ms' };
+    return { text: 'FAIL', cls: 'gate-fail', desc: 'p95 > 20ms' };
+  }
+
+  function displayResults(stats, sourceName, quality, jpegSize, iterations) {
+    const stageNames = [
+      { key: 'blob', label: '1. Blob creation' },
+      { key: 'decode', label: '2. createImageBitmap' },
+      { key: 'canvas', label: '3. OffscreenCanvas draw' },
+      { key: 'extract', label: '4. getImageData' },
+      { key: 'channel', label: '5. Channel extraction' },
+      { key: 'total', label: 'Total' },
+    ];
+
+    const tbody = document.getElementById('results-body');
+    tbody.innerHTML = '';
+
+    for (const stage of stageNames) {
+      const s = stats[stage.key];
+      const tr = document.createElement('tr');
+      if (stage.key === 'total') {
+        tr.style.fontWeight = 'bold';
+        tr.style.borderTop = '2px solid #555';
+      }
+      tr.innerHTML = `
+        <td>${stage.label}</td>
+        <td class="mono">${formatMs(s.p50)}</td>
+        <td class="mono">${formatMs(s.p95)}</td>
+        <td class="mono">${formatMs(s.p99)}</td>
+        <td class="mono">${formatMs(s.mean)}</td>
+        <td class="mono">${formatMs(s.min)}</td>
+        <td class="mono">${formatMs(s.max)}</td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    // Gate 4 assessment
+    const gate = getGate4Assessment(stats.total.p95);
+    const badge = document.getElementById('gate-badge');
+    badge.className = 'gate-badge ' + gate.cls;
+    badge.textContent = `Gate 4: ${gate.text} (${gate.desc})`;
+
+    document.getElementById('results-section').style.display = 'block';
+
+    // Summary
+    const summary = [
+      `Source: ${sourceName} | Quality: Q=${quality} | JPEG size: ${formatBytes(jpegSize)}`,
+      `Iterations: ${iterations} | Browser: ${navigator.userAgent.split(' ').pop()}`,
+      '',
+      `Total decode pipeline:`,
+      `  p50: ${formatMs(stats.total.p50)} ms`,
+      `  p95: ${formatMs(stats.total.p95)} ms`,
+      `  p99: ${formatMs(stats.total.p99)} ms`,
+      '',
+      `Bottleneck: ${identifyBottleneck(stats)}`,
+      '',
+      `Gate 4 assessment: ${gate.text} (${gate.desc})`,
+    ].join('\n');
+
+    document.getElementById('summary-text').textContent = summary;
+    document.getElementById('summary-section').style.display = 'block';
+
+    // Add to history
+    runCount++;
+    runHistory.push({
+      num: runCount,
+      source: sourceName,
+      quality: quality,
+      jpegSize: formatBytes(jpegSize),
+      iterations: iterations,
+      p50: formatMs(stats.total.p50),
+      p95: formatMs(stats.total.p95),
+      gate: gate,
+    });
+    updateHistory();
+  }
+
+  function identifyBottleneck(stats) {
+    const stages = ['blob', 'decode', 'canvas', 'extract', 'channel'];
+    const labels = {
+      blob: 'Blob creation',
+      decode: 'createImageBitmap',
+      canvas: 'OffscreenCanvas draw',
+      extract: 'getImageData',
+      channel: 'Channel extraction',
+    };
+    let maxStage = stages[0];
+    for (const s of stages) {
+      if (stats[s].p50 > stats[maxStage].p50) maxStage = s;
+    }
+    const pct = ((stats[maxStage].p50 / stats.total.p50) * 100).toFixed(0);
+    return `${labels[maxStage]} (${pct}% of total at p50)`;
+  }
+
+  function updateHistory() {
+    const tbody = document.getElementById('history-body');
+    tbody.innerHTML = '';
+    for (const h of runHistory) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${h.num}</td>
+        <td>${h.source}</td>
+        <td>Q=${h.quality}</td>
+        <td>${h.jpegSize}</td>
+        <td>${h.iterations}</td>
+        <td class="mono">${h.p50} ms</td>
+        <td class="mono">${h.p95} ms</td>
+        <td><span class="gate-badge ${h.gate.cls}">${h.gate.text}</span></td>
+      `;
+      tbody.appendChild(tr);
+    }
+    document.getElementById('history-section').style.display = 'block';
+  }
+
+  async function runBenchmark() {
+    const btn = document.getElementById('run-btn');
+    btn.disabled = true;
+
+    const source = sourceSelect.value;
+    const quality = parseInt(document.getElementById('quality-select').value);
+    const iterations = parseInt(document.getElementById('iterations').value);
+    const warmup = parseInt(document.getElementById('warmup').value);
+
+    try {
+      let jpegBytes;
+      let sourceName;
+
+      if (source === 'file') {
+        if (!currentJpegBytes) {
+          updateStatus('No file loaded. Select a JPEG file first.');
+          btn.disabled = false;
+          return;
+        }
+        jpegBytes = currentJpegBytes;
+        sourceName = currentSourceName;
+      } else {
+        updateStatus(`Generating ${source} test image...`);
+        jpegBytes = await getTestJpeg(source, quality);
+        sourceName = `${source} 512x512`;
+        currentJpegBytes = jpegBytes;
+        currentJpegSize = jpegBytes.length;
+      }
+
+      await showPreview(jpegBytes);
+
+      updateStatus(`Running benchmark: ${iterations} iterations + ${warmup} warmup...`);
+      const progressEl = document.getElementById('progress');
+
+      const stats = await benchmarkDecode(jpegBytes, iterations, warmup, (pct) => {
+        progressEl.style.width = (pct * 100) + '%';
+        if (Math.round(pct * 100) % 10 === 0) {
+          updateStatus(`Running: ${Math.round(pct * 100)}% (${Math.round(pct * iterations)}/${iterations})`);
+        }
+      });
+
+      updateStatus(`Complete: ${iterations} iterations. p95 total: ${formatMs(stats.total.p95)} ms`);
+      displayResults(stats, sourceName, quality, jpegBytes.length, iterations);
+      progressEl.style.width = '100%';
+
+    } catch (err) {
+      updateStatus(`Error: ${err.message}`);
+      console.error(err);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function clearResults() {
+    document.getElementById('results-section').style.display = 'none';
+    document.getElementById('summary-section').style.display = 'none';
+    document.getElementById('preview-section').style.display = 'none';
+    document.getElementById('progress').style.width = '0%';
+    runHistory = [];
+    runCount = 0;
+    document.getElementById('history-section').style.display = 'none';
+    updateStatus('Cleared. Ready to run.');
+  }
+
+})();
+</script>
+</body>
+</html>

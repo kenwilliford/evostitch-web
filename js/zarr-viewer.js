@@ -2,7 +2,12 @@
 // ES module for viewing OME-Zarr data with Z-stack navigation
 
 // Import from local bundle (built via npm run build:zarr)
-import { loadOmeZarr, MultiscaleImageLayer, Deck, OrthographicView } from 'zarr-viewer-bundle';
+import { loadOmeZarr, MultiscaleImageLayer, Deck, OrthographicView, registry } from 'zarr-viewer-bundle';
+
+// Register JPEG codec if available (loaded via jpeg-zarr-codec.js IIFE before this module)
+if (window._ImagecodecsJpegCodec) {
+    registry.set('imagecodecs_jpeg', () => window._ImagecodecsJpegCodec);
+}
 
 // Configuration
 const CONFIG = {

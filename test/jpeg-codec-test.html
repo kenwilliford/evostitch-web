@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JPEG Zarr Codec Test - evostitch</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: monospace; background: #1a1a2e; color: #e0e0e0; padding: 20px; }
+        h1 { color: #00d4ff; margin-bottom: 10px; font-size: 1.4em; }
+        h2 { color: #8888cc; margin: 20px 0 10px; font-size: 1.1em; }
+
+        .section { background: #16213e; border-radius: 6px; padding: 16px; margin-bottom: 16px; }
+        .status { padding: 6px 12px; border-radius: 4px; margin: 4px 0; font-size: 0.9em; }
+        .pass { background: #0a3d0a; color: #4caf50; }
+        .fail { background: #3d0a0a; color: #f44336; }
+        .info { background: #0a2a3d; color: #64b5f6; }
+        .warn { background: #3d3a0a; color: #ffb74d; }
+
+        #viewer { width: 100%; height: 500px; background: #0f0f23; border: 1px solid #333; border-radius: 4px; margin-top: 10px; position: relative; overflow: hidden; }
+        #log { max-height: 300px; overflow-y: auto; background: #0a0a1a; padding: 10px; border-radius: 4px; font-size: 0.85em; line-height: 1.6; }
+        #log div { border-bottom: 1px solid #1a1a3e; padding: 2px 0; }
+
+        .gate-result { display: flex; align-items: center; gap: 10px; margin: 6px 0; }
+        .gate-label { min-width: 180px; }
+        .gate-value { font-weight: bold; }
+
+        .controls { display: flex; align-items: center; gap: 20px; margin: 10px 0; flex-wrap: wrap; }
+        .control-group { display: flex; align-items: center; gap: 8px; }
+        .control-group label { color: #aaa; font-size: 0.9em; }
+        .z-slider { width: 120px; accent-color: #00d4ff; }
+        .z-value { color: #00d4ff; font-weight: bold; min-width: 20px; }
+
+        .ch-btn { padding: 4px 12px; border: 2px solid; border-radius: 4px; background: transparent;
+                  font-family: monospace; font-size: 0.85em; cursor: pointer; transition: all 0.15s; }
+        .ch-btn.active { color: #1a1a2e; font-weight: bold; }
+        .ch-btn.ch0 { border-color: #ff4444; color: #ff4444; }
+        .ch-btn.ch0.active { background: #ff4444; }
+        .ch-btn.ch1 { border-color: #44ff44; color: #44ff44; }
+        .ch-btn.ch1.active { background: #44ff44; }
+        .ch-btn.ch2 { border-color: #4488ff; color: #4488ff; }
+        .ch-btn.ch2.active { background: #4488ff; }
+
+        .switch-log { font-size: 0.85em; color: #888; margin-top: 4px; }
+    </style>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "zarr-viewer-bundle": "../dist/zarr-viewer-bundle.js"
+        }
+    }
+    </script>
+</head>
+<body>
+    <h1>JPEG Zarr Codec Test</h1>
+
+    <div class="section">
+        <h2>Gate 3: Pixel Fidelity (Round-Trip)</h2>
+        <div id="gate3-results">Running...</div>
+    </div>
+
+    <div class="section">
+        <h2>Gate 4: Decode Performance</h2>
+        <div id="gate4-results">Waiting for Gate 3...</div>
+    </div>
+
+    <div class="section">
+        <h2>Gate 5: Multi-Dimensional Zarr Load Test</h2>
+        <div id="zarr-status">Waiting for gates...</div>
+        <div id="zarr-controls" style="display:none;">
+            <div class="controls">
+                <div class="control-group">
+                    <label>Z plane:</label>
+                    <input type="range" id="z-slider" class="z-slider" min="0" max="2" value="0">
+                    <span id="z-value" class="z-value">0</span>
+                    <span style="color:#666; font-size:0.8em;">/2</span>
+                </div>
+                <div class="control-group">
+                    <label>Channels:</label>
+                    <button id="ch-btn-0" class="ch-btn ch0 active" data-ch="0">C0</button>
+                    <button id="ch-btn-1" class="ch-btn ch1 active" data-ch="1">C1</button>
+                    <button id="ch-btn-2" class="ch-btn ch2 active" data-ch="2">C2</button>
+                </div>
+            </div>
+            <div id="switch-log" class="switch-log"></div>
+        </div>
+        <div id="viewer"></div>
+    </div>
+
+    <div class="section">
+        <h2>Log</h2>
+        <div id="log"></div>
+    </div>
+
+    <!-- Load JPEG codec IIFE (sets window._ImagecodecsJpegCodec) -->
+    <script src="../js/jpeg-zarr-codec.js"></script>
+
+    <script type="module">
+        // Import bundle exports
+        import { loadOmeZarr, MultiscaleImageLayer, Deck, OrthographicView, registry } from 'zarr-viewer-bundle';
+
+        const logEl = document.getElementById('log');
+        function log(msg, cls) {
+            const div = document.createElement('div');
+            div.className = cls || '';
+            div.textContent = `[${new Date().toISOString().slice(11, 23)}] ${msg}`;
+            logEl.appendChild(div);
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(msg);
+        }
+
+        function statusHTML(containerId, html) {
+            document.getElementById(containerId).innerHTML = html;
+        }
+
+        function resultDiv(label, value, pass) {
+            return `<div class="gate-result">
+                <span class="gate-label">${label}</span>
+                <span class="gate-value status ${pass ? 'pass' : 'fail'}">${value}</span>
+            </div>`;
+        }
+
+        // ============================================================
+        // Gate 3: Pixel Fidelity - Round-trip JPEG encode/decode test
+        // ============================================================
+        async function runGate3() {
+            log('--- Gate 3: Pixel Fidelity ---');
+
+            if (!window._ImagecodecsJpegCodec) {
+                statusHTML('gate3-results', '<div class="status fail">JPEG codec not loaded (window._ImagecodecsJpegCodec is undefined)</div>');
+                return false;
+            }
+
+            const codec = window._ImagecodecsJpegCodec.fromConfig({ level: 95 });
+            log(`Codec created: kind=${codec.kind}`);
+
+            // Create a known grayscale ramp: 256x256, values 0-255 repeating per row
+            const W = 256;
+            const H = 256;
+            const original = new Uint8Array(W * H);
+            for (let y = 0; y < H; y++) {
+                for (let x = 0; x < W; x++) {
+                    original[y * W + x] = x; // horizontal ramp 0-255
+                }
+            }
+            log(`Created ${W}x${H} grayscale ramp (0-255 per row)`);
+
+            // Encode to JPEG using canvas.toBlob
+            const canvas = new OffscreenCanvas(W, H);
+            const ctx = canvas.getContext('2d');
+            const imgData = ctx.createImageData(W, H);
+            for (let i = 0; i < original.length; i++) {
+                const v = original[i];
+                imgData.data[i * 4] = v;     // R
+                imgData.data[i * 4 + 1] = v; // G
+                imgData.data[i * 4 + 2] = v; // B
+                imgData.data[i * 4 + 3] = 255; // A
+            }
+            ctx.putImageData(imgData, 0, 0);
+
+            const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.95 });
+            const jpegBytes = new Uint8Array(await blob.arrayBuffer());
+            log(`JPEG encoded: ${jpegBytes.length} bytes (ratio: ${(original.length / jpegBytes.length).toFixed(1)}x)`);
+
+            // Decode using our codec
+            const t0 = performance.now();
+            const decoded = await codec.decode(jpegBytes);
+            const decodeMs = performance.now() - t0;
+            log(`Decoded in ${decodeMs.toFixed(2)}ms, output length: ${decoded.length}`);
+
+            // Verify dimensions
+            if (decoded.length !== W * H) {
+                statusHTML('gate3-results', `<div class="status fail">Output size mismatch: expected ${W * H}, got ${decoded.length}</div>`);
+                return false;
+            }
+
+            // Calculate error statistics
+            let maxErr = 0;
+            let sumErr = 0;
+            for (let i = 0; i < original.length; i++) {
+                const err = Math.abs(original[i] - decoded[i]);
+                maxErr = Math.max(maxErr, err);
+                sumErr += err;
+            }
+            const meanErr = sumErr / original.length;
+
+            const maxPass = maxErr <= 2;
+            const meanPass = meanErr <= 0.5;
+            const gate3Pass = maxPass && meanPass;
+
+            log(`Max abs error: ${maxErr} (threshold: <= 2, ${maxPass ? 'PASS' : 'FAIL'})`);
+            log(`Mean abs error: ${meanErr.toFixed(4)} (threshold: <= 0.5, ${meanPass ? 'PASS' : 'FAIL'})`);
+
+            statusHTML('gate3-results',
+                resultDiv('Codec loaded', 'Yes', true) +
+                resultDiv('Output size', `${decoded.length} (expected ${W * H})`, decoded.length === W * H) +
+                resultDiv('Max abs error', `${maxErr} (threshold: <= 2)`, maxPass) +
+                resultDiv('Mean abs error', `${meanErr.toFixed(4)} (threshold: <= 0.5)`, meanPass) +
+                resultDiv('Decode time', `${decodeMs.toFixed(2)} ms`, true) +
+                `<div class="status ${gate3Pass ? 'pass' : 'fail'}">Gate 3: ${gate3Pass ? 'PASS' : 'FAIL'}</div>`
+            );
+
+            return gate3Pass;
+        }
+
+        // ============================================================
+        // Gate 4: Decode Performance - Benchmark 512x512 chunks
+        // ============================================================
+        async function runGate4() {
+            log('--- Gate 4: Decode Performance ---');
+
+            const codec = window._ImagecodecsJpegCodec.fromConfig({ level: 95 });
+            const W = 512;
+            const H = 512;
+
+            // Create a random-ish grayscale pattern (more realistic than ramp)
+            const original = new Uint8Array(W * H);
+            for (let i = 0; i < original.length; i++) {
+                original[i] = Math.floor(Math.sin(i * 0.01) * 60 + 128);
+            }
+
+            // Encode to JPEG
+            const canvas = new OffscreenCanvas(W, H);
+            const ctx = canvas.getContext('2d');
+            const imgData = ctx.createImageData(W, H);
+            for (let i = 0; i < original.length; i++) {
+                const v = original[i];
+                imgData.data[i * 4] = v;
+                imgData.data[i * 4 + 1] = v;
+                imgData.data[i * 4 + 2] = v;
+                imgData.data[i * 4 + 3] = 255;
+            }
+            ctx.putImageData(imgData, 0, 0);
+            const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.95 });
+            const jpegBytes = new Uint8Array(await blob.arrayBuffer());
+            log(`Test chunk: ${W}x${H}, JPEG size: ${jpegBytes.length} bytes`);
+
+            // Warm up
+            await codec.decode(jpegBytes);
+            await codec.decode(jpegBytes);
+
+            // Benchmark
+            const iterations = 20;
+            const times = [];
+            for (let i = 0; i < iterations; i++) {
+                const t0 = performance.now();
+                await codec.decode(jpegBytes);
+                times.push(performance.now() - t0);
+            }
+
+            times.sort((a, b) => a - b);
+            const avg = times.reduce((a, b) => a + b, 0) / times.length;
+            const p50 = times[Math.floor(times.length * 0.5)];
+            const p95 = times[Math.floor(times.length * 0.95)];
+            const min = times[0];
+            const max = times[times.length - 1];
+
+            // Target: < 5ms per 512x512 chunk decode
+            const avgPass = avg < 5;
+
+            log(`${iterations} iterations: avg=${avg.toFixed(2)}ms, p50=${p50.toFixed(2)}ms, p95=${p95.toFixed(2)}ms, min=${min.toFixed(2)}ms, max=${max.toFixed(2)}ms`);
+
+            statusHTML('gate4-results',
+                resultDiv('Chunk size', `${W}x${H} (${jpegBytes.length} bytes JPEG)`, true) +
+                resultDiv('Iterations', `${iterations}`, true) +
+                resultDiv('Avg decode', `${avg.toFixed(2)} ms (target: < 5ms)`, avgPass) +
+                resultDiv('p50 decode', `${p50.toFixed(2)} ms`, true) +
+                resultDiv('p95 decode', `${p95.toFixed(2)} ms`, true) +
+                resultDiv('Min / Max', `${min.toFixed(2)} / ${max.toFixed(2)} ms`, true) +
+                `<div class="status ${avgPass ? 'pass' : 'warn'}">Gate 4: ${avgPass ? 'PASS' : 'MARGINAL (> 5ms avg)'}</div>`
+            );
+
+            return avgPass;
+        }
+
+        // ============================================================
+        // Gate 5: Multi-Dimensional Zarr Load Test
+        // ============================================================
+
+        // Viewer state shared between load and controls
+        let viewerState = null;
+
+        function buildLayer() {
+            const { deck, loaderData, currentZ, channelsVisible, channelColors } = viewerState;
+
+            // Build selections and layer props for visible channels
+            const selections = [];
+            const colors = [];
+            const limits = [];
+            const visible = [];
+
+            for (let c = 0; c < 3; c++) {
+                selections.push({ t: 0, c, z: currentZ });
+                colors.push(channelColors[c]);
+                limits.push([0, 255]);
+                visible.push(channelsVisible[c]);
+            }
+
+            const t0 = performance.now();
+            const layer = new MultiscaleImageLayer({
+                id: 'test-layer',
+                loader: loaderData,
+                selections,
+                contrastLimits: limits,
+                colors,
+                channelsVisible: visible,
+                dtype: 'Uint8',
+                onViewportLoad: () => {
+                    const ms = performance.now() - t0;
+                    const switchEl = document.getElementById('switch-log');
+                    const visibleChs = channelsVisible.map((v, i) => v ? `C${i}` : null).filter(Boolean).join('+');
+                    switchEl.textContent = `Loaded Z=${currentZ} [${visibleChs}] in ${ms.toFixed(0)}ms`;
+                    log(`Viewport loaded: Z=${currentZ}, channels=[${visibleChs}], ${ms.toFixed(0)}ms`);
+                }
+            });
+
+            deck.setProps({ layers: [layer] });
+        }
+
+        async function runZarrLoadTest() {
+            log('--- Gate 5: Multi-Dimensional Zarr Load Test ---');
+
+            if (!registry) {
+                statusHTML('zarr-status', '<div class="status fail">registry not exported from bundle</div>');
+                return;
+            }
+
+            registry.set('imagecodecs_jpeg', () => window._ImagecodecsJpegCodec);
+            log('Registered imagecodecs_jpeg codec in zarrita registry');
+
+            const base = window.location.origin;
+            const url = `${base}/data/jpeg_test_small/0/`;
+
+            try {
+                log(`Loading zarr: ${url}`);
+                const result = await loadOmeZarr(url, { type: 'multiscales' });
+
+                const loaderData = result.data || result;
+                const shape = loaderData[0]?.shape;
+                const axes = result.metadata?.multiscales?.[0]?.axes?.map(
+                    a => typeof a === 'string' ? a : a.name
+                ) || ['t', 'c', 'z', 'y', 'x'];
+
+                const nC = shape[axes.indexOf('c')] || 1;
+                const nZ = shape[axes.indexOf('z')] || 1;
+
+                log(`Shape: [${shape}], axes: [${axes}], C=${nC}, Z=${nZ}`);
+
+                // Parse channel colors from omero metadata
+                const omeroChannels = result.metadata?.omero?.channels || [];
+                const channelColors = omeroChannels.map(ch => {
+                    const hex = ch.color || 'FFFFFF';
+                    return [parseInt(hex.slice(0,2), 16), parseInt(hex.slice(2,4), 16), parseInt(hex.slice(4,6), 16)];
+                });
+                // Fallback if missing
+                while (channelColors.length < nC) channelColors.push([255, 255, 255]);
+
+                log(`Channels: ${omeroChannels.map((ch, i) => `C${i}=#${ch.color}`).join(', ')}`);
+
+                // Set up deck.gl
+                const container = document.getElementById('viewer');
+                const xIdx = axes.indexOf('x');
+                const yIdx = axes.indexOf('y');
+                const w = xIdx >= 0 ? shape[xIdx] : shape[shape.length - 1];
+                const h = yIdx >= 0 ? shape[yIdx] : shape[shape.length - 2];
+
+                const deck = new Deck({
+                    parent: container,
+                    views: [new OrthographicView({ id: 'ortho', controller: true })],
+                    initialViewState: { target: [w / 2, h / 2, 0], zoom: Math.log2(500 / Math.max(w, h)) },
+                    layers: []
+                });
+
+                // Initialize state
+                viewerState = {
+                    deck,
+                    loaderData,
+                    shape,
+                    axes,
+                    nC,
+                    nZ,
+                    currentZ: 0,
+                    channelsVisible: new Array(nC).fill(true),
+                    channelColors
+                };
+
+                // Configure Z slider
+                const zSlider = document.getElementById('z-slider');
+                const zValue = document.getElementById('z-value');
+                zSlider.max = nZ - 1;
+                zSlider.value = 0;
+                document.getElementById('zarr-controls').style.display = 'block';
+
+                zSlider.addEventListener('input', () => {
+                    const newZ = parseInt(zSlider.value);
+                    zValue.textContent = newZ;
+                    viewerState.currentZ = newZ;
+                    buildLayer();
+                });
+
+                // Configure channel buttons
+                for (let c = 0; c < nC; c++) {
+                    const btn = document.getElementById(`ch-btn-${c}`);
+                    if (!btn) continue;
+                    btn.addEventListener('click', () => {
+                        viewerState.channelsVisible[c] = !viewerState.channelsVisible[c];
+                        btn.classList.toggle('active');
+                        buildLayer();
+                    });
+                }
+
+                // Initial render
+                statusHTML('zarr-status',
+                    `<div class="status pass">Loaded: shape=[${shape}], ${nC} channels, ${nZ} Z-planes</div>`
+                );
+                buildLayer();
+
+            } catch (err) {
+                log(`Failed to load ${url}: ${err.message}`, 'warn');
+                console.error(err);
+                statusHTML('zarr-status',
+                    '<div class="status warn">Failed to load test zarr data. ' +
+                    'Expected at <code>/data/jpeg_test_small/</code> ' +
+                    '(symlink from <code>/home/kenwilliford/data/jpeg_zarr_test_small/</code>).</div>'
+                );
+            }
+        }
+
+        // ============================================================
+        // Run all tests
+        // ============================================================
+        async function main() {
+            log('Starting JPEG codec tests');
+
+            try {
+                const gate3 = await runGate3();
+                const gate4 = await runGate4();
+                await runZarrLoadTest();
+
+                log('--- All tests complete ---');
+                if (gate3) {
+                    log('Gate 3 (Pixel Fidelity): PASS', 'pass');
+                } else {
+                    log('Gate 3 (Pixel Fidelity): FAIL', 'fail');
+                }
+            } catch (err) {
+                log(`Unexpected error: ${err.message}`, 'fail');
+                console.error(err);
+            }
+        }
+
+        main();
+    </script>
+</body>
+</html>

@@ -67111,7 +67111,8 @@ export {
   ImageLayer,
   MultiscaleImageLayer,
   orthographic_view_default as OrthographicView,
-  loadOmeZarr
+  loadOmeZarr,
+  registry2 as registry
 };
 /*! Bundled license information:
 
