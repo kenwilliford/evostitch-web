@@ -13,7 +13,7 @@
     {
       "id": "3x3x3-test",
       "title": "SCH-55-22B 3D Explorer",
-      "description": "Gunflint Formation stromatolite at 50× — 21 Z-planes, 3 channels. Navigate depth with the Z slider or arrow keys, toggle channels, and pan/zoom.",
+      "description": "Gunflint Formation stromatolite at 50× — 21 Z-planes, 3 channels. Pan and zoom to locate a target, zoom all the way in, and click Load 3D to explore depth.",
       "width": 85719,
       "height": 58754,
       "physicalWidth": 7704,
