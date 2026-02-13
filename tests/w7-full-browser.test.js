@@ -85,7 +85,7 @@ async function run() {
         });
 
         // === Load zarr-viewer.html with R2 dataset ===
-        const url = `http://localhost:${PORT}/zarr-viewer.html?zarr=mosaic_3d_zarr_v2`;
+        const url = `http://localhost:${PORT}/zarr-viewer.html?zarr=mosaic_3d_zarr_v3`;
         console.log(`Opening ${url} ...`);
         await page.goto(url, { timeout: TIMEOUT });
 

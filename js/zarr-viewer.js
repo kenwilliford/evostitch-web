@@ -7,6 +7,9 @@ import { loadOmeZarr, MultiscaleImageLayer, Deck, OrthographicView, registry } f
 // Register JPEG codec if available (loaded via jpeg-zarr-codec.js IIFE before this module)
 if (window._ImagecodecsJpegCodec) {
     registry.set('imagecodecs_jpeg', () => window._ImagecodecsJpegCodec);
+    console.log('[evostitch] ZarrViewer: JPEG codec registered (imagecodecs_jpeg)');
+} else {
+    console.warn('[evostitch] ZarrViewer: JPEG codec IIFE not loaded — imagecodecs_jpeg unavailable');
 }
 
 // Configuration
@@ -670,6 +673,72 @@ function updateScaleBar() {
 }
 
 /**
+ * Preflight check: fetch .zarray for level 0 and verify JPEG codec is
+ * registered if the dataset uses JPEG compression.
+ * @param {string} url - OME-Zarr store URL (the /0/ group for bioformats2raw)
+ * @returns {Promise<boolean>} true if OK to proceed, false if codec missing
+ */
+async function preflightCodecCheck(url) {
+    // Level 0 .zarray is at {storeUrl}/0/.zarray
+    const zarrayUrl = url.replace(/\/$/, '') + '/0/.zarray';
+    log('Preflight: fetching ' + zarrayUrl);
+
+    try {
+        const resp = await fetch(zarrayUrl);
+        if (!resp.ok) {
+            // Can't check — let loadOmeZarr handle any errors
+            log('Preflight: .zarray fetch returned ' + resp.status + ', skipping check');
+            return true;
+        }
+
+        const zarray = await resp.json();
+        const compressorId = zarray?.compressor?.id;
+        log('Preflight: compressor.id = ' + (compressorId || '(none)'));
+
+        if (compressorId === 'imagecodecs_jpeg' && !registry.has('imagecodecs_jpeg')) {
+            console.error('[evostitch] JPEG codec required but not registered. ' +
+                'Ensure jpeg-zarr-codec.js is loaded before zarr-viewer.js.');
+            showErrorBanner('JPEG codec not available. Cannot display this dataset. ' +
+                'Please reload the page or check browser console for details.');
+            return false;
+        }
+
+        return true;
+    } catch (err) {
+        // Network error or JSON parse — let loadOmeZarr handle it
+        log('Preflight: check failed (' + err.message + '), proceeding anyway');
+        return true;
+    }
+}
+
+/**
+ * Show an error banner at the top of the viewer
+ * @param {string} message - Error message to display
+ */
+function showErrorBanner(message) {
+    // Remove existing banner if any
+    const existing = document.getElementById('evostitch-error-banner');
+    if (existing) existing.remove();
+
+    const banner = document.createElement('div');
+    banner.id = 'evostitch-error-banner';
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10000;' +
+        'background:#d32f2f;color:#fff;padding:12px 20px;font-family:sans-serif;' +
+        'font-size:14px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.3);';
+    banner.textContent = message;
+
+    // Add close button
+    const close = document.createElement('button');
+    close.textContent = '\u00d7';
+    close.style.cssText = 'background:none;border:none;color:#fff;font-size:20px;' +
+        'cursor:pointer;margin-left:16px;vertical-align:middle;';
+    close.addEventListener('click', () => banner.remove());
+    banner.appendChild(close);
+
+    document.body.prepend(banner);
+}
+
+/**
  * Load OME-Zarr data from URL
  * @param {string} url - OME-Zarr URL
  */
@@ -683,6 +752,16 @@ async function loadZarr(url) {
 
     if (elements.description) {
         elements.description.textContent = 'Loading Zarr data...';
+    }
+
+    // Preflight: check codec availability before loading data
+    const codecOk = await preflightCodecCheck(url);
+    if (!codecOk) {
+        loadingUI.hide();
+        if (elements.description) {
+            elements.description.textContent = 'Error: JPEG codec not available';
+        }
+        return false;
     }
 
     try {

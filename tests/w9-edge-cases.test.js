@@ -91,7 +91,7 @@ async function run() {
         page.on('pageerror', err => pageErrors.push(err.message));
 
         // === Load viewer and wait for init ===
-        const url = `http://localhost:${PORT}/zarr-viewer.html?zarr=mosaic_3d_zarr_v2`;
+        const url = `http://localhost:${PORT}/zarr-viewer.html?zarr=mosaic_3d_zarr_v3`;
         console.log(`\nLoading ${url} ...`);
         await page.goto(url, { timeout: TIMEOUT });
         await page.waitForFunction(
@@ -357,7 +357,7 @@ async function run() {
 
                 // Fetch a chunk from the OLD domain
                 try {
-                    const oldUrl = 'https://pub-db7ffa4b7df04b76aaae379c13562977.r2.dev/mosaic_3d_zarr_v2/0/0/0/0/0/0/0';
+                    const oldUrl = 'https://pub-db7ffa4b7df04b76aaae379c13562977.r2.dev/mosaic_3d_zarr_v3/0/0/0/0/0/0/0';
                     const resp = await fetch(oldUrl);
                     const oldDomainOk = resp.ok || resp.status === 200;
 
@@ -407,7 +407,7 @@ async function run() {
 
                 // Fetch .zarray directly from new domain to verify freshness
                 try {
-                    const resp = await fetch('https://data.evostitch.net/mosaic_3d_zarr_v2/0/0/.zarray');
+                    const resp = await fetch('https://data.evostitch.net/mosaic_3d_zarr_v3/0/0/.zarray');
                     const data = await resp.json();
                     return {
                         zarrayTotal: zarrayEntries.length,

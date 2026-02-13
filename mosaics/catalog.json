@@ -21,7 +21,7 @@
       "zCount": 21,
       "thumbnail": "thumbnail.jpg",
       "format": "zarr",
-      "zarrUrl": "mosaic_3d_zarr_v2"
+      "zarrUrl": "mosaic_3d_zarr_v3"
     }
   ]
 }

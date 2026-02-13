@@ -87,7 +87,7 @@ async function run() {
         page.on('pageerror', err => errors.push(err.message));
 
         // === Load zarr-viewer with R2 dataset (now using data.evostitch.net) ===
-        const url = `http://localhost:${PORT}/zarr-viewer.html?zarr=mosaic_3d_zarr_v2`;
+        const url = `http://localhost:${PORT}/zarr-viewer.html?zarr=mosaic_3d_zarr_v3`;
         console.log(`Opening ${url} ...`);
         await page.goto(url, { timeout: TIMEOUT });
 
@@ -177,7 +177,7 @@ async function run() {
         console.log('\n--- OLD DOMAIN INTERCEPTION ---');
         try {
             // Fetch a known zarr chunk via old domain — SW should intercept
-            const chunkUrl = `https://${OLD_DOMAIN}/mosaic_3d_zarr_v2/0/9/0/0/0/0/0`;
+            const chunkUrl = `https://${OLD_DOMAIN}/mosaic_3d_zarr_v3/0/9/0/0/0/0/0`;
 
             const fetchResult = await page.evaluate(async (url) => {
                 try {
@@ -217,7 +217,7 @@ async function run() {
         console.log('\n--- DUAL DOMAIN CACHE ---');
         try {
             // Also fetch a chunk from new domain explicitly
-            const newChunkUrl = `https://${NEW_DOMAIN}/mosaic_3d_zarr_v2/0/9/0/0/0/0/0`;
+            const newChunkUrl = `https://${NEW_DOMAIN}/mosaic_3d_zarr_v3/0/9/0/0/0/0/0`;
             await page.evaluate(async (url) => {
                 try { await fetch(url); } catch {}
             }, newChunkUrl);
@@ -300,7 +300,7 @@ async function run() {
             const corsResult = await new Promise((resolve) => {
                 const cp = require('child_process');
                 cp.exec(
-                    `curl -s -H "Origin: https://evostitch.net" -D - -o /dev/null "https://${NEW_DOMAIN}/mosaic_3d_zarr_v2/0/0/.zarray" 2>&1 | head -20`,
+                    `curl -s -H "Origin: https://evostitch.net" -D - -o /dev/null "https://${NEW_DOMAIN}/mosaic_3d_zarr_v3/0/0/.zarray" 2>&1 | head -20`,
                     { timeout: 10000 },
                     (err, stdout) => resolve(stdout || err?.message || 'unknown')
                 );
