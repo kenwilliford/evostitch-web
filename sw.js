@@ -1,7 +1,7 @@
 // evostitch Service Worker - Tile caching for improved 3D performance
 // W1: Service Worker Caching
 
-const SW_VERSION = '1.4.0';
+const SW_VERSION = '1.4.1';
 const TILE_CACHE_NAME = `evostitch-tiles-v${SW_VERSION}`;
 const STATIC_CACHE_NAME = `evostitch-static-v${SW_VERSION}`;
 const ZARR_CACHE_NAME = `evostitch-zarr-v${SW_VERSION}`;
@@ -188,10 +188,11 @@ function cacheFirstStrategy(request, cacheName, maxEntries) {
     return caches.open(cacheName).then(function(cache) {
         return cache.match(request).then(function(cachedResponse) {
             if (cachedResponse) {
-                // Cache hit - move to end of cache for LRU tracking
-                // (delete and re-add moves entry to end)
+                // Cache hit - clone immediately before body can be consumed
+                var lruCopy = cachedResponse.clone();
+                // Move to end of cache for LRU tracking (async, fire-and-forget)
                 cache.delete(request).then(function() {
-                    cache.put(request, cachedResponse.clone());
+                    cache.put(request, lruCopy);
                 }).catch(function(e) {
                     console.warn('[evostitch SW] LRU cache update failed:', e);
                 });
