@@ -46,10 +46,22 @@ web/
 │   ├── zarr-viewer.js         # ES module: OME-Zarr 3D Explorer controller (Viv/deck.gl)
 │   ├── zarr-perf-test.js      # Performance test runner for zarr viewer
 │   ├── loading-indicator.js   # Dual-arc progress ring for tile loading
+│   ├── jpeg-zarr-codec.js     # JPEG zarr codec: WASM primary (libjpeg-turbo), canvas fallback
 │   ├── browser-decode.js      # Browser detection for decode strategy
 │   ├── worker-pool.js         # Web Worker pool management
 │   ├── tile-decoder-worker.js # Off-thread tile decoding worker
 │   └── worker-tile-source.js  # OSD integration for worker decoding
+├── wasm/
+│   ├── jpeg-decode.js         # Emscripten JS glue (MODULARIZE=1, EXPORT_NAME=JpegDecodeModule)
+│   ├── jpeg-decode.wasm       # WASM libjpeg-turbo binary (247 KB, grayscale decode only)
+│   ├── CHECKSUMS.sha256       # SHA-256 hashes of built artifacts
+│   └── LICENSE.libjpeg-turbo  # libjpeg-turbo BSD/IJG license
+├── build/
+│   └── libjpeg-turbo-wasm/    # WASM build infrastructure
+│       ├── CMakeLists.txt     # Emscripten build config
+│       ├── jpeg-decode-wrapper.c  # C wrapper (init, decode_gray, destroy, version)
+│       ├── build.sh           # One-command build (pins libjpeg-turbo 3.0.4 + Emscripten 3.1.51)
+│       └── README.md          # Build prerequisites and instructions
 ├── css/
 │   └── style.css       # Shared styles (dark theme)
 ├── mosaics/
@@ -553,6 +565,45 @@ Z-switch rendering optimizations: 50ms debounce, zoom capping, RAF batching.
 evostitch.zarrRenderOpt.isInitialized() // true/false
 ```
 
+### jpeg-zarr-codec.js
+
+JPEG codec for zarrita registry. Decodes JPEG-compressed zarr chunks (codec ID `imagecodecs_jpeg`).
+
+| Function/Property | Purpose |
+|-------------------|---------|
+| `decode(bytes)` | Decode JPEG chunk → `Uint8Array` pixels (WASM or canvas path) |
+| `getState()` | Return telemetry: `wasmState`, `decodeCount`, `fallbackCount`, `avgDecodeMs` |
+
+**Decode paths:**
+
+| Path | Pipeline | Latency (512x512) | When |
+|------|----------|-------------------|------|
+| WASM (primary) | JPEG → WASM libjpeg-turbo `TJPF_GRAY` → `Uint8Array` | 1-3ms | `JpegDecodeModule` available |
+| Canvas (fallback) | JPEG → `createImageBitmap` → `OffscreenCanvas` → R-channel | 40-70ms | WASM unavailable |
+
+**State machine:** `uninitialized → initializing → ready | failed`. One-way degrade: once `failed`, always uses canvas fallback. Single warning on fallback (not repeated).
+
+**Safety checks:**
+- Version coherency: `JPEG_DECODE_VERSION = 1` must match C wrapper
+- Dimension guard: `MAX_CHUNK_DIM = 4096` — rejects oversized images
+- Buffer growth: pre-allocated WASM buffers grow on `-3` (output too small), with decompressor reinit
+
+**Console API:**
+
+```javascript
+evostitch.jpegCodec.getState()  // { wasmState, decodeCount, fallbackCount, avgDecodeMs }
+```
+
+### WASM libjpeg-turbo Build (web/build/libjpeg-turbo-wasm/)
+
+Custom WASM build of libjpeg-turbo for in-browser JPEG decoding. Produces `jpeg-decode.{js,wasm}`.
+
+**Build:** libjpeg-turbo 3.0.4 + Emscripten 3.1.51, `-Oz -flto`, emmalloc, wasm-opt post-process. Uses standard jpeglib.h API (decode-only). Binary: 247 KB.
+
+**C wrapper exports:** `_jpeg_decode_init()`, `_jpeg_decode_gray(src, srcSize, dst, dstSize, widthPtr, heightPtr)`, `_jpeg_decode_destroy()`, `_jpeg_decode_version()`.
+
+**Build command:** `cd web/build/libjpeg-turbo-wasm && ./build.sh`
+
 ### browser-decode.js
 
 Detects browser capabilities and provides optimal decode strategy.
@@ -750,7 +801,9 @@ The zarr viewer modules optimize OME-Zarr 3D volume browsing. Key technologies: 
 4. **zarr-prefetch.js** - Viewport-aware Z-plane prefetching (W10)
 5. **zarr-render-opt.js** - Debounce, zoom cap, RAF batching
 6. **zarr-3d-loader.js** - "Load 3D" mode
-7. **zarr-viewer.js** - ES module (loaded via `<script type="module">`)
+7. **wasm/jpeg-decode.js** - Emscripten glue (defines `JpegDecodeModule` global)
+8. **jpeg-zarr-codec.js** - JPEG zarr codec IIFE (WASM primary, canvas fallback; sets `window._ImagecodecsJpegCodec`)
+9. **zarr-viewer.js** - ES module (registers codec via zarrita `registry.set()` if IIFE loaded)
 
 #### Zarr Data Flow
 
@@ -831,9 +884,18 @@ mosaic_3d_zarr/
 │   └── ...                     # Up to ~10 resolution levels
 ```
 
-Chunks: `[1,1,1,512,512]` (TCZYX order), dtype `uint8`, blosc/lz4 compression.
+Chunks: `[1,1,1,512,512]` (TCZYX order), dtype `uint8`.
 
-URL pattern: `https://data.evostitch.net/mosaic_3d_zarr/0/{level}/{t}/{c}/{z}/{y}/{x}`
+**Compression codecs:**
+
+| Version | Codec | Path | Size | Decode |
+|---------|-------|------|------|--------|
+| V2 | blosc(zstd, clevel=5) | `mosaic_3d_zarr_v2/` | 187.5 GiB | WASM zstd |
+| V3 | JPEG Q=95 (`imagecodecs_jpeg`) | `mosaic_3d_zarr_v3/` | 61 GiB (3.1x) | WASM libjpeg-turbo |
+
+**Production default:** V3 (JPEG). V2 accessible via `?zarr=mosaic_3d_zarr_v2`.
+
+URL pattern: `https://data.evostitch.net/mosaic_3d_zarr_v3/0/{level}/{t}/{c}/{z}/{y}/{x}`
 
 ---
 
