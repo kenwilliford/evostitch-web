@@ -121,7 +121,7 @@ async function run() {
             swActive = await page.evaluate(() => window.evostitch?.sw?.isActive?.());
         }
 
-        // === Test 1: SW active with v1.4.0 cache ===
+        // === Test 1: SW active with v1.4.1 cache ===
         console.log('\n--- SW ACTIVATION ---');
         try {
             const stats = await page.evaluate(async () => {
@@ -132,13 +132,13 @@ async function run() {
             if (!stats) {
                 fail('sw-active', 'Could not get SW stats');
             } else {
-                // Check via cache API for v1.4.0 cache
+                // Check via cache API for v1.4.1 cache
                 const cacheNames = await page.evaluate(async () => await caches.keys());
                 const hasV14 = cacheNames.some(n => n.includes('1.4.0'));
                 if (hasV14) {
                     pass('sw-active', `SW active, caches: ${cacheNames.join(', ')}, zarrEntries=${stats.zarrEntries || stats.entryCount || 0}`);
                 } else {
-                    fail('sw-active', `Expected v1.4.0 cache, found: ${cacheNames.join(', ')}`);
+                    fail('sw-active', `Expected v1.4.1 cache, found: ${cacheNames.join(', ')}`);
                 }
             }
         } catch (e) {
@@ -149,7 +149,7 @@ async function run() {
         console.log('\n--- NEW DOMAIN CACHING ---');
         try {
             const cacheAudit = await page.evaluate(async (newDomain) => {
-                const cache = await caches.open('evostitch-zarr-v1.4.0');
+                const cache = await caches.open('evostitch-zarr-v1.4.1');
                 const keys = await cache.keys();
                 const newDomainUrls = keys
                     .map(r => r.url)
@@ -195,7 +195,7 @@ async function run() {
             if (fetchResult.ok) {
                 // Check if SW cached it
                 const inCache = await page.evaluate(async (url) => {
-                    const cache = await caches.open('evostitch-zarr-v1.4.0');
+                    const cache = await caches.open('evostitch-zarr-v1.4.1');
                     const match = await cache.match(url);
                     return !!match;
                 }, chunkUrl);
@@ -225,7 +225,7 @@ async function run() {
             await page.waitForTimeout(500);
 
             const domainAudit = await page.evaluate(async () => {
-                const cache = await caches.open('evostitch-zarr-v1.4.0');
+                const cache = await caches.open('evostitch-zarr-v1.4.1');
                 const keys = await cache.keys();
                 const domains = {};
                 for (const req of keys) {
@@ -263,7 +263,7 @@ async function run() {
         console.log('\n--- Z-SWITCH CACHING ---');
         try {
             const beforeCount = await page.evaluate(async () => {
-                const cache = await caches.open('evostitch-zarr-v1.4.0');
+                const cache = await caches.open('evostitch-zarr-v1.4.1');
                 return (await cache.keys()).length;
             });
 
@@ -276,7 +276,7 @@ async function run() {
             await page.waitForTimeout(2000);
 
             const afterCount = await page.evaluate(async () => {
-                const cache = await caches.open('evostitch-zarr-v1.4.0');
+                const cache = await caches.open('evostitch-zarr-v1.4.1');
                 return (await cache.keys()).length;
             });
 

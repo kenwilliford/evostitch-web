@@ -137,7 +137,7 @@ Viv 0.19 brings zarrita (replacing zarr.js) and deck.gl 9's improved tile manage
 | Application JS removed | — | 578 lines (zarr-cache.js) |
 | Test lines removed | — | 469 lines (zarr-cache.test.js) |
 
-The `zarr-cache.js` module duplicated the SW's cache-first strategy. Removing it eliminated the competing cache layer. SW cache (`evostitch-zarr-v1.4.0`) handles all zarr chunk caching with LRU eviction at 10,000 entries.
+The `zarr-cache.js` module duplicated the SW's cache-first strategy. Removing it eliminated the competing cache layer. SW cache (`evostitch-zarr-v1.4.1`) handles all zarr chunk caching with LRU eviction at 10,000 entries.
 
 ### W9: refinementStrategy
 

@@ -26,7 +26,7 @@ web/
 ├── index.html              # Catalog page
 ├── viewer.html             # DZI viewer page (loads OpenSeadragon)
 ├── zarr-viewer.html        # OME-Zarr 3D Explorer (loads Viv/deck.gl bundle)
-├── sw.js                   # Service worker: DZI tile + zarr chunk caching (v1.4.0)
+├── sw.js                   # Service worker: DZI tile + zarr chunk caching (v1.4.1)
 ├── dist/
 │   └── zarr-viewer-bundle.js  # ESM bundle: Viv 0.19 + deck.gl 9 (built via npm run build:zarr)
 ├── build/
@@ -224,11 +224,11 @@ Caches DZI tiles and OME-Zarr chunks for offline access and improved repeat-visi
 
 | Request Type | Strategy | Cache | Rationale |
 |-------------|----------|-------|-----------|
-| DZI tiles (`_files/{level}/{x}_{y}.{ext}`) | Cache-first | `evostitch-tiles-v1.4.0` | Tiles are immutable |
-| DZI descriptors (`.dzi`) | Cache-first | `evostitch-tiles-v1.4.0` | Also immutable |
-| Zarr chunks (R2 domain + numeric path) | Cache-first | `evostitch-zarr-v1.4.0` | Chunks are immutable |
-| Zarr metadata (`.zarray`, `.zattrs`, `.zgroup`) | Network-first | `evostitch-zarr-v1.4.0` | Metadata may change |
-| Static assets (HTML, JS, CSS) | Network-first | `evostitch-static-v1.4.0` | Allow code updates |
+| DZI tiles (`_files/{level}/{x}_{y}.{ext}`) | Cache-first | `evostitch-tiles-v1.4.1` | Tiles are immutable |
+| DZI descriptors (`.dzi`) | Cache-first | `evostitch-tiles-v1.4.1` | Also immutable |
+| Zarr chunks (R2 domain + numeric path) | Cache-first | `evostitch-zarr-v1.4.1` | Chunks are immutable |
+| Zarr metadata (`.zarray`, `.zattrs`, `.zgroup`) | Network-first | `evostitch-zarr-v1.4.1` | Metadata may change |
+| Static assets (HTML, JS, CSS) | Network-first | `evostitch-static-v1.4.1` | Allow code updates |
 | Other requests | Pass through | — | No caching |
 
 **Dual-domain support (W12):**
@@ -789,7 +789,7 @@ The zarr viewer modules optimize OME-Zarr 3D volume browsing. Key technologies: 
                      ┌───────────────────────┐
                      │        sw.js          │
                      │ Dual-domain: R2 + CDN │ ◄── Cache-first for chunks
-                     │ evostitch-zarr-v1.4.0 │    Network-first for metadata
+                     │ evostitch-zarr-v1.4.1 │    Network-first for metadata
                      └───────────────────────┘
 ```
 

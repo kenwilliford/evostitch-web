@@ -224,7 +224,7 @@ The viewer extracts from OME-Zarr `.zattrs`:
 |--------------|---------|
 | **refinementStrategy: 'best-available'** | Old Z-plane tiles stay visible as placeholders during Z-switch (no blank flash) |
 | **Viewport-aware prefetch** | Only prefetches chunks in viewport + 2-tile margin, not the entire Z-plane |
-| **SW cache-first** | Service worker (v1.4.0) intercepts zarr chunk fetches, serves from cache before network |
+| **SW cache-first** | Service worker (v1.4.1) intercepts zarr chunk fetches, serves from cache before network |
 | **Z-switch debounce** | 50ms debounce prevents redundant tile reloads during rapid Z-slider dragging |
 | **Smart loading indicator** | 150ms delay prevents flash on fast loads |
 | **Throttled scale bar** | 100ms minimum update interval during zoom/pan |
@@ -237,7 +237,7 @@ The viewer extracts from OME-Zarr `.zattrs`:
 ```
 web/
 ├── zarr-viewer.html           # Main viewer page (IIFE script tags + ES module)
-├── sw.js                      # Service worker v1.4.0 (zarr chunk caching)
+├── sw.js                      # Service worker v1.4.1 (zarr chunk caching)
 ├── js/
 │   ├── zarr-viewer.js         # ES module: init, Z-nav, channel controls, deck.gl setup
 │   ├── zarr-prefetch.js       # IIFE: viewport-aware Z-plane prefetching
@@ -292,7 +292,7 @@ Two-layer cache: CDN (Cloudflare) + Service Worker (browser).
 | Layer | Cache Name | Strategy | TTL |
 |-------|-----------|----------|-----|
 | CDN | Cloudflare edge | Chunks: immutable (1yr). Metadata: 1hr | Transform Rules |
-| SW | `evostitch-zarr-v1.4.0` | Cache-first for chunks, network-first for metadata | 10K entry limit |
+| SW | `evostitch-zarr-v1.4.1` | Cache-first for chunks, network-first for metadata | 10K entry limit |
 
 The SW recognizes both `data.evostitch.net` (primary) and `pub-*.r2.dev` (legacy) domains.
 

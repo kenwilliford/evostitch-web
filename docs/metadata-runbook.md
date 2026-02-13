@@ -81,7 +81,7 @@ await window.evostitch.sw.clearCache()
 
 // Verify cache is empty
 await window.evostitch.sw.getStats()
-// → { entryCount: 0, cacheName: 'evostitch-zarr-v1.4.0' }
+// → { entryCount: 0, cacheName: 'evostitch-zarr-v1.4.1' }
 ```
 
 ### Step 3: Verify
@@ -123,7 +123,7 @@ const SW_VERSION = '1.4.1';
 Deploy the updated `sw.js` to GitHub Pages. On next page load:
 1. Browser detects byte-changed `sw.js` and triggers install event
 2. `skipWaiting()` activates the new SW immediately
-3. Activate event deletes all `evostitch-zarr-v1.4.0` caches
+3. Activate event deletes all `evostitch-zarr-v1.4.1` caches
 4. Fresh `evostitch-zarr-v1.4.1` cache starts empty
 
 ### Step 3: Verify
@@ -170,7 +170,7 @@ Use when deploying code changes to `sw.js` (new features, bug fixes, version bum
    ```
    [evostitch SW] Installing v1.4.1
    [evostitch SW] Activating v1.4.1
-   [evostitch SW] Deleting old cache: evostitch-zarr-v1.4.0
+   [evostitch SW] Deleting old cache: evostitch-zarr-v1.4.1
    ```
 
 ### Cache Name Convention
