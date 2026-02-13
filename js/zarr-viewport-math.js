@@ -1,6 +1,6 @@
 // evostitch Viewport Math — shared viewport geometry for zarr modules
-// Extracted from zarr-3d-loader.js (W10) so zarr-prefetch.js can reuse
-// the same zoom→level, viewState→bounds, and bounds→tileRange logic.
+// Shared zoom→level, viewState→bounds, and bounds→tileRange logic
+// used by zarr-prefetch.js and zarr-viewer.js.
 //
 // Dependencies: none (pure math, no DOM or network)
 

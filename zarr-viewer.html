@@ -55,26 +55,11 @@
     </div>
 
     <div id="z-controls-container" class="z-controls-container">
-        <!-- 2D mode: Load 3D button -->
-        <button id="load-3d-btn" class="load-3d-btn">
-            Load 3D <span id="load-3d-estimate"></span>
-        </button>
-
-        <!-- Loading mode: progress bar -->
-        <div id="load-3d-progress" class="load-3d-progress" style="display:none">
-            <div class="load-3d-bar"><div id="load-3d-fill"></div></div>
-            <span id="load-3d-text">0%</span>
-            <button id="load-3d-cancel" class="load-3d-cancel">Cancel</button>
-            <button id="load-3d-retry" class="load-3d-retry" style="display:none">Retry</button>
-        </div>
-
-        <!-- 3D Ready mode: Z-slider + exit button -->
-        <div id="z-slider-wrapper" style="display:none">
+        <div id="z-slider-wrapper" class="z-slider-wrapper">
             <label class="z-label">Z:</label>
             <input type="range" id="z-slider" class="z-slider" min="0" max="0" value="0" step="1">
             <span id="z-depth" class="z-depth">0 µm</span>
             <span id="z-index" class="z-index">(1/1)</span>
-            <button id="exit-3d-btn" class="exit-3d-btn">Exit 3D</button>
         </div>
     </div>
 
@@ -116,7 +101,6 @@
     <script src="js/zarr-viewport-math.js"></script>
     <script src="js/zarr-prefetch.js"></script>
     <script src="js/zarr-render-opt.js"></script>
-    <script src="js/zarr-3d-loader.js"></script>
     <!-- WASM JPEG decoder (Emscripten glue — defines JpegDecodeModule global) -->
     <script src="wasm/jpeg-decode.js"></script>
     <script src="js/jpeg-zarr-codec.js"></script>

@@ -22,10 +22,9 @@ JavaScript viewer for displaying stitched microscopy mosaics with Z-plane naviga
 | `js/network-detect.js` | Network speed detection (W3) |
 | `js/quality-adapt.js` | Adaptive quality based on network (W4) |
 | `zarr-viewer.html` | OME-Zarr 3D Explorer (Viv/deck.gl) |
-| `js/zarr-viewer.js` | Zarr viewer initialization, Z-navigation, channel controls |
-| `js/zarr-prefetch.js` | Predictive Z-plane prefetching for zarr viewer |
+| `js/zarr-viewer.js` | Zarr viewer: init, seamless Z-focus (zoom-gated slider), channels |
+| `js/zarr-prefetch.js` | Predictive Z-plane prefetching + viewport change handler |
 | `js/zarr-render-opt.js` | Z-debounce, zoom capping for zarr viewer |
-| `js/zarr-3d-loader.js` | "Load 3D" mode: viewport-scoped prefetch for smooth Z-focus |
 | `css/style.css` | Shared styles |
 | `CNAME` | GitHub Pages custom domain (evostitch.net) |
 

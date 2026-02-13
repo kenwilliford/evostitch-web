@@ -42,7 +42,7 @@
         lastZ: 0,
         velocity: 0,            // planes/sec, positive = forward
 
-        // Viewport callbacks (same pattern as zarr-3d-loader)
+        // Viewport callbacks
         getViewState: null,         // Function returning current deck.gl viewState
         getContainerSize: null,     // Function returning { width, height }
 
@@ -426,8 +426,8 @@
     }
 
     /**
-     * Choose which resolution levels to prefetch
-     * Coarser levels are smaller and load faster, maximizing perceived performance
+     * Choose which resolution levels to prefetch.
+     * Prioritizes the level matching current zoom, plus coarser levels for fast placeholders.
      * @returns {number[]} Resolution level indices to prefetch
      */
     function choosePrefetchLevels() {
@@ -435,22 +435,32 @@
 
         var levels = [];
         var count = state.resolutionLevels.length;
+        var added = {};
 
-        // Coarsest level (smallest, fastest)
-        levels.push(count - 1);
-
-        // If there's a mid-level, include it
-        if (count > 2) {
-            levels.push(Math.floor(count / 2));
+        // Prioritize level matching current zoom (what the user actually sees)
+        var vpm = window.evostitch && window.evostitch.viewportMath;
+        if (vpm && state.getViewState) {
+            var viewState = state.getViewState();
+            if (viewState) {
+                var currentLevel = vpm.zoomToLevel(viewState.zoom, count);
+                if (state.resolutionLevels[currentLevel]) {
+                    levels.push(currentLevel);
+                    added[currentLevel] = true;
+                }
+            }
         }
 
-        // Finest level (largest, full detail) - only if few chunks
-        if (count > 1) {
-            var finest = state.resolutionLevels[0];
-            if (!finest) return levels;
-            var totalChunks = finest.yChunks * finest.xChunks;
-            if (totalChunks <= 64) {
-                levels.push(0);
+        // Coarsest level (smallest, fastest placeholder)
+        if (!added[count - 1]) {
+            levels.push(count - 1);
+            added[count - 1] = true;
+        }
+
+        // Mid-level for progressive refinement
+        if (count > 2) {
+            var mid = Math.floor(count / 2);
+            if (!added[mid]) {
+                levels.push(mid);
             }
         }
 
@@ -586,6 +596,29 @@
     }
 
     /**
+     * Called when viewport changes (pan/zoom) while Z-slider is visible.
+     * Debounced — viewport changes are rapid during pan/zoom.
+     * Clears prefetchedPlanes tracking since viewport tiles may differ,
+     * then re-evaluates prefetch for new viewport.
+     * @param {Object} viewState - deck.gl viewState
+     */
+    var viewportChangeTimer = null;
+    function onViewportChange(viewState) {
+        if (!state.initialized) return;
+
+        if (viewportChangeTimer) {
+            clearTimeout(viewportChangeTimer);
+        }
+        viewportChangeTimer = setTimeout(function() {
+            viewportChangeTimer = null;
+            // Clear tracking — old viewport tiles may not match new viewport
+            state.prefetchedPlanes.clear();
+            log('Viewport changed, re-evaluating prefetch');
+            executePrefetch();
+        }, 200);
+    }
+
+    /**
      * Called when onViewportLoad fires (tiles for current viewport finished loading).
      * Increments lateFetchCount if there are still pending prefetch requests,
      * meaning the viewer loaded tiles before prefetch completed.
@@ -645,6 +678,12 @@
             state.prefetchTimeout = null;
         }
 
+        // Clear viewport change timer
+        if (viewportChangeTimer) {
+            clearTimeout(viewportChangeTimer);
+            viewportChangeTimer = null;
+        }
+
         // Abort all pending fetches
         state.pendingFetches.forEach(function(controller) {
             controller.abort();
@@ -673,7 +712,7 @@
     }
 
     /**
-     * Get resolution level metadata (needed by zarr-3d-loader)
+     * Get resolution level metadata
      * @returns {Array} Array of { level, shape, chunks, zChunkSize, yChunks, xChunks, yChunkSize, xChunkSize }
      */
     function getResolutionLevels() {
@@ -681,7 +720,7 @@
     }
 
     /**
-     * Get axes order (needed by zarr-3d-loader)
+     * Get axes order
      * @returns {Array} e.g., ['t', 'c', 'z', 'y', 'x']
      */
     function getAxes() {
@@ -689,7 +728,7 @@
     }
 
     /**
-     * Get zarr store URL (needed by zarr-3d-loader)
+     * Get zarr store URL
      * @returns {string}
      */
     function getStoreUrl() {
@@ -697,7 +736,7 @@
     }
 
     /**
-     * Get dimension separator (needed by zarr-3d-loader)
+     * Get dimension separator
      * @returns {string} '/' or '.'
      */
     function getDimensionSeparator() {
@@ -709,6 +748,7 @@
     window.evostitch.zarrPrefetch = {
         init: init,
         onZChange: onZChange,
+        onViewportChange: onViewportChange,
         onViewportLoad: onViewportLoad,
         getPrefetchState: getPrefetchState,
         warmPlane: warmPlane,

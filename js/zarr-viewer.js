@@ -70,8 +70,15 @@ let state = {
     lastMouseY: 0,
     // Channel settings (brightness/contrast)
     channelSettings: [],  // Array of { visible, min, max, defaultMin, defaultMax }
-    channelControlsExpanded: true
+    channelControlsExpanded: true,
+    // Seamless Z-focus: slider visibility tracks zoom level
+    zSliderVisible: false,
+    zSliderHideTimer: null
 };
+
+// Zoom threshold for Z-slider visibility: level <= 3 (zoom >= -3)
+// At this zoom (12.5%+), the user is looking at features, not the full mosaic overview.
+const Z_SLIDER_ZOOM_THRESHOLD = -3;
 
 // Throttle config for DOM updates during animations (ms)
 const SCALE_BAR_THROTTLE_MS = 100;
@@ -197,7 +204,8 @@ let elements = {
     scaleBarLabel: null,
     channelControls: null,
     channelControlsToggle: null,
-    channelList: null
+    channelList: null,
+    zControlsContainer: null
 };
 
 /**
@@ -219,6 +227,7 @@ function initElements() {
     elements.channelControls = document.getElementById('channel-controls');
     elements.channelControlsToggle = document.getElementById('channel-controls-toggle');
     elements.channelList = document.getElementById('channel-list');
+    elements.zControlsContainer = document.getElementById('z-controls-container');
 }
 
 /**
@@ -272,9 +281,10 @@ function initDeck() {
                 state.deck.setProps({ viewState });
             }
             updateScaleBar();
-            // Notify 3D loader of viewport changes (containment check, budget update)
-            if (window.evostitch?.zarr3DLoader) {
-                window.evostitch.zarr3DLoader.onViewStateChange(viewState);
+            updateZSliderVisibility(viewState);
+            // Trigger viewport-aware prefetch when Z-slider is visible
+            if (state.zSliderVisible && window.evostitch?.zarrPrefetch?.onViewportChange) {
+                window.evostitch.zarrPrefetch.onViewportChange(viewState);
             }
         },
         layers: []
@@ -927,38 +937,6 @@ function initOptimizationModules() {
         }
     }
 
-    // Initialize 3D loader (Load 3D mode)
-    if (window.evostitch?.zarr3DLoader && window.evostitch?.zarrPrefetch) {
-        try {
-            var prefetch = window.evostitch.zarrPrefetch;
-            var channelCount = 1;
-            if (state.axes?.includes('c') && loaderData?.[0]) {
-                channelCount = loaderData[0].shape[state.axes.indexOf('c')] || 1;
-            }
-
-            window.evostitch.zarr3DLoader.init({
-                zarrStoreUrl: state.zarrStoreUrl || CONFIG.evositchBaseUrl,
-                zCount: state.zCount,
-                axes: prefetch.getAxes(),
-                getResolutionLevels: function() { return prefetch.getResolutionLevels(); },
-                dimensionSeparator: prefetch.getDimensionSeparator(),
-                channelCount: channelCount,
-                getViewState: function() { return state.viewState; },
-                getContainerSize: function() {
-                    var el = elements.viewer;
-                    if (!el) return null;
-                    return { width: el.offsetWidth, height: el.offsetHeight };
-                },
-                onModeChange: function(newMode, oldMode, reason) {
-                    log('3D mode: ' + oldMode + ' -> ' + newMode +
-                        (reason ? ' (' + reason + ')' : ''));
-                }
-            });
-            log('Zarr 3D loader module initialized');
-        } catch (e) {
-            console.warn('[evostitch] Failed to init zarr-3d-loader:', e);
-        }
-    }
 }
 
 /**
@@ -1101,12 +1079,46 @@ function updateZSlider() {
         const zMicrons = state.currentZ * state.pixelSizeZ;
         elements.zDepth.textContent = `${zMicrons.toFixed(1)} µm`;
     }
+}
 
-    // Show z-controls container if we have multiple Z-planes
-    // The 3D loader module manages visibility of individual sub-elements
-    const container = document.getElementById('z-controls-container');
-    if (container && state.zCount > 1) {
-        container.style.display = 'flex';
+/**
+ * Update Z-slider visibility based on zoom level.
+ * Z-slider appears when zoomed in past threshold and dataset has multiple Z-planes.
+ * @param {Object} viewState - Current deck.gl viewState
+ */
+function updateZSliderVisibility(viewState) {
+    if (state.zCount <= 1) return;
+    if (!elements.zControlsContainer) return;
+
+    const shouldShow = viewState.zoom >= Z_SLIDER_ZOOM_THRESHOLD;
+
+    if (shouldShow === state.zSliderVisible) return;
+
+    if (shouldShow) {
+        // Cancel any pending hide
+        if (state.zSliderHideTimer !== null) {
+            clearTimeout(state.zSliderHideTimer);
+            state.zSliderHideTimer = null;
+        }
+        // Show: set display first, then add class on next frame for CSS transition
+        elements.zControlsContainer.style.display = 'flex';
+        requestAnimationFrame(() => {
+            elements.zControlsContainer.classList.add('z-controls-visible');
+        });
+        state.zSliderVisible = true;
+        log('Z-slider shown (zoom=' + viewState.zoom.toFixed(2) + ')');
+    } else {
+        // Hide: remove class first, then set display:none after transition
+        elements.zControlsContainer.classList.remove('z-controls-visible');
+        state.zSliderHideTimer = setTimeout(() => {
+            state.zSliderHideTimer = null;
+            // Only hide if still supposed to be hidden
+            if (!state.zSliderVisible) {
+                elements.zControlsContainer.style.display = 'none';
+            }
+        }, 200);
+        state.zSliderVisible = false;
+        log('Z-slider hidden (zoom=' + viewState.zoom.toFixed(2) + ')');
     }
 }
 

@@ -74,10 +74,13 @@ WebGL-powered 3D microscopy viewer for OME-Zarr datasets using Viv/deck.gl.
   - **C slider:** White point / contrast
   - **Reset:** Restore default values
 
-### Z-Slider (bottom)
+### Z-Slider (bottom, zoom-gated)
+- Appears automatically when zoomed in past level 3 (zoom >= -3)
+- Fades in/out with 200ms CSS opacity transition
 - Drag slider to navigate Z-stack
 - Shows current depth in µm
 - Shows plane index: `(42/236)`
+- No "Load 3D" button or mode switching required
 
 ## Console API
 
@@ -239,11 +242,10 @@ web/
 ├── zarr-viewer.html           # Main viewer page (IIFE script tags + ES module)
 ├── sw.js                      # Service worker v1.4.1 (zarr chunk caching)
 ├── js/
-│   ├── zarr-viewer.js         # ES module: init, Z-nav, channel controls, deck.gl setup
-│   ├── zarr-prefetch.js       # IIFE: viewport-aware Z-plane prefetching
+│   ├── zarr-viewer.js         # ES module: init, seamless Z-focus, channel controls, deck.gl
+│   ├── zarr-prefetch.js       # IIFE: viewport-aware Z-plane prefetching + viewport change
 │   ├── zarr-render-opt.js     # IIFE: Z-debounce (50ms), zoom capping
 │   ├── zarr-viewport-math.js  # IIFE: shared viewport math (zoomToLevel, viewStateToBounds, boundsToTileRange)
-│   ├── zarr-3d-loader.js      # IIFE: "Load 3D" mode (viewport-scoped prefetch)
 │   ├── zarr-perf-test.js      # Performance test runner
 │   └── loading-indicator.js   # IIFE: smart loading indicator (150ms delay)
 ├── dist/
@@ -258,7 +260,7 @@ web/
     └── metadata-runbook.md    # CDN/SW cache invalidation procedures
 ```
 
-**IIFE load order** (zarr-viewer.html): loading-indicator → zarr-viewport-math → zarr-prefetch → zarr-render-opt → zarr-3d-loader → zarr-viewer (ES module)
+**IIFE load order** (zarr-viewer.html): loading-indicator → zarr-viewport-math → zarr-prefetch → zarr-render-opt → zarr-viewer (ES module)
 
 ## Building
 

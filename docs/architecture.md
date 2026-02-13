@@ -40,10 +40,9 @@ web/
 │   ├── quality-adapt.js       # Adaptive quality based on network (W4)
 │   ├── blur-up-loader.js      # Progressive tile resolution (blur-up loading)
 │   ├── zarr-viewport-math.js  # Shared viewport geometry: zoom→level, bounds, tile ranges (W10)
-│   ├── zarr-prefetch.js       # Viewport-aware Z-plane prefetching for OME-Zarr viewer (W10)
+│   ├── zarr-prefetch.js       # Viewport-aware Z-plane prefetching + viewport change handler
 │   ├── zarr-render-opt.js     # Z-debounce, zoom capping, RAF batching for Zarr viewer
-│   ├── zarr-3d-loader.js      # Explicit "Load 3D" mode with viewport-scoped prefetch
-│   ├── zarr-viewer.js         # ES module: OME-Zarr 3D Explorer controller (Viv/deck.gl)
+│   ├── zarr-viewer.js         # ES module: OME-Zarr 3D Explorer with seamless Z-focus
 │   ├── zarr-perf-test.js      # Performance test runner for zarr viewer
 │   ├── loading-indicator.js   # Dual-arc progress ring for tile loading
 │   ├── jpeg-zarr-codec.js     # JPEG zarr codec: WASM primary (libjpeg-turbo), canvas fallback
@@ -414,7 +413,7 @@ evostitch.loadingIndicator.getState()       // { initialized, isLoading, visible
 
 ### zarr-viewport-math.js (W10)
 
-Shared viewport geometry for zarr modules. Extracted from `zarr-3d-loader.js` so `zarr-prefetch.js` can reuse the same zoom→level, viewState→bounds, and bounds→tileRange logic.
+Shared viewport geometry for zarr modules. Provides zoom→level, viewState→bounds, and bounds→tileRange logic used by `zarr-prefetch.js` and `zarr-viewer.js`.
 
 | Function | Purpose |
 |----------|---------|
@@ -432,66 +431,6 @@ evostitch.viewportMath.viewStateToBounds(vs, size) // → { minX, maxX, minY, ma
 evostitch.viewportMath.boundsToTileRange(bounds, levelInfo, 2) // → { minTileX, maxTileX, ... }
 ```
 
-### zarr-3d-loader.js
-
-Explicit "Load 3D" mode for the OME-Zarr viewer. Instead of fighting Viv's tile cache invalidation on Z-switches, this module prefetches all visible chunks across all Z-planes at the current viewport, then enables smooth Z-scrubbing via SW cache hits.
-
-| Function | Purpose |
-|----------|---------|
-| `init(config)` | Initialize with zarr metadata, viewport callbacks |
-| `startLoad()` | Begin prefetching all Z-planes for current viewport |
-| `cancelLoad(reason)` | Cancel in-progress prefetch, return to 2D |
-| `exit3D(reason)` | Exit 3D mode, return to 2D |
-| `onViewStateChange(viewState)` | Hook for deck.gl viewport changes |
-| `calculateBudget()` | Compute chunk count for current viewport |
-| `getMode()` | Current state: `2D`, `LOADING`, or `3D_READY` |
-| `getProgress()` | Loading progress: `{ completed, total, percent }` |
-| `is3DReady()` | Whether Z-slider should be shown |
-
-**State machine:**
-
-```
-[2D] --click Load 3D--> [LOADING] --all cached--> [3D_READY]
- ^                          |                          |
- |     cancel/pan/zoom      |     pan outside region   |
- +--------------------------+     or zoom level change  |
- +----------------------------------------------------------+
-```
-
-**How it works:**
-
-1. In 2D mode, "Load 3D" button shows chunk estimate for current viewport
-2. User clicks button → viewport is captured, all Z-plane chunks are prefetched
-3. Fetches go through normal `fetch()` → SW intercepts and caches automatically
-4. On completion, Z-slider appears. Every Z-switch is a SW cache hit
-5. Containment check on every pan/zoom: exits 3D if viewport leaves cached region
-
-**Viewport math:** Delegates to shared `zarr-viewport-math.js` (W10), with graceful fallback stubs if the module is missing.
-
-| Step | Source | Purpose |
-|------|--------|---------|
-| 1 | `viewportMath.zoomToLevel()` | Map deck.gl zoom to zarr resolution level |
-| 2 | `viewportMath.viewStateToBounds()` | Compute visible data bounds |
-| 3 | `viewportMath.boundsToTileRange()` | Convert to tile coordinates with 1-tile margin |
-| 4 | `generateChunkUrls()` (local) | Build all chunk URLs |
-
-**Configuration:**
-
-| Setting | Default | Purpose |
-|---------|---------|---------|
-| `maxChunks` | 5000 | Budget limit; button disabled when exceeded |
-| `concurrency` | 6 | Parallel prefetch requests |
-| `consecutiveErrorLimit` | 5 | Pause and show retry after N consecutive errors |
-
-**Console API:**
-
-```javascript
-evostitch.zarr3DLoader.getMode()          // '2D' | 'LOADING' | '3D_READY'
-evostitch.zarr3DLoader.getProgress()      // { completed, total, percent }
-evostitch.zarr3DLoader.calculateBudget()  // { total, tilesPerPlane, withinBudget, levelIdx }
-evostitch.zarr3DLoader.setDebug(true)     // Enable debug logging
-```
-
 ### zarr-viewer.js (ES Module)
 
 Main controller for the OME-Zarr 3D Explorer. Uses Viv 0.19 `loadOmeZarr` + `MultiscaleImageLayer` on deck.gl 9's `Deck` with `OrthographicView`.
@@ -501,8 +440,11 @@ Main controller for the OME-Zarr 3D Explorer. Uses Viv 0.19 `loadOmeZarr` + `Mul
 | `init()` | Await SW ready, load zarr, initialize deck.gl viewer |
 | `loadZarr(zarrParam)` | Load OME-Zarr dataset via Viv's `loadOmeZarr` |
 | `updateLayer()` | Create/update MultiscaleImageLayer with current Z, channels |
+| `updateZSliderVisibility(viewState)` | Show/hide Z-slider based on zoom threshold (-3) |
 | `onViewportLoad()` | Callback when all visible tiles finish loading |
 | `getPerfStats()` | Return timing + cache stats for performance monitoring |
+
+**Seamless Z-Focus:** Z-slider appears automatically when `zoom >= -3` (level ≤ 3) and `zCount > 1`. No mode switches or loading gates. Controlled by `Z_SLIDER_ZOOM_THRESHOLD` constant. CSS opacity transition (200ms) on show/hide via `.z-controls-visible` class.
 
 **Key props on MultiscaleImageLayer (W7/W9):**
 
@@ -527,6 +469,7 @@ Viewport-aware predictive Z-plane prefetching for the OME-Zarr viewer. Prefetche
 |----------|---------|
 | `init(config)` | Initialize with store URL, level count, viewport callbacks |
 | `onZChange(newZ)` | Trigger prefetch of adjacent Z-planes |
+| `onViewportChange(viewState)` | Re-evaluate prefetch after pan/zoom (200ms debounce) |
 | `onViewportLoad()` | Track late fetch count (tiles still pending at viewport load) |
 | `getStats()` | Return prefetch metrics |
 | `destroy()` | Clean up state, abort pending fetches |
@@ -771,18 +714,20 @@ The zarr viewer modules optimize OME-Zarr 3D volume browsing. Key technologies: 
 └──────────┬──────────┘
            │ zoomToLevel, viewStateToBounds, boundsToTileRange
            ▼
-┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
-│  zarr-prefetch   │     │ zarr-render-opt  │     │  zarr-3d-loader  │
-│  (viewport-aware │     │ (50ms debounce,  │     │ ("Load 3D" mode) │
-│   Z-prefetch)    │     │  zoom cap, RAF)  │     │                  │
-└──────────────────┘     └──────────────────┘     └──────────────────┘
-           │                      │                       │
-           │ adjacent Z chunks    │ debounced Z update    │ bulk Z-plane prefetch
-           ▼                      ▼                       ▼
+┌──────────────────┐     ┌──────────────────┐
+│  zarr-prefetch   │     │ zarr-render-opt  │
+│  (viewport-aware │     │ (50ms debounce,  │
+│   Z-prefetch)    │     │  zoom cap, RAF)  │
+└──────────────────┘     └──────────────────┘
+           │                      │
+           │ adjacent Z chunks    │ debounced Z update
+           │ + viewport change    │
+           ▼                      ▼
 ┌───────────────────────────────────────────────────────────────────┐
 │                     zarr-viewer.js (ES module)                    │
 │          Viv 0.19 MultiscaleImageLayer + deck.gl 9 Deck           │
 │          refinementStrategy: 'best-available' (W9)                │
+│          Seamless Z-Focus: zoom-gated slider (threshold: -3)      │
 └────────────────────────────────┬──────────────────────────────────┘
                                  │ fetch requests (R2 chunks)
                                  ▼
@@ -798,12 +743,11 @@ The zarr viewer modules optimize OME-Zarr 3D volume browsing. Key technologies: 
 1. **sw.js** - Registered via inline script, sets `window._swReady` promise
 2. **loading-indicator.js** - Progress ring UI
 3. **zarr-viewport-math.js** - Shared viewport geometry (W10)
-4. **zarr-prefetch.js** - Viewport-aware Z-plane prefetching (W10)
+4. **zarr-prefetch.js** - Viewport-aware Z-plane prefetching (W10) + viewport change handler
 5. **zarr-render-opt.js** - Debounce, zoom cap, RAF batching
-6. **zarr-3d-loader.js** - "Load 3D" mode
-7. **wasm/jpeg-decode.js** - Emscripten glue (defines `JpegDecodeModule` global)
-8. **jpeg-zarr-codec.js** - JPEG zarr codec IIFE (WASM primary, canvas fallback; sets `window._ImagecodecsJpegCodec`)
-9. **zarr-viewer.js** - ES module (registers codec via zarrita `registry.set()` if IIFE loaded)
+6. **wasm/jpeg-decode.js** - Emscripten glue (defines `JpegDecodeModule` global)
+7. **jpeg-zarr-codec.js** - JPEG zarr codec IIFE (WASM primary, canvas fallback; sets `window._ImagecodecsJpegCodec`)
+8. **zarr-viewer.js** - ES module (registers codec, zoom-gated Z-slider, viewport prefetch wiring)
 
 #### Zarr Data Flow
 

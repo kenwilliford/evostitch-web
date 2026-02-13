@@ -1,8 +1,8 @@
-// W7 Full Browser Test: Z-nav, zoom/pan, channels, prefetch init, 3D mode, SW interception
+// W7 Full Browser Test: Z-nav, zoom/pan, channels, prefetch init, seamless Z-focus, SW interception
 // Tests zarr-viewer.html with R2 dataset after Viv 0.19 + deck.gl 9 upgrade
 //
 // Covers: Z-slider, zoom/pan controls, channel controls, prefetch engine,
-//         3D loader mode, service worker cache interception
+//         seamless zoom-gated Z-focus, service worker cache interception
 
 const { chromium } = require('playwright');
 const http = require('http');
@@ -252,27 +252,39 @@ async function run() {
             fail('prefetch-init', e.message);
         }
 
-        // === Test 5: 3D loader mode ===
-        console.log('\n--- 3D MODE ---');
+        // === Test 5: Seamless Z-Focus (replaced 3D loader mode) ===
+        console.log('\n--- SEAMLESS Z-FOCUS ---');
         try {
-            const mode3d = await page.evaluate(() => {
-                if (!window.evostitch?.zarr3DLoader) return null;
+            const zFocusInfo = await page.evaluate(() => {
                 return {
-                    mode: window.evostitch.zarr3DLoader.getMode(),
-                    is3DReady: window.evostitch.zarr3DLoader.is3DReady(),
-                    btnVisible: document.getElementById('load-3d-btn')?.offsetParent !== null
+                    // zarr3DLoader should NOT exist
+                    has3DLoader: !!window.evostitch?.zarr3DLoader,
+                    // No Load 3D button in DOM
+                    hasLoadBtn: !!document.getElementById('load-3d-btn'),
+                    hasExitBtn: !!document.getElementById('exit-3d-btn'),
+                    // Z-controls container should exist
+                    hasContainer: !!document.getElementById('z-controls-container'),
+                    hasSlider: !!document.getElementById('z-slider'),
+                    // Check CSS class support
+                    containerClasses: document.getElementById('z-controls-container')?.className || ''
                 };
             });
 
-            if (!mode3d) {
-                fail('3d-mode', 'zarr3DLoader module not found');
-            } else if (mode3d.mode !== '2D') {
-                fail('3d-mode', `Expected mode 2D, got ${mode3d.mode}`);
+            const issues = [];
+            if (zFocusInfo.has3DLoader) issues.push('zarr3DLoader still exists');
+            if (zFocusInfo.hasLoadBtn) issues.push('load-3d-btn still in DOM');
+            if (zFocusInfo.hasExitBtn) issues.push('exit-3d-btn still in DOM');
+            if (!zFocusInfo.hasContainer) issues.push('z-controls-container missing');
+            if (!zFocusInfo.hasSlider) issues.push('z-slider missing');
+
+            if (issues.length > 0) {
+                fail('seamless-z-focus', issues.join(', '));
             } else {
-                pass('3d-mode', `Mode=${mode3d.mode}, button visible=${mode3d.btnVisible}`);
+                pass('seamless-z-focus',
+                    'No 3D loader, no Load/Exit buttons, Z-controls present');
             }
         } catch (e) {
-            fail('3d-mode', e.message);
+            fail('seamless-z-focus', e.message);
         }
 
         // === Test 6: Service worker interception ===
