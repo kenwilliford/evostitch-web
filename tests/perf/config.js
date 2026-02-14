@@ -1,9 +1,8 @@
 // Performance test harness configuration
 
 const CONFIG = {
-    // Test mosaic - use environment variable or default to small test mosaic
-    // For baseline capture, use: TEST_MOSAIC=SCH-55-22B_50xt_3D_test4_33x33x21
-    TEST_MOSAIC: process.env.TEST_MOSAIC || '3x3x3-test',
+    // Test mosaic - use environment variable or default
+    TEST_MOSAIC: process.env.TEST_MOSAIC || 'mosaic_3d_zarr_v2',
 
     // Viewer URL (use local server or production)
     // Use environment variable or default to production
