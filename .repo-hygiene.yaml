@@ -1,0 +1,23 @@
+# .repo-hygiene.yaml — evostitch-web
+version: 1
+profile: app-service
+docs:
+  specs_dir: docs
+  archive_dir: docs/archive
+freshness:
+  - when_paths:
+      - "src/**"
+    require_any:
+      - "CLAUDE.md"
+scripts:
+  scratch_dir: _scratch
+  reusable_root: scripts
+  archive_dirs: []
+outputs:
+  gitignored_dirs: []
+runtime:
+  ignore_paths:
+    - node_modules/
+    - dist/
+    - .wrangler/
+  protected_paths: []

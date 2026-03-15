@@ -267,3 +267,17 @@ node tests/tile-prioritizer.test.js  # 45 tests
 node tests/network-detect.test.js    # 37 tests
 node tests/quality-adapt.test.js     # 51 tests
 ```
+
+## Repo Hygiene
+
+See `~/code/infra-spec/policies/REPO_HYGIENE.md` for the full Archaeon hygiene policy.
+
+**Critical rules:**
+1. No generated files in git (`__pycache__/`, build artifacts, runtime logs)
+2. One-time scripts in `_scratch/`, reusable in `scripts/`
+3. Large outputs in gitignored dirs
+4. Update docs when changing code (see `.repo-hygiene.yaml` freshness map)
+5. Session closeout: check untracked files, stale branches, doc freshness
+6. No secrets in git
+7. Conventional commits: `<type>(<scope>): <subject>`
+8. Spec lifecycle: one canonical spec, updated in place after review, review artifacts archived (see policy §6)
