@@ -1,5 +1,10 @@
 # 3D Viewer Performance Research
 
+> **Note (2026-02-18):** This document was written for the OSD/DZI-based 3D viewer (W1–W6 era).
+> The viewer has since migrated to Viv/OME-Zarr (W7–W12). The research on WebGL rendering,
+> Web Workers, PMTiles, and Z-interpolation remains relevant to the next phase.
+> For current strategy, see [3D-viewer-roadmap.md](3D-viewer-roadmap.md).
+
 Deep investigation into achieving smooth, microscope-like 3D viewing performance for evostitch web viewer.
 
 **Date:** 2026-01-16
