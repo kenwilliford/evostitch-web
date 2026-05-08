@@ -4,6 +4,9 @@ var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __typeError = (msg) => {
+  throw TypeError(msg);
+};
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __esm = (fn, res) => function __init() {
   return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
@@ -31,32 +34,12 @@ var __toESM = (mod3, isNodeMode, target2) => (target2 = mod3 != null ? __create(
   isNodeMode || !mod3 || !mod3.__esModule ? __defProp(target2, "default", { value: mod3, enumerable: true }) : target2,
   mod3
 ));
-var __publicField = (obj, key, value) => {
-  __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
-  return value;
-};
-var __accessCheck = (obj, member, msg) => {
-  if (!member.has(obj))
-    throw TypeError("Cannot " + msg);
-};
-var __privateGet = (obj, member, getter) => {
-  __accessCheck(obj, member, "read from private field");
-  return getter ? getter.call(obj) : member.get(obj);
-};
-var __privateAdd = (obj, member, value) => {
-  if (member.has(obj))
-    throw TypeError("Cannot add the same private member more than once");
-  member instanceof WeakSet ? member.add(obj) : member.set(obj, value);
-};
-var __privateSet = (obj, member, value, setter2) => {
-  __accessCheck(obj, member, "write to private field");
-  setter2 ? setter2.call(obj, value) : member.set(obj, value);
-  return value;
-};
-var __privateMethod = (obj, member, method) => {
-  __accessCheck(obj, member, "access private method");
-  return method;
-};
+var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
+var __accessCheck = (obj, member, msg) => member.has(obj) || __typeError("Cannot " + msg);
+var __privateGet = (obj, member, getter) => (__accessCheck(obj, member, "read from private field"), getter ? getter.call(obj) : member.get(obj));
+var __privateAdd = (obj, member, value) => member.has(obj) ? __typeError("Cannot add the same private member more than once") : member instanceof WeakSet ? member.add(obj) : member.set(obj, value);
+var __privateSet = (obj, member, value, setter2) => (__accessCheck(obj, member, "write to private field"), setter2 ? setter2.call(obj, value) : member.set(obj, value), value);
+var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "access private method"), method);
 
 // node_modules/geotiff/dist-module/globals.js
 var fieldTagNames, fieldTags, arrayFields, fieldTypeNames, fieldTypes, LercParameters, LercAddCompression, geoKeyNames, geoKeys;
@@ -739,6 +722,7 @@ function decodeScan(data, initialOffset, frame, components, resetInterval, spect
           continue;
         }
         case 1:
+        // skipping r zero items
         case 2:
           if (zz[z2]) {
             zz[z2] += (readBit() << successive) * direction;
@@ -1170,21 +1154,37 @@ var init_jpeg = __esm({
             case 65280:
               break;
             case 65504:
+            // APP0 (Application Specific)
             case 65505:
+            // APP1
             case 65506:
+            // APP2
             case 65507:
+            // APP3
             case 65508:
+            // APP4
             case 65509:
+            // APP5
             case 65510:
+            // APP6
             case 65511:
+            // APP7
             case 65512:
+            // APP8
             case 65513:
+            // APP9
             case 65514:
+            // APP10
             case 65515:
+            // APP11
             case 65516:
+            // APP12
             case 65517:
+            // APP13
             case 65518:
+            // APP14
             case 65519:
+            // APP15
             case 65534: {
               const appData = readDataBlock();
               if (fileMarker === 65504) {
@@ -1236,7 +1236,9 @@ var init_jpeg = __esm({
               break;
             }
             case 65472:
+            // SOF0 (Start of Frame, Baseline DCT)
             case 65473:
+            // SOF1 (Start of Frame, Extended DCT)
             case 65474: {
               readUint16();
               const frame = {
@@ -1680,8 +1682,7 @@ function Inflate$1(options) {
 function inflate$1(input, options) {
   const inflator = new Inflate$1(options);
   inflator.push(input);
-  if (inflator.err)
-    throw inflator.msg || messages[inflator.err];
+  if (inflator.err) throw inflator.msg || messages[inflator.err];
   return inflator.result;
 }
 function inflateRaw$1(input, options) {
@@ -3653,10 +3654,8 @@ var init_pako_esm = __esm({
       if (this.ended) {
         return false;
       }
-      if (flush_mode === ~~flush_mode)
-        _flush_mode = flush_mode;
-      else
-        _flush_mode = flush_mode === true ? Z_FINISH$2 : Z_NO_FLUSH$1;
+      if (flush_mode === ~~flush_mode) _flush_mode = flush_mode;
+      else _flush_mode = flush_mode === true ? Z_FINISH$2 : Z_NO_FLUSH$1;
       if (typeof data === "string") {
         strm.input = strings.string2buf(data);
       } else if (toString$1.call(data) === "[object ArrayBuffer]") {
@@ -3696,8 +3695,7 @@ var init_pako_esm = __esm({
           strm.avail_out = 0;
           continue;
         }
-        if (strm.avail_in === 0)
-          break;
+        if (strm.avail_in === 0) break;
       }
       return true;
     };
@@ -4593,6 +4591,7 @@ var init_pako_esm = __esm({
               hold = 0;
               bits = 0;
               state.mode = TIME;
+            /* falls through */
             case TIME:
               while (bits < 32) {
                 if (have === 0) {
@@ -4615,6 +4614,7 @@ var init_pako_esm = __esm({
               hold = 0;
               bits = 0;
               state.mode = OS;
+            /* falls through */
             case OS:
               while (bits < 16) {
                 if (have === 0) {
@@ -4636,6 +4636,7 @@ var init_pako_esm = __esm({
               hold = 0;
               bits = 0;
               state.mode = EXLEN;
+            /* falls through */
             case EXLEN:
               if (state.flags & 1024) {
                 while (bits < 16) {
@@ -4661,6 +4662,7 @@ var init_pako_esm = __esm({
                 state.head.extra = null;
               }
               state.mode = EXTRA;
+            /* falls through */
             case EXTRA:
               if (state.flags & 1024) {
                 copy6 = state.length;
@@ -4697,6 +4699,7 @@ var init_pako_esm = __esm({
               }
               state.length = 0;
               state.mode = NAME;
+            /* falls through */
             case NAME:
               if (state.flags & 2048) {
                 if (have === 0) {
@@ -4722,6 +4725,7 @@ var init_pako_esm = __esm({
               }
               state.length = 0;
               state.mode = COMMENT;
+            /* falls through */
             case COMMENT:
               if (state.flags & 4096) {
                 if (have === 0) {
@@ -4746,6 +4750,7 @@ var init_pako_esm = __esm({
                 state.head.comment = null;
               }
               state.mode = HCRC;
+            /* falls through */
             case HCRC:
               if (state.flags & 512) {
                 while (bits < 16) {
@@ -4784,6 +4789,7 @@ var init_pako_esm = __esm({
               hold = 0;
               bits = 0;
               state.mode = DICT;
+            /* falls through */
             case DICT:
               if (state.havedict === 0) {
                 strm.next_out = put;
@@ -4796,10 +4802,12 @@ var init_pako_esm = __esm({
               }
               strm.adler = state.check = 1;
               state.mode = TYPE;
+            /* falls through */
             case TYPE:
               if (flush === Z_BLOCK || flush === Z_TREES) {
                 break inf_leave;
               }
+            /* falls through */
             case TYPEDO:
               if (state.last) {
                 hold >>>= bits & 7;
@@ -4864,8 +4872,10 @@ var init_pako_esm = __esm({
               if (flush === Z_TREES) {
                 break inf_leave;
               }
+            /* falls through */
             case COPY_:
               state.mode = COPY;
+            /* falls through */
             case COPY:
               copy6 = state.length;
               if (copy6) {
@@ -4913,6 +4923,7 @@ var init_pako_esm = __esm({
               }
               state.have = 0;
               state.mode = LENLENS;
+            /* falls through */
             case LENLENS:
               while (state.have < state.ncode) {
                 while (bits < 3) {
@@ -4942,6 +4953,7 @@ var init_pako_esm = __esm({
               }
               state.have = 0;
               state.mode = CODELENS;
+            /* falls through */
             case CODELENS:
               while (state.have < state.nlen + state.ndist) {
                 for (; ; ) {
@@ -5059,8 +5071,10 @@ var init_pako_esm = __esm({
               if (flush === Z_TREES) {
                 break inf_leave;
               }
+            /* falls through */
             case LEN_:
               state.mode = LEN;
+            /* falls through */
             case LEN:
               if (have >= 6 && left >= 258) {
                 strm.next_out = put;
@@ -5142,6 +5156,7 @@ var init_pako_esm = __esm({
               }
               state.extra = here_op & 15;
               state.mode = LENEXT;
+            /* falls through */
             case LENEXT:
               if (state.extra) {
                 n2 = state.extra;
@@ -5160,6 +5175,7 @@ var init_pako_esm = __esm({
               }
               state.was = state.length;
               state.mode = DIST;
+            /* falls through */
             case DIST:
               for (; ; ) {
                 here = state.distcode[hold & (1 << state.distbits) - 1];
@@ -5210,6 +5226,7 @@ var init_pako_esm = __esm({
               state.offset = here_val;
               state.extra = here_op & 15;
               state.mode = DISTEXT;
+            /* falls through */
             case DISTEXT:
               if (state.extra) {
                 n2 = state.extra;
@@ -5232,6 +5249,7 @@ var init_pako_esm = __esm({
                 break;
               }
               state.mode = MATCH;
+            /* falls through */
             case MATCH:
               if (left === 0) {
                 break inf_leave;
@@ -5308,6 +5326,7 @@ var init_pako_esm = __esm({
                 bits = 0;
               }
               state.mode = LENGTH;
+            /* falls through */
             case LENGTH:
               if (state.wrap && state.flags) {
                 while (bits < 32) {
@@ -5327,6 +5346,7 @@ var init_pako_esm = __esm({
                 bits = 0;
               }
               state.mode = DONE;
+            /* falls through */
             case DONE:
               ret = Z_STREAM_END$1;
               break inf_leave;
@@ -5336,6 +5356,7 @@ var init_pako_esm = __esm({
             case MEM:
               return Z_MEM_ERROR$1;
             case SYNC:
+            /* falls through */
             default:
               return Z_STREAM_ERROR$1;
           }
@@ -5347,8 +5368,7 @@ var init_pako_esm = __esm({
       state.hold = hold;
       state.bits = bits;
       if (state.wsize || _out !== strm.avail_out && state.mode < BAD && (state.mode < CHECK || flush !== Z_FINISH$1)) {
-        if (updatewindow(strm, strm.output, strm.next_out, _out - strm.avail_out))
-          ;
+        if (updatewindow(strm, strm.output, strm.next_out, _out - strm.avail_out)) ;
       }
       _in -= strm.avail_in;
       _out -= strm.avail_out;
@@ -5454,12 +5474,9 @@ var init_pako_esm = __esm({
       const chunkSize = this.options.chunkSize;
       const dictionary = this.options.dictionary;
       let status, _flush_mode, last_avail_out;
-      if (this.ended)
-        return false;
-      if (flush_mode === ~~flush_mode)
-        _flush_mode = flush_mode;
-      else
-        _flush_mode = flush_mode === true ? Z_FINISH : Z_NO_FLUSH;
+      if (this.ended) return false;
+      if (flush_mode === ~~flush_mode) _flush_mode = flush_mode;
+      else _flush_mode = flush_mode === true ? Z_FINISH : Z_NO_FLUSH;
       if (toString.call(data) === "[object ArrayBuffer]") {
         strm.input = new Uint8Array(data);
       } else {
@@ -5504,24 +5521,21 @@ var init_pako_esm = __esm({
               let utf8str = strings.buf2string(strm.output, next_out_utf8);
               strm.next_out = tail;
               strm.avail_out = chunkSize - tail;
-              if (tail)
-                strm.output.set(strm.output.subarray(next_out_utf8, next_out_utf8 + tail), 0);
+              if (tail) strm.output.set(strm.output.subarray(next_out_utf8, next_out_utf8 + tail), 0);
               this.onData(utf8str);
             } else {
               this.onData(strm.output.length === strm.next_out ? strm.output : strm.output.subarray(0, strm.next_out));
             }
           }
         }
-        if (status === Z_OK && last_avail_out === 0)
-          continue;
+        if (status === Z_OK && last_avail_out === 0) continue;
         if (status === Z_STREAM_END) {
           status = inflate_1$2.inflateEnd(this.strm);
           this.onEnd(status);
           this.ended = true;
           return true;
         }
-        if (strm.avail_in === 0)
-          break;
+        if (strm.avail_in === 0) break;
       }
       return true;
     };
@@ -5615,7 +5629,7 @@ var init_packbits = __esm({
 var require_LercDecode = __commonJS({
   "node_modules/lerc/LercDecode.js"(exports, module) {
     (function() {
-      var LercDecode = function() {
+      var LercDecode = (function() {
         var CntZImage = {};
         CntZImage.defaultNoDataValue = -34027999387901484e22;
         CntZImage.decode = function(input, options) {
@@ -5969,8 +5983,8 @@ var require_LercDecode = __commonJS({
           return dest;
         };
         return CntZImage;
-      }();
-      var Lerc2Decode = function() {
+      })();
+      var Lerc2Decode = (function() {
         "use strict";
         var BitStuffer = {
           //methods ending with 2 are for the new byte order used by Lerc2.3 and above.
@@ -7193,10 +7207,12 @@ var require_LercDecode = __commonJS({
             var s2 = 0;
             switch (t2) {
               case 0:
+              //ubyte
               case 1:
                 s2 = 1;
                 break;
               case 2:
+              //short
               case 3:
                 s2 = 2;
                 break;
@@ -7217,10 +7233,12 @@ var require_LercDecode = __commonJS({
             var t2 = dt2;
             switch (dt2) {
               case 2:
+              //short
               case 4:
                 t2 = dt2 - tc;
                 break;
               case 3:
+              //ushort
               case 5:
                 t2 = dt2 - 2 * tc;
                 break;
@@ -7459,14 +7477,14 @@ var require_LercDecode = __commonJS({
           }
         };
         return Lerc2Decode2;
-      }();
-      var isPlatformLittleEndian = function() {
+      })();
+      var isPlatformLittleEndian = (function() {
         var a2 = new ArrayBuffer(4);
         var b2 = new Uint8Array(a2);
         var c2 = new Uint32Array(a2);
         c2[0] = 1;
         return b2[0] === 1;
-      }();
+      })();
       var Lerc2 = {
         /************wrapper**********************************************/
         /**
@@ -7606,8 +7624,7 @@ var init_zstddec_modern = __esm({
     };
     ZSTDDecoder = class {
       init() {
-        if (init)
-          return init;
+        if (init) return init;
         if (typeof fetch !== "undefined") {
           init = fetch("data:application/wasm;base64," + wasm).then((response) => response.arrayBuffer()).then((arrayBuffer2) => WebAssembly.instantiate(arrayBuffer2, IMPORT_OBJECT)).then(this._init);
         } else {
@@ -7620,8 +7637,7 @@ var init_zstddec_modern = __esm({
         IMPORT_OBJECT.env.emscripten_notify_memory_growth(0);
       }
       decode(array, uncompressedSize = 0) {
-        if (!instance)
-          throw new Error(`ZSTDDecoder: Await .init() before decoding.`);
+        if (!instance) throw new Error(`ZSTDDecoder: Await .init() before decoding.`);
         const compressedSize = array.byteLength;
         const compressedPtr = instance.exports.malloc(compressedSize);
         heap.set(array, compressedPtr);
@@ -8498,7 +8514,7 @@ var init_blosc = __esm({
             G3[d2 >> 2] = e2;
             return 0;
           }
-        }, Y2 = function() {
+        }, Y2 = (function() {
           function a2(c2) {
             Y2 = c2.exports;
             y2 = Y2.w;
@@ -8526,7 +8542,7 @@ var init_blosc = __esm({
             a2(c2.instance);
           }).catch(q2);
           return {};
-        }(), mb = (a2) => (mb = Y2.y)(a2), W2 = (a2) => (W2 = Y2.z)(a2), Ta = (a2) => (Ta = Y2.B)(a2);
+        })(), mb = (a2) => (mb = Y2.y)(a2), W2 = (a2) => (W2 = Y2.z)(a2), Ta = (a2) => (Ta = Y2.B)(a2);
         f2.dynCall_jiji = (a2, b2, c2, d2, e2) => (f2.dynCall_jiji = Y2.D)(a2, b2, c2, d2, e2);
         var Z2;
         J2 = function pb() {
@@ -9316,7 +9332,7 @@ var init_lz4 = __esm({
               return true;
           }
           return false;
-        } }, Y2 = function() {
+        } }, Y2 = (function() {
           function a2(c2) {
             Y2 = c2.exports;
             z2 = Y2.r;
@@ -9344,7 +9360,7 @@ var init_lz4 = __esm({
             a2(c2.instance);
           }).catch(t2);
           return {};
-        }(), fb = (a2) => (fb = Y2.t)(a2), W2 = (a2) => (W2 = Y2.u)(a2), Ra = (a2) => (Ra = Y2.v)(a2), Z2;
+        })(), fb = (a2) => (fb = Y2.t)(a2), W2 = (a2) => (W2 = Y2.u)(a2), Ra = (a2) => (Ra = Y2.v)(a2), Z2;
         L2 = function ib() {
           Z2 || jb();
           Z2 || (L2 = ib);
@@ -10086,7 +10102,7 @@ var init_zstd = __esm({
               return true;
           }
           return false;
-        } }, X2 = function() {
+        } }, X2 = (function() {
           function a2(c2) {
             X2 = c2.exports;
             u2 = X2.o;
@@ -10112,7 +10128,7 @@ var init_zstd = __esm({
             a2(c2.instance);
           }).catch(q2);
           return {};
-        }(), ob = (a2) => (ob = X2.q)(a2), W2 = (a2) => (W2 = X2.r)(a2), Sa = (a2) => (Sa = X2.s)(a2), pa = () => (pa = X2.u)(), mb = (a2) => (mb = X2.v)(a2), kb = (a2) => (kb = X2.w)(a2), jb = () => (jb = X2.x)(), ib = (a2) => (ib = X2.y)(a2), hb = (a2) => (hb = X2.z)(a2), fb = (a2) => (fb = X2.A)(a2), lb = (a2, b2, c2) => (lb = X2.B)(a2, b2, c2), Z2;
+        })(), ob = (a2) => (ob = X2.q)(a2), W2 = (a2) => (W2 = X2.r)(a2), Sa = (a2) => (Sa = X2.s)(a2), pa = () => (pa = X2.u)(), mb = (a2) => (mb = X2.v)(a2), kb = (a2) => (kb = X2.w)(a2), jb = () => (jb = X2.x)(), ib = (a2) => (ib = X2.y)(a2), hb = (a2) => (hb = X2.z)(a2), fb = (a2) => (fb = X2.A)(a2), lb = (a2, b2, c2) => (lb = X2.B)(a2, b2, c2), Z2;
         I3 = function rb() {
           Z2 || sb();
           Z2 || (I3 = rb);
@@ -10218,25 +10234,19 @@ var require_earcut = __commonJS({
     function earcut3(data, holeIndices, dim) {
       dim = dim || 2;
       var hasHoles = holeIndices && holeIndices.length, outerLen = hasHoles ? holeIndices[0] * dim : data.length, outerNode = linkedList(data, 0, outerLen, dim, true), triangles = [];
-      if (!outerNode || outerNode.next === outerNode.prev)
-        return triangles;
+      if (!outerNode || outerNode.next === outerNode.prev) return triangles;
       var minX, minY, maxX, maxY, x2, y2, invSize;
-      if (hasHoles)
-        outerNode = eliminateHoles(data, holeIndices, outerNode, dim);
+      if (hasHoles) outerNode = eliminateHoles(data, holeIndices, outerNode, dim);
       if (data.length > 80 * dim) {
         minX = maxX = data[0];
         minY = maxY = data[1];
         for (var i3 = dim; i3 < outerLen; i3 += dim) {
           x2 = data[i3];
           y2 = data[i3 + 1];
-          if (x2 < minX)
-            minX = x2;
-          if (y2 < minY)
-            minY = y2;
-          if (x2 > maxX)
-            maxX = x2;
-          if (y2 > maxY)
-            maxY = y2;
+          if (x2 < minX) minX = x2;
+          if (y2 < minY) minY = y2;
+          if (x2 > maxX) maxX = x2;
+          if (y2 > maxY) maxY = y2;
         }
         invSize = Math.max(maxX - minX, maxY - minY);
         invSize = invSize !== 0 ? 32767 / invSize : 0;
@@ -10247,11 +10257,9 @@ var require_earcut = __commonJS({
     function linkedList(data, start, end, dim, clockwise) {
       var i3, last;
       if (clockwise === signedArea(data, start, end, dim) > 0) {
-        for (i3 = start; i3 < end; i3 += dim)
-          last = insertNode(i3, data[i3], data[i3 + 1], last);
+        for (i3 = start; i3 < end; i3 += dim) last = insertNode(i3, data[i3], data[i3 + 1], last);
       } else {
-        for (i3 = end - dim; i3 >= start; i3 -= dim)
-          last = insertNode(i3, data[i3], data[i3 + 1], last);
+        for (i3 = end - dim; i3 >= start; i3 -= dim) last = insertNode(i3, data[i3], data[i3 + 1], last);
       }
       if (last && equals6(last, last.next)) {
         removeNode(last);
@@ -10260,18 +10268,15 @@ var require_earcut = __commonJS({
       return last;
     }
     function filterPoints(start, end) {
-      if (!start)
-        return start;
-      if (!end)
-        end = start;
+      if (!start) return start;
+      if (!end) end = start;
       var p2 = start, again;
       do {
         again = false;
         if (!p2.steiner && (equals6(p2, p2.next) || area(p2.prev, p2, p2.next) === 0)) {
           removeNode(p2);
           p2 = end = p2.prev;
-          if (p2 === p2.next)
-            break;
+          if (p2 === p2.next) break;
           again = true;
         } else {
           p2 = p2.next;
@@ -10280,10 +10285,8 @@ var require_earcut = __commonJS({
       return end;
     }
     function earcutLinked(ear, triangles, dim, minX, minY, invSize, pass) {
-      if (!ear)
-        return;
-      if (!pass && invSize)
-        indexCurve(ear, minX, minY, invSize);
+      if (!ear) return;
+      if (!pass && invSize) indexCurve(ear, minX, minY, invSize);
       var stop = ear, prev, next;
       while (ear.prev !== ear.next) {
         prev = ear.prev;
@@ -10313,42 +10316,35 @@ var require_earcut = __commonJS({
     }
     function isEar(ear) {
       var a2 = ear.prev, b2 = ear, c2 = ear.next;
-      if (area(a2, b2, c2) >= 0)
-        return false;
+      if (area(a2, b2, c2) >= 0) return false;
       var ax = a2.x, bx = b2.x, cx = c2.x, ay = a2.y, by = b2.y, cy = c2.y;
       var x0 = ax < bx ? ax < cx ? ax : cx : bx < cx ? bx : cx, y0 = ay < by ? ay < cy ? ay : cy : by < cy ? by : cy, x1 = ax > bx ? ax > cx ? ax : cx : bx > cx ? bx : cx, y1 = ay > by ? ay > cy ? ay : cy : by > cy ? by : cy;
       var p2 = c2.next;
       while (p2 !== a2) {
-        if (p2.x >= x0 && p2.x <= x1 && p2.y >= y0 && p2.y <= y1 && pointInTriangle(ax, ay, bx, by, cx, cy, p2.x, p2.y) && area(p2.prev, p2, p2.next) >= 0)
-          return false;
+        if (p2.x >= x0 && p2.x <= x1 && p2.y >= y0 && p2.y <= y1 && pointInTriangle(ax, ay, bx, by, cx, cy, p2.x, p2.y) && area(p2.prev, p2, p2.next) >= 0) return false;
         p2 = p2.next;
       }
       return true;
     }
     function isEarHashed(ear, minX, minY, invSize) {
       var a2 = ear.prev, b2 = ear, c2 = ear.next;
-      if (area(a2, b2, c2) >= 0)
-        return false;
+      if (area(a2, b2, c2) >= 0) return false;
       var ax = a2.x, bx = b2.x, cx = c2.x, ay = a2.y, by = b2.y, cy = c2.y;
       var x0 = ax < bx ? ax < cx ? ax : cx : bx < cx ? bx : cx, y0 = ay < by ? ay < cy ? ay : cy : by < cy ? by : cy, x1 = ax > bx ? ax > cx ? ax : cx : bx > cx ? bx : cx, y1 = ay > by ? ay > cy ? ay : cy : by > cy ? by : cy;
       var minZ = zOrder(x0, y0, minX, minY, invSize), maxZ = zOrder(x1, y1, minX, minY, invSize);
       var p2 = ear.prevZ, n2 = ear.nextZ;
       while (p2 && p2.z >= minZ && n2 && n2.z <= maxZ) {
-        if (p2.x >= x0 && p2.x <= x1 && p2.y >= y0 && p2.y <= y1 && p2 !== a2 && p2 !== c2 && pointInTriangle(ax, ay, bx, by, cx, cy, p2.x, p2.y) && area(p2.prev, p2, p2.next) >= 0)
-          return false;
+        if (p2.x >= x0 && p2.x <= x1 && p2.y >= y0 && p2.y <= y1 && p2 !== a2 && p2 !== c2 && pointInTriangle(ax, ay, bx, by, cx, cy, p2.x, p2.y) && area(p2.prev, p2, p2.next) >= 0) return false;
         p2 = p2.prevZ;
-        if (n2.x >= x0 && n2.x <= x1 && n2.y >= y0 && n2.y <= y1 && n2 !== a2 && n2 !== c2 && pointInTriangle(ax, ay, bx, by, cx, cy, n2.x, n2.y) && area(n2.prev, n2, n2.next) >= 0)
-          return false;
+        if (n2.x >= x0 && n2.x <= x1 && n2.y >= y0 && n2.y <= y1 && n2 !== a2 && n2 !== c2 && pointInTriangle(ax, ay, bx, by, cx, cy, n2.x, n2.y) && area(n2.prev, n2, n2.next) >= 0) return false;
         n2 = n2.nextZ;
       }
       while (p2 && p2.z >= minZ) {
-        if (p2.x >= x0 && p2.x <= x1 && p2.y >= y0 && p2.y <= y1 && p2 !== a2 && p2 !== c2 && pointInTriangle(ax, ay, bx, by, cx, cy, p2.x, p2.y) && area(p2.prev, p2, p2.next) >= 0)
-          return false;
+        if (p2.x >= x0 && p2.x <= x1 && p2.y >= y0 && p2.y <= y1 && p2 !== a2 && p2 !== c2 && pointInTriangle(ax, ay, bx, by, cx, cy, p2.x, p2.y) && area(p2.prev, p2, p2.next) >= 0) return false;
         p2 = p2.prevZ;
       }
       while (n2 && n2.z <= maxZ) {
-        if (n2.x >= x0 && n2.x <= x1 && n2.y >= y0 && n2.y <= y1 && n2 !== a2 && n2 !== c2 && pointInTriangle(ax, ay, bx, by, cx, cy, n2.x, n2.y) && area(n2.prev, n2, n2.next) >= 0)
-          return false;
+        if (n2.x >= x0 && n2.x <= x1 && n2.y >= y0 && n2.y <= y1 && n2 !== a2 && n2 !== c2 && pointInTriangle(ax, ay, bx, by, cx, cy, n2.x, n2.y) && area(n2.prev, n2, n2.next) >= 0) return false;
         n2 = n2.nextZ;
       }
       return true;
@@ -10393,8 +10389,7 @@ var require_earcut = __commonJS({
         start = holeIndices[i3] * dim;
         end = i3 < len4 - 1 ? holeIndices[i3 + 1] * dim : data.length;
         list = linkedList(data, start, end, dim, false);
-        if (list === list.next)
-          list.steiner = true;
+        if (list === list.next) list.steiner = true;
         queue.push(getLeftmost(list));
       }
       queue.sort(compareX);
@@ -10423,14 +10418,12 @@ var require_earcut = __commonJS({
           if (x2 <= hx && x2 > qx) {
             qx = x2;
             m2 = p2.x < p2.next.x ? p2 : p2.next;
-            if (x2 === hx)
-              return m2;
+            if (x2 === hx) return m2;
           }
         }
         p2 = p2.next;
       } while (p2 !== outerNode);
-      if (!m2)
-        return null;
+      if (!m2) return null;
       var stop = m2, mx = m2.x, my = m2.y, tanMin = Infinity, tan2;
       p2 = m2;
       do {
@@ -10451,8 +10444,7 @@ var require_earcut = __commonJS({
     function indexCurve(start, minX, minY, invSize) {
       var p2 = start;
       do {
-        if (p2.z === 0)
-          p2.z = zOrder(p2.x, p2.y, minX, minY, invSize);
+        if (p2.z === 0) p2.z = zOrder(p2.x, p2.y, minX, minY, invSize);
         p2.prevZ = p2.prev;
         p2.nextZ = p2.next;
         p2 = p2.next;
@@ -10475,8 +10467,7 @@ var require_earcut = __commonJS({
           for (i3 = 0; i3 < inSize; i3++) {
             pSize++;
             q2 = q2.nextZ;
-            if (!q2)
-              break;
+            if (!q2) break;
           }
           qSize = inSize;
           while (pSize > 0 || qSize > 0 && q2) {
@@ -10489,10 +10480,8 @@ var require_earcut = __commonJS({
               q2 = q2.nextZ;
               qSize--;
             }
-            if (tail)
-              tail.nextZ = e2;
-            else
-              list = e2;
+            if (tail) tail.nextZ = e2;
+            else list = e2;
             e2.prevZ = tail;
             tail = e2;
           }
@@ -10519,8 +10508,7 @@ var require_earcut = __commonJS({
     function getLeftmost(start) {
       var p2 = start, leftmost = start;
       do {
-        if (p2.x < leftmost.x || p2.x === leftmost.x && p2.y < leftmost.y)
-          leftmost = p2;
+        if (p2.x < leftmost.x || p2.x === leftmost.x && p2.y < leftmost.y) leftmost = p2;
         p2 = p2.next;
       } while (p2 !== start);
       return leftmost;
@@ -10545,16 +10533,11 @@ var require_earcut = __commonJS({
       var o22 = sign(area(p1, q1, q2));
       var o3 = sign(area(p2, q2, p1));
       var o4 = sign(area(p2, q2, q1));
-      if (o1 !== o22 && o3 !== o4)
-        return true;
-      if (o1 === 0 && onSegment(p1, p2, q1))
-        return true;
-      if (o22 === 0 && onSegment(p1, q2, q1))
-        return true;
-      if (o3 === 0 && onSegment(p2, p1, q2))
-        return true;
-      if (o4 === 0 && onSegment(p2, q1, q2))
-        return true;
+      if (o1 !== o22 && o3 !== o4) return true;
+      if (o1 === 0 && onSegment(p1, p2, q1)) return true;
+      if (o22 === 0 && onSegment(p1, q2, q1)) return true;
+      if (o3 === 0 && onSegment(p2, p1, q2)) return true;
+      if (o4 === 0 && onSegment(p2, q1, q2)) return true;
       return false;
     }
     function onSegment(p2, q2, r2) {
@@ -10566,8 +10549,7 @@ var require_earcut = __commonJS({
     function intersectsPolygon(a2, b2) {
       var p2 = a2;
       do {
-        if (p2.i !== a2.i && p2.next.i !== a2.i && p2.i !== b2.i && p2.next.i !== b2.i && intersects(p2, p2.next, a2, b2))
-          return true;
+        if (p2.i !== a2.i && p2.next.i !== a2.i && p2.i !== b2.i && p2.next.i !== b2.i && intersects(p2, p2.next, a2, b2)) return true;
         p2 = p2.next;
       } while (p2 !== a2);
       return false;
@@ -10612,10 +10594,8 @@ var require_earcut = __commonJS({
     function removeNode(p2) {
       p2.next.prev = p2.prev;
       p2.prev.next = p2.next;
-      if (p2.prevZ)
-        p2.prevZ.nextZ = p2.nextZ;
-      if (p2.nextZ)
-        p2.nextZ.prevZ = p2.prevZ;
+      if (p2.prevZ) p2.prevZ.nextZ = p2.nextZ;
+      if (p2.nextZ) p2.nextZ.prevZ = p2.prevZ;
     }
     function Node(i3, x2, y2) {
       this.i = i3;
@@ -10662,8 +10642,7 @@ var require_earcut = __commonJS({
       var dim = data[0][0].length, result = { vertices: [], holes: [], dimensions: dim }, holeIndex = 0;
       for (var i3 = 0; i3 < data.length; i3++) {
         for (var j2 = 0; j2 < data[i3].length; j2++) {
-          for (var d2 = 0; d2 < dim; d2++)
-            result.vertices.push(data[i3][j2][d2]);
+          for (var d2 = 0; d2 < dim; d2++) result.vertices.push(data[i3][j2][d2]);
         }
         if (i3 > 0) {
           holeIndex += data[i3 - 1].length;
@@ -10717,16 +10696,14 @@ function C() {
 async function E(I3) {
   void 0 === I3 && (I3 = "".replace(/\.js$/, "_bg.wasm"));
   ("string" == typeof I3 || "function" == typeof Request && I3 instanceof Request || "function" == typeof URL && I3 instanceof URL) && (I3 = fetch(I3));
-  const { instance: g3, module: B3 } = await async function(A3, I4) {
+  const { instance: g3, module: B3 } = await (async function(A3, I4) {
     if ("function" == typeof Response && A3 instanceof Response) {
-      if ("function" == typeof WebAssembly.instantiateStreaming)
-        try {
-          return await WebAssembly.instantiateStreaming(A3, I4);
-        } catch (I5) {
-          if ("application/wasm" == A3.headers.get("Content-Type"))
-            throw I5;
-          console.warn("`WebAssembly.instantiateStreaming` failed because your server does not serve wasm with `application/wasm` MIME type. Falling back to `WebAssembly.instantiate` which is slower. Original error:\n", I5);
-        }
+      if ("function" == typeof WebAssembly.instantiateStreaming) try {
+        return await WebAssembly.instantiateStreaming(A3, I4);
+      } catch (I5) {
+        if ("application/wasm" == A3.headers.get("Content-Type")) throw I5;
+        console.warn("`WebAssembly.instantiateStreaming` failed because your server does not serve wasm with `application/wasm` MIME type. Falling back to `WebAssembly.instantiate` which is slower. Original error:\n", I5);
+      }
       const g4 = await A3.arrayBuffer();
       return await WebAssembly.instantiate(g4, I4);
     }
@@ -10734,16 +10711,16 @@ async function E(I3) {
       const g4 = await WebAssembly.instantiate(A3, I4);
       return g4 instanceof WebAssembly.Instance ? { instance: g4, module: A3 } : g4;
     }
-  }(await I3, {});
+  })(await I3, {});
   return A = g3.exports, E.__wbindgen_wasm_module = B3, A;
 }
 var D = Object.freeze({ __proto__: null, decompress: function(I3, Q3) {
   try {
     const F2 = A.__wbindgen_add_to_stack_pointer(-16);
-    var E3 = function(A3, I4) {
+    var E3 = (function(A3, I4) {
       const Q4 = I4(1 * A3.length);
       return g().set(A3, Q4 / 1), B = A3.length, Q4;
-    }(I3, A.__wbindgen_malloc), D3 = B;
+    })(I3, A.__wbindgen_malloc), D3 = B;
     A.decompress(F2, E3, D3, Q3);
     var i3 = C()[F2 / 4 + 0], w3 = C()[F2 / 4 + 1], G3 = (o3 = i3, N3 = w3, g().subarray(o3 / 1, o3 / 1 + N3)).slice();
     return A.__wbindgen_free(i3, 1 * w3), G3;
@@ -10756,18 +10733,16 @@ var i = [62, 0, 0, 0, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 0, 0, 0, 0, 0,
 function w(A3) {
   return i[A3 - 43];
 }
-var G = function(A3) {
+var G = (function(A3) {
   let I3, g3 = A3.endsWith("==") ? 2 : A3.endsWith("=") ? 1 : 0, B3 = A3.length, Q3 = new Uint8Array(B3 / 4 * 3);
-  for (let g4 = 0, C3 = 0; g4 < B3; g4 += 4, C3 += 3)
-    I3 = w(A3.charCodeAt(g4)) << 18 | w(A3.charCodeAt(g4 + 1)) << 12 | w(A3.charCodeAt(g4 + 2)) << 6 | w(A3.charCodeAt(g4 + 3)), Q3[C3] = I3 >> 16, Q3[C3 + 1] = I3 >> 8 & 255, Q3[C3 + 2] = 255 & I3;
+  for (let g4 = 0, C3 = 0; g4 < B3; g4 += 4, C3 += 3) I3 = w(A3.charCodeAt(g4)) << 18 | w(A3.charCodeAt(g4 + 1)) << 12 | w(A3.charCodeAt(g4 + 2)) << 6 | w(A3.charCodeAt(g4 + 3)), Q3[C3] = I3 >> 16, Q3[C3 + 1] = I3 >> 8 & 255, Q3[C3 + 2] = 255 & I3;
   return Q3.subarray(0, Q3.length - g3);
-}("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NwMAIANBEGokAA8LIARBCEHYhcAAEDcACyACQQhByIXAABA3AAuqAgEDfyMAQYABayIEJAACQAJAAn8CQCABKAIAIgNBEHFFBEAgACgCACECIANBIHENASACrSABEBUMAgsgACgCACECQQAhAANAIAAgBGpB/wBqIAJBD3EiA0EwciADQdcAaiADQQpJGzoAACAAQX9qIQAgAkEEdiICDQALIABBgAFqIgJBgQFPDQIgAUGkjsAAQQIgACAEakGAAWpBACAAaxAIDAELQQAhAANAIAAgBGpB/wBqIAJBD3EiA0EwciADQTdqIANBCkkbOgAAIABBf2ohACACQQR2IgINAAsgAEGAAWoiAkGBAU8NAiABQaSOwABBAiAAIARqQYABakEAIABrEAgLIARBgAFqJAAPCyACQYABQZSOwAAQOQALIAJBgAFBlI7AABA5AAuxAgEEfyMAQUBqIgIkACABKAIEIgNFBEAgAUEEaiEDIAEoAgAhBCACQQA2AiAgAkIBNwMYIAIgAkEYajYCJCACQThqIARBEGopAgA3AwAgAkEwaiAEQQhqKQIANwMAIAIgBCkCADcDKCACQSRqQdiJwAAgAkEoahAJGiACQRBqIgQgAigCIDYCACACIAIpAxg3AwgCQCABKAIEIgVFDQAgAUEIaigCAEUNACAFEAQLIAMgAikDCDcCACADQQhqIAQoAgA2AgAgAygCACEDCyABQQE2AgQgAUEMaigCACEEIAFBCGoiASgCACEFIAFCADcCAEEMQQQQWSIBRQRAQQxBBBBjAAsgASAENgIIIAEgBTYCBCABIAM2AgAgAEGQi8AANgIEIAAgATYCACACQUBrJAAL/AEBAn8jAEEQayICJAAgACgCACACQQA2AgwCfwJAAkAgAUGAAU8EQCABQYAQSQ0BIAJBDGohACABQYCABE8NAiACIAFBP3FBgAFyOgAOIAIgAUEMdkHgAXI6AAwgAiABQQZ2QT9xQYABcjoADUEDDAMLIAIgAToADCACQQxqIQBBAQwCCyACIAFBP3FBgAFyOgANIAIgAUEGdkHAAXI6AAwgAkEMaiEAQQIMAQsgAiABQT9xQYABcjoADyACIAFBEnZB8AFyOgAMIAIgAUEGdkE/cUGAAXI6AA4gAiABQQx2QT9xQYABcjoADUEECyEBIAAgARALIAJBEGokAAv5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QSxqQQI2AgAgAUE8akEhNgIAIAFCAjcCHCABQayMwAA2AhggAUEdNgI0IAEgAUEwajYCKCABIAFBEGo2AjggASABQQhqNgIwIAFBGGpB8IDAABBRAAtxAQN/IwBBIGsiAiQAAkAgACABEBkNACABQRxqKAIAIQMgASgCGCACQRxqQQA2AgAgAkHwi8AANgIYIAJCATcCDCACQfSLwAA2AgggAyACQQhqEAkNACAAQQRqIAEQGSACQSBqJAAPCyACQSBqJABBAQswAQF/AkACQEGAwABBAhBZIgENAQwAC0GAwABBAhBjAAsgACABNgIAIABBgCA2AgQLewECfwJAAkAgACgCBCIBBEAgACgCDCICIAFPDQEgACgCACIBIAJqIAEtAAA6AAAgAEEANgIIIAAgACgCDEEBajYCDCAAKAIERQ0CIAAoAgAtAAAPC0EAQQBBiIbAABA2AAsgAiABQZiGwAAQNgALQQBBAEGohsAAEDYAC2gBAn8gACAALQBGIgFBAWoiAjoACiAAQQEgAUEPcXRBAmoiATsBQCAAQX8gAkEPcXRBf3M7AQggAEEYaigCACABQf//A3EiAU8EQCAAIAE2AhgLIABBJGooAgAgAU8EQCAAIAE2AiQLC1ABAX8gAEEUaigCACIBRSABQQJ0RXJFBEAgACgCEBAECyAAQSBqKAIAIgFFIAFBAXRFckUEQCAAKAIcEAQLIABBLGooAgAEQCAAKAIoEAQLC2wBAX8jAEEwayIDJAAgAyABNgIEIAMgADYCACADQRxqQQI2AgAgA0EsakEcNgIAIANCAjcCDCADQYCNwAA2AgggA0EcNgIkIAMgA0EgajYCGCADIAM2AiggAyADQQRqNgIgIANBCGogAhBRAAtsAQF/IwBBMGsiAyQAIAMgATYCBCADIAA2AgAgA0EcakECNgIAIANBLGpBHDYCACADQgI3AgwgA0HMkcAANgIIIANBHDYCJCADIANBIGo2AhggAyADQQRqNgIoIAMgAzYCICADQQhqIAIQUQALbAEBfyMAQTBrIgMkACADIAE2AgQgAyAANgIAIANBHGpBAjYCACADQSxqQRw2AgAgA0ICNwIMIANBgJLAADYCCCADQRw2AiQgAyADQSBqNgIYIAMgA0EEajYCKCADIAM2AiAgA0EIaiACEFEAC2wBAX8jAEEwayIDJAAgAyABNgIEIAMgADYCACADQRxqQQI2AgAgA0EsakEcNgIAIANCAjcCDCADQayRwAA2AgggA0EcNgIkIAMgA0EgajYCGCADIANBBGo2AiggAyADNgIgIANBCGogAhBRAAtcAQF/IwBBEGsiAyQAAkAgACgCBCABayACTwRAIANBADYCAAwBCyADIAAgASACEBYgAygCAEEBRw0AIANBCGooAgAiAARAIAMoAgQgABBjAAsQXQALIANBEGokAAtaAQF/IwBBEGsiAiQAAkAgACgCBCABa0EBTwRAIAJBADYCAAwBCyACIAAgARAeIAIoAgBBAUcNACACQQhqKAIAIgAEQCACKAIEIAAQYwALEF0ACyACQRBqJAALWgEBfyMAQRBrIgIkAAJAIAAoAgQgAWtBAU8EQCACQQA2AgAMAQsgAiAAIAEQHSACKAIAQQFHDQAgAkEIaigCACIABEAgAigCBCAAEGMACxBdAAsgAkEQaiQAC1kBAX8jAEEgayICJAAgAiAAKAIANgIEIAJBGGogAUEQaikCADcDACACQRBqIAFBCGopAgA3AwAgAiABKQIANwMIIAJBBGpB2InAACACQQhqEAkgAkEgaiQAC0YAAkBBCCACSQRAAn9BCCACSQRAIAIgAxAQDAELIAMQAAsiAg0BQQAPCyAAIAMQCg8LIAIgACADIAEgASADSxsQSyAAEAQLWQEBfyMAQSBrIgIkACACIAAoAgA2AgQgAkEYaiABQRBqKQIANwMAIAJBEGogAUEIaikCADcDACACIAEpAgA3AwggAkEEakHwj8AAIAJBCGoQCSACQSBqJAALWQACQAJAAkAgAUF/SgRAAkAgAgRAIAENAQwECyABRQ0DIAFBARBZIgINBAwCCyABEEciAkUNAQwDCxBdAAsgAUEBEGMAC0EBIQILIAAgATYCBCAAIAI2AgALVgEBfyMAQSBrIgIkACACIAA2AgQgAkEYaiABQRBqKQIANwMAIAJBEGogAUEIaikCADcDACACIAEpAgA3AwggAkEEakHwj8AAIAJBCGoQCSACQSBqJAALWQEDfwJAIAEoAgwiAiABKAIIIgNPBEAgASgCBCIEIAJJDQEgASgCACEBIAAgAiADazYCBCAAIAEgA2o2AgAPCyADIAJB2IbAABA4AAsgAiAEQdiGwAAQNwALVQEBfyAAQRBqIAAtAEYQDSAAQQA6AEcgAEEAOwE4IABBMGpCADcDACAAQQA6AAsgAEIANwMAIAAgAC0ARkEBaiIBOgAKIABBfyABQQ9xdEF/czsBCAtDAQN/AkAgAkUNAANAIAAtAAAiBCABLQAAIgVGBEAgAEEBaiEAIAFBAWohASACQX9qIgINAQwCCwsgBCAFayEDCyADC0UBAX8jAEEQayICJAAgAiAAIAEQLQJAIAIoAgBBAUYEQCACQQhqKAIAIgBFDQEgAigCBCAAEGMACyACQRBqJAAPCxBdAAtKAAJ/IAFBgIDEAEcEQEEBIAAoAhggASAAQRxqKAIAKAIQEQAADQEaCyACRQRAQQAPCyAAKAIYIAIgAyAAQRxqKAIAKAIMEQEACwsmAQF/AkAgABAAIgFFDQAgAUF8ai0AAEEDcUUNACABIAAQUgsgAQtHAQF/IwBBIGsiAyQAIANBFGpBADYCACADQfCLwAA2AhAgA0IBNwIEIAMgATYCHCADIAA2AhggAyADQRhqNgIAIAMgAhBRAAtEAQJ/IAEoAgQhAiABKAIAIQNBCEEEEFkiAUUEQEEIQQQQYwALIAEgAjYCBCABIAM2AgAgAEGgi8AANgIEIAAgATYCAAtbAQN/IwBBEGsiASQAIAAoAgwiAkUEQEGAisAAQStByIrAABBIAAsgACgCCCIDRQRAQYCKwABBK0HYisAAEEgACyABIAI2AgggASAANgIEIAEgAzYCACABEFAACzMBAX8gAgRAIAAhAwNAIAMgAS0AADoAACABQQFqIQEgA0EBaiEDIAJBf2oiAg0ACwsgAAssAAJAIABBfE0EQCAARQRAQQQhAAwCCyAAIABBfUlBAnQQWSIADQELAAsgAAsxAQF/IAEoAgQiAgRAIAAgAjYCBCAAQQhqQQE2AgAgACABKAIANgIADwsgAEEANgIACzEBAX8gACABKAIEIAEoAggiAksEfyABIAIQRSABKAIIBSACCzYCBCAAIAEoAgA2AgALKAEBfyAAKAIIIgIgAU8EQCAAKAIAGiAAIAE2AggPCyAAIAEgAmsQKAssAQF/IwBBEGsiASQAIAFBCGogAEEIaigCADYCACABIAApAgA3AwAgARAsAAs0AQF/IwBBEGsiAiQAIAIgATYCDCACIAA2AgggAkG8jMAANgIEIAJB8IvAADYCACACEEoACyEAIAEEQANAIABBADoAACAAQQFqIQAgAUF/aiIBDQALCwsgAQF/AkAgACgCACIBRQ0AIABBBGooAgBFDQAgARAECwsgAQF/AkAgACgCBCIBRQ0AIABBCGooAgBFDQAgARAECwsMACAAIAEgAiADED4LCwAgAQRAIAAQBAsLEgAgACgCACABIAEgAmoQH0EACxQAIAAoAgAgASAAKAIEKAIMEQAACxkAAn9BCCABSQRAIAEgABAQDAELIAAQAAsLEAAgACACNgIEIAAgATYCAAsTACAAQaCLwAA2AgQgACABNgIACxAAIAEgACgCACAAKAIEEAULEQBBzIvAAEERQeCLwAAQSAALDgAgACgCABoDQAwACwALCwAgADUCACABEBULDQAgACgCACABIAIQCwsLACAAMQAAIAEQFQsLACAAIwBqJAAjAAsZACAAIAFB+KbAACgCACIAQQ4gABsRAgAACw0AIAFBxJDAAEECEAULCQAgAEEAOgBHCwcAIAAtAEcLDQBC9Pme5u6jqvn+AAsNAEL3uO76qszV7uUACwwAQunQotvMouq7RgsDAAELAwABCwvfJgEAQYCAwAAL1SYvVXNlcnMvZm04MTMvLnJ1c3R1cC90b29sY2hhaW5zL3N0YWJsZS14ODZfNjQtYXBwbGUtZGFyd2luL2xpYi9ydXN0bGliL3NyYy9ydXN0L2xpYnJhcnkvY29yZS9zcmMvYWxsb2MvbGF5b3V0LnJzAAAQAHAAAAALAQAAOQAAAGNhbGxlZCBgUmVzdWx0Ojp1bndyYXAoKWAgb24gYW4gYEVycmAgdmFsdWUAAQAAAAAAAAABAAAAAgAAAHNyYy9saWIucnMAALwAEAAKAAAAGwAAAA4AAAC8ABAACgAAABwAAAASAAAAYXNzZXJ0aW9uIGZhaWxlZDogbWlkIDw9IHNlbGYubGVuKCkvVXNlcnMvZm04MTMvLnJ1c3R1cC90b29sY2hhaW5zL3N0YWJsZS14ODZfNjQtYXBwbGUtZGFyd2luL2xpYi9ydXN0bGliL3NyYy9ydXN0L2xpYnJhcnkvY29yZS9zcmMvc2xpY2UvbW9kLnJzCwEQAG0AAAD9BAAACQAAAAMAAABQAAAACAAAAAQAAAAFAAAABgAAAAcAAAAIAAAAUAAAAAgAAAAJAAAACgAAAAsAAAAMAAAAL1VzZXJzL2ZtODEzLy5jYXJnby9yZWdpc3RyeS9zcmMvZ2l0aHViLmNvbS0xZWNjNjI5OWRiOWVjODIzL3dlZXpsLTAuMS40L3NyYy9kZWNvZGUucnMAAMABEABWAAAAWgIAAB8AAADAARAAVgAAAG0CAAAbAAAAwAEQAFYAAACCAgAAJgAAAMABEABWAAAAqwIAABEAAADAARAAVgAAAK0CAAARAAAAwAEQAFYAAAC5AgAAGQAAAMABEABWAAAAzQIAACIAAADAARAAVgAAAM8CAAAbAAAAwAEQAFYAAADQAgAAFQAAAMABEABWAAAA0QIAABUAAADAARAAVgAAAPoCAAANAAAAwAEQAFYAAABFAwAAEQAAAMABEABWAAAASwMAABEAAADAARAAVgAAAIoDAAARAAAAwAEQAFYAAACQAwAAEQAAAMABEABWAAAAvAMAACcAAADAARAAVgAAALwDAAAJAAAAwAEQAFYAAAC/AwAACQAAAMABEABWAAAAxgMAABUAAADAARAAVgAAAMkDAAAYAAAAwAEQAFYAAADSAwAACgAAAMABEABWAAAA+AMAAAoAAADAARAAVgAAAAUEAAAVAAAAwAEQAFYAAAANBAAAFgAAAMABEABWAAAAGAQAAAkAAAAvVXNlcnMvZm04MTMvLnJ1c3R1cC90b29sY2hhaW5zL3N0YWJsZS14ODZfNjQtYXBwbGUtZGFyd2luL2xpYi9ydXN0bGliL3NyYy9ydXN0L2xpYnJhcnkvYWxsb2Mvc3JjL3Jhd192ZWMucnNUcmllZCB0byBzaHJpbmsgdG8gYSBsYXJnZXIgY2FwYWNpdHmoAxAAbAAAAMUBAAAJAAAATWF4aW11bSBjb2RlIHNpemUgMTIgcmVxdWlyZWQsIGdvdCAASAQQACMAAAAvVXNlcnMvZm04MTMvLmNhcmdvL3JlZ2lzdHJ5L3NyYy9naXRodWIuY29tLTFlY2M2Mjk5ZGI5ZWM4MjMvd2VlemwtMC4xLjQvc3JjL2xpYi5ycwB0BBAAUwAAAE0AAAAFAAAADwAAAAQAAAAEAAAAEAAAABEAAAASAAAADwAAAAAAAAABAAAAEwAAAGNhbGxlZCBgT3B0aW9uOjp1bndyYXAoKWAgb24gYSBgTm9uZWAgdmFsdWVsaWJyYXJ5L3N0ZC9zcmMvcGFuaWNraW5nLnJzACsFEAAcAAAA7QEAAB8AAAArBRAAHAAAAO4BAAAeAAAAFAAAABAAAAAEAAAAFQAAABYAAAAPAAAACAAAAAQAAAAXAAAAGAAAABkAAAAMAAAABAAAABoAAAAPAAAACAAAAAQAAAAbAAAAbGlicmFyeS9hbGxvYy9zcmMvcmF3X3ZlYy5yc2NhcGFjaXR5IG92ZXJmbG93AAAAsAUQABwAAAAeAgAABQAAAGAuLgDxBRAAAgAAAGNhbGxlZCBgT3B0aW9uOjp1bndyYXAoKWAgb24gYSBgTm9uZWAgdmFsdWU6IAAAAPAFEAAAAAAAJwYQAAIAAAAiAAAAAAAAAAEAAAAjAAAAaW5kZXggb3V0IG9mIGJvdW5kczogdGhlIGxlbiBpcyAgYnV0IHRoZSBpbmRleCBpcyAAAEwGEAAgAAAAbAYQABIAAABsaWJyYXJ5L2NvcmUvc3JjL2ZtdC9idWlsZGVycy5ycyIAAAAMAAAABAAAACQAAAAlAAAAJgAAACAgICCQBhAAIAAAADIAAAAhAAAAkAYQACAAAAAzAAAAEgAAACB7CiwKLCAgeyB9IH1saWJyYXJ5L2NvcmUvc3JjL2ZtdC9udW0ucnP5BhAAGwAAAGUAAAAUAAAAMHgwMDAxMDIwMzA0MDUwNjA3MDgwOTEwMTExMjEzMTQxNTE2MTcxODE5MjAyMTIyMjMyNDI1MjYyNzI4MjkzMDMxMzIzMzM0MzUzNjM3MzgzOTQwNDE0MjQzNDQ0NTQ2NDc0ODQ5NTA1MTUyNTM1NDU1NTY1NzU4NTk2MDYxNjI2MzY0NjU2NjY3Njg2OTcwNzE3MjczNzQ3NTc2Nzc3ODc5ODA4MTgyODM4NDg1ODY4Nzg4ODk5MDkxOTI5Mzk0OTU5Njk3OTg5OQAAIgAAAAQAAAAEAAAAJwAAACgAAAApAAAAbGlicmFyeS9jb3JlL3NyYy9mbXQvbW9kLnJzAAgIEAAbAAAAVQQAABEAAAAICBAAGwAAAF8EAAAkAAAAKClsaWJyYXJ5L2NvcmUvc3JjL3NsaWNlL21lbWNoci5ycwAARggQACAAAABaAAAABQAAAHJhbmdlIHN0YXJ0IGluZGV4ICBvdXQgb2YgcmFuZ2UgZm9yIHNsaWNlIG9mIGxlbmd0aCB4CBAAEgAAAIoIEAAiAAAAcmFuZ2UgZW5kIGluZGV4ILwIEAAQAAAAiggQACIAAABzbGljZSBpbmRleCBzdGFydHMgYXQgIGJ1dCBlbmRzIGF0IADcCBAAFgAAAPIIEAANAAAAbGlicmFyeS9jb3JlL3NyYy9zdHIvcGF0dGVybi5ycwAQCRAAHwAAALABAAAmAAAAWy4uLl1ieXRlIGluZGV4ICBpcyBvdXQgb2YgYm91bmRzIG9mIGAAAEUJEAALAAAAUAkQABYAAADwBRAAAQAAAGJlZ2luIDw9IGVuZCAoIDw9ICkgd2hlbiBzbGljaW5nIGAAAIAJEAAOAAAAjgkQAAQAAACSCRAAEAAAAPAFEAABAAAAIGlzIG5vdCBhIGNoYXIgYm91bmRhcnk7IGl0IGlzIGluc2lkZSAgKGJ5dGVzICkgb2YgYEUJEAALAAAAxAkQACYAAADqCRAACAAAAPIJEAAGAAAA8AUQAAEAAABsaWJyYXJ5L2NvcmUvc3JjL3VuaWNvZGUvcHJpbnRhYmxlLnJzAAAAIAoQACUAAAAKAAAAHAAAACAKEAAlAAAAGgAAADYAAAAAAQMFBQYGAwcGCAgJEQocCxkMFA0QDg0PBBADEhITCRYBFwUYAhkDGgccAh0BHxYgAysDLAItCy4BMAMxAjIBpwKpAqoEqwj6AvsF/QT+A/8JrXh5i42iMFdYi4yQHB3dDg9LTPv8Li8/XF1fteKEjY6RkqmxurvFxsnK3uTl/wAEERIpMTQ3Ojs9SUpdhI6SqbG0urvGys7P5OUABA0OERIpMTQ6O0VGSUpeZGWEkZudyc7PDREpRUlXZGWNkam0urvFyd/k5fANEUVJZGWAhLK8vr/V1/Dxg4WLpKa+v8XHzs/a20iYvc3Gzs9JTk9XWV5fiY6Psba3v8HGx9cRFhdbXPb3/v+ADW1x3t8ODx9ubxwdX31+rq+7vPoWFx4fRkdOT1haXF5+f7XF1NXc8PH1cnOPdHWWL18mLi+nr7e/x8/X35pAl5gwjx/Awc7/Tk9aWwcIDxAnL+7vbm83PT9CRZCR/v9TZ3XIydDR2Nnn/v8AIF8igt8EgkQIGwQGEYGsDoCrNSgLgOADGQgBBC8ENAQHAwEHBgcRClAPEgdVBwMEHAoJAwgDBwMCAwMDDAQFAwsGAQ4VBToDEQcGBRAHVwcCBxUNUARDAy0DAQQRBg8MOgQdJV8gbQRqJYDIBYKwAxoGgv0DWQcVCxcJFAwUDGoGCgYaBlkHKwVGCiwEDAQBAzELLAQaBgsDgKwGCgYhP0wELQN0CDwDDwM8BzgIKwWC/xEYCC8RLQMgECEPgIwEgpcZCxWIlAUvBTsHAg4YCYCzLXQMgNYaDAWA/wWA3wzuDQOEjQM3CYFcFIC4CIDLKjgDCgY4CEYIDAZ0Cx4DWgRZCYCDGBwKFglMBICKBqukDBcEMaEEgdomBwwFBYClEYFtEHgoKgZMBICNBIC+AxsDDw0ABgEBAwEEAggICQIKBQsCDgQQARECEgUTERQBFQIXAhkNHAUdCCQBagNrArwC0QLUDNUJ1gLXAtoB4AXhAugC7iDwBPgC+QL6AvsBDCc7Pk5Pj56enwYHCTY9Plbz0NEEFBg2N1ZXf6qur7014BKHiY6eBA0OERIpMTQ6RUZJSk5PZGVctrcbHAcICgsUFzY5Oqip2NkJN5CRqAcKOz5maY+Sb1/u71pimpsnKFWdoKGjpKeorbq8xAYLDBUdOj9FUaanzM2gBxkaIiU+P8XGBCAjJSYoMzg6SEpMUFNVVlhaXF5gY2Vma3N4fX+KpKqvsMDQrq95zG5vk14iewUDBC0DZgMBLy6Agh0DMQ8cBCQJHgUrBUQEDiqAqgYkBCQEKAg0CwGAkIE3CRYKCICYOQNjCAkwFgUhAxsFAUA4BEsFLwQKBwkHQCAnBAwJNgM6BRoHBAwHUEk3Mw0zBy4ICoEmUk4oCCpWHBQXCU4EHg9DDhkHCgZICCcJdQs/QSoGOwUKBlEGAQUQAwWAi2IeSAgKgKZeIkULCgYNEzkHCjYsBBCAwDxkUwxICQpGRRtICFMdOYEHRgodA0dJNwMOCAoGOQcKgTYZgLcBDzINg5tmdQuAxIq8hC+P0YJHobmCOQcqBAJgJgpGCigFE4KwW2VLBDkHEUAFCwIOl/gIhNYqCaL3gR8xAxEECIGMiQRrBQ0DCQcQk2CA9gpzCG4XRoCaFAxXCRmAh4FHA4VCDxWFUCuA1S0DGgQCgXA6BQGFAIDXKUwECgQCgxFETD2AwjwGAQRVBRs0AoEOLARkDFYKgK44HQ0sBAkHAg4GgJqD2AgNAw0DdAxZBwwUDAQ4CAoGKAgiToFUDBUDAwUHCRkHBwkDDQcpgMslCoQGbGlicmFyeS9jb3JlL3NyYy91bmljb2RlL3VuaWNvZGVfZGF0YS5ycwCvDxAAKAAAAEsAAAAoAAAArw8QACgAAABXAAAAFgAAAK8PEAAoAAAAUgAAAD4AAAAiAAAABAAAAAQAAAAqAAAAAAMAAIMEIACRBWAAXROgABIXoB4MIOAe7ywgKyowoCtvpmAsAqjgLB774C0A/qA1nv/gNf0BYTYBCqE2JA1hN6sO4TgvGCE5MBxhRvMeoUrwamFOT2+hTp28IU9l0eFPANohUADg4VEw4WFT7OKhVNDo4VQgAC5V8AG/VQBwAAcALQEBAQIBAgEBSAswFRABZQcCBgICAQQjAR4bWws6CQkBGAQBCQEDAQUrA3cPASA3AQEBBAgEAQMHCgIdAToBAQECBAgBCQEKAhoBAgI5AQQCBAICAwMBHgIDAQsCOQEEBQECBAEUAhYGAQE6AQECAQQIAQcDCgIeATsBAQEMAQkBKAEDATkDBQMBBAcCCwIdAToBAgECAQMBBQIHAgsCHAI5AgEBAgQIAQkBCgIdAUgBBAECAwEBCAFRAQIHDAhiAQIJCwZKAhsBAQEBATcOAQUBAgULASQJAWYEAQYBAgICGQIEAxAEDQECAgYBDwEAAwADHQMdAh4CQAIBBwgBAgsJAS0DdwIiAXYDBAIJAQYD2wICAToBAQcBAQEBAggGCgIBMBE/BDAHAQEFASgJDAIgBAICAQM4AQECAwEBAzoIAgKYAwENAQcEAQYBAwLGOgEFAAHDIQADjQFgIAAGaQIABAEKIAJQAgABAwEEARkCBQGXAhoSDQEmCBkLLgMwAQIEAgInAUMGAgICAgwBCAEvATMBAQMCAgUCAQEqAggB7gECAQQBAAEAEBAQAAIAAeIBlQUAAwECBQQoAwQBpQIABAACmQuwATYPOAMxBAICRQMkBQEIPgEMAjQJCgQCAV8DAgEBAgYBoAEDCBUCOQIBAQEBFgEOBwMFwwgCAwEBFwFRAQIGAQECAQECAQLrAQIEBgIBAhsCVQgCAQECagEBAQIGAQFlAwIEAQUACQEC9QEKAgEBBAGQBAICBAEgCigGAgQIAQkGAgMuDQECAAcBBgEBUhYCBwECAQJ6BgMBAQIBBwEBSAIDAQEBAAIABTsHAAE/BFEBAAIAAQEDBAUICAIHHgSUAwA3BDIIAQ4BFgUBDwAHARECBwECAQUABwAEAAdtBwBggPAATGF5b3V0RXJycHJpdmF0ZQB7CXByb2R1Y2VycwIIbGFuZ3VhZ2UBBFJ1c3QADHByb2Nlc3NlZC1ieQMFcnVzdGMdMS40OS4wIChlMTg4NGE4ZTMgMjAyMC0xMi0yOSkGd2FscnVzBjAuMTguMAx3YXNtLWJpbmRnZW4SMC4yLjcwIChiNjM1NWMyNzAp");
+})("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NwMAIANBEGokAA8LIARBCEHYhcAAEDcACyACQQhByIXAABA3AAuqAgEDfyMAQYABayIEJAACQAJAAn8CQCABKAIAIgNBEHFFBEAgACgCACECIANBIHENASACrSABEBUMAgsgACgCACECQQAhAANAIAAgBGpB/wBqIAJBD3EiA0EwciADQdcAaiADQQpJGzoAACAAQX9qIQAgAkEEdiICDQALIABBgAFqIgJBgQFPDQIgAUGkjsAAQQIgACAEakGAAWpBACAAaxAIDAELQQAhAANAIAAgBGpB/wBqIAJBD3EiA0EwciADQTdqIANBCkkbOgAAIABBf2ohACACQQR2IgINAAsgAEGAAWoiAkGBAU8NAiABQaSOwABBAiAAIARqQYABakEAIABrEAgLIARBgAFqJAAPCyACQYABQZSOwAAQOQALIAJBgAFBlI7AABA5AAuxAgEEfyMAQUBqIgIkACABKAIEIgNFBEAgAUEEaiEDIAEoAgAhBCACQQA2AiAgAkIBNwMYIAIgAkEYajYCJCACQThqIARBEGopAgA3AwAgAkEwaiAEQQhqKQIANwMAIAIgBCkCADcDKCACQSRqQdiJwAAgAkEoahAJGiACQRBqIgQgAigCIDYCACACIAIpAxg3AwgCQCABKAIEIgVFDQAgAUEIaigCAEUNACAFEAQLIAMgAikDCDcCACADQQhqIAQoAgA2AgAgAygCACEDCyABQQE2AgQgAUEMaigCACEEIAFBCGoiASgCACEFIAFCADcCAEEMQQQQWSIBRQRAQQxBBBBjAAsgASAENgIIIAEgBTYCBCABIAM2AgAgAEGQi8AANgIEIAAgATYCACACQUBrJAAL/AEBAn8jAEEQayICJAAgACgCACACQQA2AgwCfwJAAkAgAUGAAU8EQCABQYAQSQ0BIAJBDGohACABQYCABE8NAiACIAFBP3FBgAFyOgAOIAIgAUEMdkHgAXI6AAwgAiABQQZ2QT9xQYABcjoADUEDDAMLIAIgAToADCACQQxqIQBBAQwCCyACIAFBP3FBgAFyOgANIAIgAUEGdkHAAXI6AAwgAkEMaiEAQQIMAQsgAiABQT9xQYABcjoADyACIAFBEnZB8AFyOgAMIAIgAUEGdkE/cUGAAXI6AA4gAiABQQx2QT9xQYABcjoADUEECyEBIAAgARALIAJBEGokAAv5AQECfyMAQRBrIgIkACACQQA2AgwCfwJAAkAgAUGAAU8EQCABQYAQSQ0BIAJBDGohAyABQYCABE8NAiACIAFBP3FBgAFyOgAOIAIgAUEMdkHgAXI6AAwgAiABQQZ2QT9xQYABcjoADUEDDAMLIAIgAToADCACQQxqIQNBAQwCCyACIAFBP3FBgAFyOgANIAIgAUEGdkHAAXI6AAwgAkEMaiEDQQIMAQsgAiABQT9xQYABcjoADyACIAFBEnZB8AFyOgAMIAIgAUEGdkE/cUGAAXI6AA4gAiABQQx2QT9xQYABcjoADUEECyEBIAAgAyABEAsgAkEQaiQAC/wBAQN/IwBBIGsiBCQAAkAgAkEBaiIDIAJPBEAgASgCBCICQQF0IgUgAyAFIANLGyIDQQQgA0EESxsiA0H/////A3EgA0ZBAXQhBSADQQJ0IQMCQCACBEAgBEEYakECNgIAIAQgAkECdDYCFCAEIAEoAgA2AhAMAQsgBEEANgIQCyAEIAMgBSAEQRBqECVBASECIARBCGooAgAhAyAEKAIEIQUgBCgCAEEBRwRAIAEgBTYCACABIANBAnY2AgRBACECDAILIAAgBTYCBCAAQQhqIAM2AgAMAQsgACADNgIEIABBCGpBADYCAEEBIQILIAAgAjYCACAEQSBqJAAL8AEBBH8jAEEgayIEJAACQCACQQFqIgMgAk8EQCABKAIEIgVBAXQiAiADIAIgA0sbIgNBBCADQQRLGyIDIANqIgYgA09BAXQhAwJAIAUEQCAEQRhqQQI2AgAgBCACNgIUIAQgASgCADYCEAwBCyAEQQA2AhALIAQgBiADIARBEGoQJUEBIQIgBEEIaigCACEDIAQoAgQhBSAEKAIAQQFHBEAgASAFNgIAIAEgA0EBdjYCBEEAIQIMAgsgACAFNgIEIABBCGogAzYCAAwBCyAAIAM2AgQgAEEIakEANgIAQQEhAgsgACACNgIAIARBIGokAAvZAQEDfwJAIABBBGooAgAiBCAAQQhqKAIAIgNrIAIgAWsiBU8EQCAAKAIAIQQMAQsCfwJAAkAgAyAFaiICIANJDQAgBEEBdCIDIAIgAyACSxsiAkEIIAJBCEsbIQIgBARAIAJBAEgNASAAKAIAIgNFDQIgAyAEQQEgAhBVDAMLIAJBAE4NAQsQXQALIAJBARBZCyIEBEAgACAENgIAIABBBGogAjYCACAAQQhqKAIAIQMMAQsgAkEBEGMACyADIARqIAEgBRBLGiAAQQhqIgAgACgCACAFajYCAAvoAQEFfyMAQRBrIgMkACAALQALIQIgA0IANwMIIAEoAgAhBQJAAkAgAAJ/IAEoAgQiBEHAACACayIGQfgBcUEDdiICSQRAIARBCU8NAiADQQhqIAUgBBBLGiABQQA2AgQgAUGIg8AANgIAIARBA3QMAQsgBkH/AXFByABPDQIgA0EIaiAFIAIQSxogASAEIAJrNgIEIAEgAiAFajYCACAGQfgBcQsgAC0ACyIBajoACyAAIAApAwAgAykDCCABQT9xrYaENwMAIANBEGokAA8LIARBCEH4hcAAEDcACyACQQhB6IXAABA3AAvcAQEEfyMAQUBqIgIkACABQQRqIQQgASgCBEUEQCABKAIAIQMgAkEANgIgIAJCATcDGCACIAJBGGo2AiQgAkE4aiADQRBqKQIANwMAIAJBMGogA0EIaikCADcDACACIAMpAgA3AyggAkEkakHYicAAIAJBKGoQCRogAkEQaiIDIAIoAiA2AgAgAiACKQMYNwMIAkAgASgCBCIFRQ0AIAFBCGooAgBFDQAgBRAECyAEIAIpAwg3AgAgBEEIaiADKAIANgIACyAAQZCLwAA2AgQgACAENgIAIAJBQGskAAuYAgECfyMAQSBrIgQkAEEBIQVBiKfAAEGIp8AAKAIAQQFqNgIAAkACQAJAQdCqwAAoAgBBAUcEQEHQqsAAQoGAgIAQNwMADAELQdSqwABB1KrAACgCAEEBaiIFNgIAIAVBAksNAQsgBCADNgIcIAQgAjYCGCAEQfCJwAA2AhQgBEHwicAANgIQQfymwAAoAgAiAkF/TA0AQfymwAAgAkEBaiICNgIAQfymwABBhKfAACgCACIDBH9BgKfAACgCACAEQQhqIAAgASgCEBECACAEIAQpAwg3AxAgBEEQaiADKAIMEQIAQfymwAAoAgAFIAILQX9qNgIAIAVBAU0NAQsACyMAQRBrIgIkACACIAE2AgwgAiAANgIIAAvMAQECfyABQRRqKAIAIgUgA0H//wNxIgRLBEAgASgCDCAEQQF0ai8BACEFIAEoAggiBCABKAIERgRAIAEgBBA8IAEoAgghBAsgASgCACAEQQJ0aiIEIAI6AAIgBCADOwEAIAEgASgCCEEBajYCCCABKAIUIgQgAUEQaigCAEYEQCABQQxqIAQQOyABKAIUIQQLIAEoAgwgBEEBdGogBUEBajsBACABIAEoAhRBAWo2AhQgACACOgACIAAgAzsBAA8LIAQgBUH4hsAAEDYAC8QBAQJ/IwBBEGsiAiQAIAIgAa1CgICAgBBCACABKAIYQcWmwABBCSABQRxqKAIAKAIMEQEAG4Q3AwAgAiAANgIMIAIgAkEMahASIAItAAQhASACLQAFBEAgAUH/AXEhACACAn9BASAADQAaIAIoAgAiAEEcaigCACgCDCEBIAAoAhghAyAALQAAQQRxRQRAIANB943AAEECIAERAQAMAQsgA0H2jcAAQQEgAREBAAsiAToABAsgAkEQaiQAIAFB/wFxQQBHC6oBAQJ/AkACQAJAIAIEQEEBIQQgAUEATg0BDAILIAAgATYCBEEBIQQMAQsCQAJAAkACQAJAIAMoAgAiBUUEQCABRQ0BDAMLIAMoAgQiAw0BIAENAgsgAiEDDAMLIAUgAyACIAEQVSIDRQ0BDAILIAEgAhBZIgMNAQsgACABNgIEIAIhAQwCCyAAIAM2AgRBACEEDAELQQAhAQsgACAENgIAIABBCGogATYCAAufAQEDfyAAQgA3AggCQCABQRRqKAIAIgQgAkH//wNxIgNLBEAgASgCDCADQQF0ai8BACEDIAAoAgQhBCAAQQA2AgQgACgCACEFIABBATYCACAEIANJDQEgASACIAUgAxApIAAoAgQEQCAAKAIAEAQLIAAgAzYCDCAAIAQ2AgQgACAFNgIADwsgAyAEQbiGwAAQNgALIAMgBEHIhsAAEDcAC4cBAQJ/IwBBMGsiBCQAIARBIGoiBSACNgIIIAUgAjYCBCAFIAE2AgAgBEEIaiAEQSBqEE4gBEEQaiAEKAIIIgEgBCgCDCICIAMQEyACBEAgARAECyAEQShqIARBGGooAgA2AgAgBCAEKQMQNwMgIAQgBEEgahBOIAAgBCkDADcDACAEQTBqJAALggEBBn8jAEEQayIDJAAgACAAKAIIIAEQOiAAKAIAIQUgACgCCCECIANBCGpBASABEFogAiAFaiEEIAMoAgwiBiADKAIIIgdLBEAgBCAGIAdrEFIgBSACIAZqIAdrIgJqIQQLIAAgAQR/IARBADoAACACQQFqBSACCzYCCCADQRBqJAALjgEBA38gACgCCCIEIAFB//8DcSIFSwRAIAMEQCAAKAIAIQQgAkF/aiEFIAEhAANAIAQgAEH//wNxQQJ0aiIGLwEAIQAgAyAFaiAGLQACOgAAIAAgASAAIAFB//8DcUkbIQAgA0F/aiIDDQALIAItAAAPC0EAQQBBmIfAABA2AAsgBUEBaiAEQYiHwAAQNwALaAECfyMAQdAAayICJAAjAEEwayIBJAAgAUEIOgAPIAFBMGokACACEBdB0ABBCBBZIgEEQCABIAJB0AAQSxogAUEBOgBIIABBpIPAADYCBCAAIAE2AgAgAkHQAGokAA8LQdAAQQgQYwALgAECAn8BfiABLQALIgQgAS0ACiIDSQRAIAEgAhAYIAEtAAshBCABLQAKIQMLIAQgA0H/AXFJBH9BAAUgASAEIANrOgALIAEgASkDACADrYkiBSABLwEIIgGtQn+FQoCAfISDNwMAIAEgBadxIQNBAQshASAAIAM7AQIgACABOwEAC6IBAQN/IwBBEGsiASQAIAAoAgAiAkEUaigCACEDAkACfwJAAkAgAigCBA4CAAEDCyADDQJBACECQfCJwAAMAQsgAw0BIAIoAgAiAygCBCECIAMoAgALIQMgASACNgIEIAEgAzYCACABQfyKwAAgACgCBCgCCCAAKAIIECIACyABQQA2AgQgASACNgIAIAFB6IrAACAAKAIEKAIIIAAoAggQIgALgQEBA38gASgCBCIDIAJPBEACQCADRQ0AIAEoAgAhBAJAAkAgAkUEQEEBIQMgBBAEDAELIAQgA0EBIAIQVSIDRQ0BCyABIAI2AgQgASADNgIADAELIAAgAjYCBCAAQQhqQQE2AgBBASEFCyAAIAU2AgAPC0GUiMAAQSRBuIjAABBIAAt1AgJ/AX4gAS0ACyIEIAEtAAoiA0kEQCABIAIQICABLQALIQQgAS0ACiEDCyAEIANB/wFxSQR/QQAFIAEgBCADazoACyABIAEpAwAiBSADrUI/g4g3AwAgAS8BCCAFp3EhA0EBCyEBIAAgAzsBAiAAIAE7AQALMAEBfwJAAkBBgIABQQIQWSIBDQEMAAtBgIABQQIQYwALIAAgATYCACAAQYAgNgIEC4YBAQF/IwBBQGoiASQAIAFBKzYCDCABQYCBwAA2AgggAUGsgcAANgIUIAEgADYCECABQSxqQQI2AgAgAUE8akEhNgIAIAFCAjcCHCABQayMwAA2AhggAUEdNgI0IAEgAUEwajYCKCABIAFBEGo2AjggASABQQhqNgIwIAFBGGpB8IDAABBRAAtxAQN/IwBBIGsiAiQAAkAgACABEBkNACABQRxqKAIAIQMgASgCGCACQRxqQQA2AgAgAkHwi8AANgIYIAJCATcCDCACQfSLwAA2AgggAyACQQhqEAkNACAAQQRqIAEQGSACQSBqJAAPCyACQSBqJABBAQswAQF/AkACQEGAwABBAhBZIgENAQwAC0GAwABBAhBjAAsgACABNgIAIABBgCA2AgQLewECfwJAAkAgACgCBCIBBEAgACgCDCICIAFPDQEgACgCACIBIAJqIAEtAAA6AAAgAEEANgIIIAAgACgCDEEBajYCDCAAKAIERQ0CIAAoAgAtAAAPC0EAQQBBiIbAABA2AAsgAiABQZiGwAAQNgALQQBBAEGohsAAEDYAC2gBAn8gACAALQBGIgFBAWoiAjoACiAAQQEgAUEPcXRBAmoiATsBQCAAQX8gAkEPcXRBf3M7AQggAEEYaigCACABQf//A3EiAU8EQCAAIAE2AhgLIABBJGooAgAgAU8EQCAAIAE2AiQLC1ABAX8gAEEUaigCACIBRSABQQJ0RXJFBEAgACgCEBAECyAAQSBqKAIAIgFFIAFBAXRFckUEQCAAKAIcEAQLIABBLGooAgAEQCAAKAIoEAQLC2wBAX8jAEEwayIDJAAgAyABNgIEIAMgADYCACADQRxqQQI2AgAgA0EsakEcNgIAIANCAjcCDCADQYCNwAA2AgggA0EcNgIkIAMgA0EgajYCGCADIAM2AiggAyADQQRqNgIgIANBCGogAhBRAAtsAQF/IwBBMGsiAyQAIAMgATYCBCADIAA2AgAgA0EcakECNgIAIANBLGpBHDYCACADQgI3AgwgA0HMkcAANgIIIANBHDYCJCADIANBIGo2AhggAyADQQRqNgIoIAMgAzYCICADQQhqIAIQUQALbAEBfyMAQTBrIgMkACADIAE2AgQgAyAANgIAIANBHGpBAjYCACADQSxqQRw2AgAgA0ICNwIMIANBgJLAADYCCCADQRw2AiQgAyADQSBqNgIYIAMgA0EEajYCKCADIAM2AiAgA0EIaiACEFEAC2wBAX8jAEEwayIDJAAgAyABNgIEIAMgADYCACADQRxqQQI2AgAgA0EsakEcNgIAIANCAjcCDCADQayRwAA2AgggA0EcNgIkIAMgA0EgajYCGCADIANBBGo2AiggAyADNgIgIANBCGogAhBRAAtcAQF/IwBBEGsiAyQAAkAgACgCBCABayACTwRAIANBADYCAAwBCyADIAAgASACEBYgAygCAEEBRw0AIANBCGooAgAiAARAIAMoAgQgABBjAAsQXQALIANBEGokAAtaAQF/IwBBEGsiAiQAAkAgACgCBCABa0EBTwRAIAJBADYCAAwBCyACIAAgARAeIAIoAgBBAUcNACACQQhqKAIAIgAEQCACKAIEIAAQYwALEF0ACyACQRBqJAALWgEBfyMAQRBrIgIkAAJAIAAoAgQgAWtBAU8EQCACQQA2AgAMAQsgAiAAIAEQHSACKAIAQQFHDQAgAkEIaigCACIABEAgAigCBCAAEGMACxBdAAsgAkEQaiQAC1kBAX8jAEEgayICJAAgAiAAKAIANgIEIAJBGGogAUEQaikCADcDACACQRBqIAFBCGopAgA3AwAgAiABKQIANwMIIAJBBGpB2InAACACQQhqEAkgAkEgaiQAC0YAAkBBCCACSQRAAn9BCCACSQRAIAIgAxAQDAELIAMQAAsiAg0BQQAPCyAAIAMQCg8LIAIgACADIAEgASADSxsQSyAAEAQLWQEBfyMAQSBrIgIkACACIAAoAgA2AgQgAkEYaiABQRBqKQIANwMAIAJBEGogAUEIaikCADcDACACIAEpAgA3AwggAkEEakHwj8AAIAJBCGoQCSACQSBqJAALWQACQAJAAkAgAUF/SgRAAkAgAgRAIAENAQwECyABRQ0DIAFBARBZIgINBAwCCyABEEciAkUNAQwDCxBdAAsgAUEBEGMAC0EBIQILIAAgATYCBCAAIAI2AgALVgEBfyMAQSBrIgIkACACIAA2AgQgAkEYaiABQRBqKQIANwMAIAJBEGogAUEIaikCADcDACACIAEpAgA3AwggAkEEakHwj8AAIAJBCGoQCSACQSBqJAALWQEDfwJAIAEoAgwiAiABKAIIIgNPBEAgASgCBCIEIAJJDQEgASgCACEBIAAgAiADazYCBCAAIAEgA2o2AgAPCyADIAJB2IbAABA4AAsgAiAEQdiGwAAQNwALVQEBfyAAQRBqIAAt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");
 var o;
 async function N(A3, I3) {
   o || (o = await (async () => (await E(G), D))());
   const g3 = o.decompress(A3, I3);
-  if (0 === g3.length)
-    throw Error("Failed to decode with LZW decoder.");
+  if (0 === g3.length) throw Error("Failed to decode with LZW decoder.");
   return g3;
 }
 
@@ -14479,7 +14454,6 @@ ZodNaN.create = (params) => {
     ...processCreateParams(params)
   });
 };
-var BRAND = Symbol("zod_brand");
 var ZodBranded = class extends ZodType {
   _parse(input) {
     const { ctx: ctx2 } = this._processInputParams(input);
@@ -14648,14 +14622,14 @@ var nullableType = ZodNullable.create;
 var preprocessType = ZodEffects.createWithPreprocess;
 var pipelineType = ZodPipeline.create;
 var coerce = {
-  string: (arg) => ZodString.create({ ...arg, coerce: true }),
-  number: (arg) => ZodNumber.create({ ...arg, coerce: true }),
-  boolean: (arg) => ZodBoolean.create({
+  string: ((arg) => ZodString.create({ ...arg, coerce: true })),
+  number: ((arg) => ZodNumber.create({ ...arg, coerce: true })),
+  boolean: ((arg) => ZodBoolean.create({
     ...arg,
     coerce: true
-  }),
-  bigint: (arg) => ZodBigInt.create({ ...arg, coerce: true }),
-  date: (arg) => ZodDate.create({ ...arg, coerce: true })
+  })),
+  bigint: ((arg) => ZodBigInt.create({ ...arg, coerce: true })),
+  date: ((arg) => ZodDate.create({ ...arg, coerce: true }))
 };
 
 // node_modules/@zarrita/storage/dist/src/util.js
@@ -14716,25 +14690,25 @@ async function fetch_suffix(url, suffix_length, init5, use_suffix_request) {
   let length5 = Number(content_length);
   return fetch_range(url, length5 - suffix_length, length5, init5);
 }
-var _overrides, _use_suffix_request, _merge_init, merge_init_fn;
+var _overrides, _use_suffix_request, _FetchStore_instances, merge_init_fn;
 var FetchStore = class {
   constructor(url, options = {}) {
-    __privateAdd(this, _merge_init);
+    __privateAdd(this, _FetchStore_instances);
     __publicField(this, "url");
-    __privateAdd(this, _overrides, void 0);
-    __privateAdd(this, _use_suffix_request, void 0);
+    __privateAdd(this, _overrides);
+    __privateAdd(this, _use_suffix_request);
     this.url = url;
     __privateSet(this, _overrides, options.overrides ?? {});
     __privateSet(this, _use_suffix_request, options.useSuffixRequest ?? false);
   }
   async get(key, options = {}) {
     let href = resolve(this.url, key).href;
-    let response = await fetch(href, __privateMethod(this, _merge_init, merge_init_fn).call(this, options));
+    let response = await fetch(href, __privateMethod(this, _FetchStore_instances, merge_init_fn).call(this, options));
     return handle_response(response);
   }
   async getRange(key, range3, options = {}) {
     let url = resolve(this.url, key);
-    let init5 = __privateMethod(this, _merge_init, merge_init_fn).call(this, options);
+    let init5 = __privateMethod(this, _FetchStore_instances, merge_init_fn).call(this, options);
     let response;
     if ("suffixLength" in range3) {
       response = await fetch_suffix(url, range3.suffixLength, init5, __privateGet(this, _use_suffix_request));
@@ -14746,7 +14720,7 @@ var FetchStore = class {
 };
 _overrides = new WeakMap();
 _use_suffix_request = new WeakMap();
-_merge_init = new WeakSet();
+_FetchStore_instances = new WeakSet();
 merge_init_fn = function(overrides) {
   return merge_init(__privateGet(this, _overrides), overrides);
 };
@@ -14756,7 +14730,7 @@ var fetch_default = FetchStore;
 var _bytes;
 var BoolArray = class {
   constructor(x2, byteOffset, length5) {
-    __privateAdd(this, _bytes, void 0);
+    __privateAdd(this, _bytes);
     if (typeof x2 === "number") {
       __privateSet(this, _bytes, new Uint8Array(x2));
     } else if (x2 instanceof ArrayBuffer) {
@@ -14802,7 +14776,7 @@ var ByteStringArray = class {
   constructor(chars, x2, byteOffset, length5) {
     __publicField(this, "_data");
     __publicField(this, "chars");
-    __privateAdd(this, _encoder, void 0);
+    __privateAdd(this, _encoder);
     this.chars = chars;
     __privateSet(this, _encoder, new TextEncoder());
     if (typeof x2 === "number") {
@@ -14859,7 +14833,7 @@ _encoder = new WeakMap();
 var _data;
 var _UnicodeStringArray = class _UnicodeStringArray {
   constructor(chars, x2, byteOffset, length5) {
-    __privateAdd(this, _data, void 0);
+    __privateAdd(this, _data);
     __publicField(this, "chars");
     this.chars = chars;
     if (typeof x2 === "number") {
@@ -14871,12 +14845,12 @@ var _UnicodeStringArray = class _UnicodeStringArray {
     } else {
       const values = x2;
       const d2 = new _UnicodeStringArray(chars, 1);
-      __privateSet(this, _data, new Int32Array(function* () {
+      __privateSet(this, _data, new Int32Array((function* () {
         for (let str5 of values) {
           d2.set(0, str5);
           yield* __privateGet(d2, _data);
         }
-      }()));
+      })()));
     }
   }
   get BYTES_PER_ELEMENT() {
@@ -15159,11 +15133,11 @@ var _stride, _TypedArray, _BYTES_PER_ELEMENT, _shape, _endian;
 var _BytesCodec = class _BytesCodec {
   constructor(configuration, meta) {
     __publicField(this, "kind", "array_to_bytes");
-    __privateAdd(this, _stride, void 0);
-    __privateAdd(this, _TypedArray, void 0);
-    __privateAdd(this, _BYTES_PER_ELEMENT, void 0);
-    __privateAdd(this, _shape, void 0);
-    __privateAdd(this, _endian, void 0);
+    __privateAdd(this, _stride);
+    __privateAdd(this, _TypedArray);
+    __privateAdd(this, _BYTES_PER_ELEMENT);
+    __privateAdd(this, _shape);
+    __privateAdd(this, _endian);
     __privateSet(this, _endian, configuration?.endian);
     __privateSet(this, _TypedArray, get_ctr(meta.data_type));
     __privateSet(this, _shape, meta.shape);
@@ -15250,8 +15224,8 @@ var _JsonCodec = class _JsonCodec {
   constructor(configuration = {}) {
     __publicField(this, "configuration");
     __publicField(this, "kind", "array_to_bytes");
-    __privateAdd(this, _encoder_config, void 0);
-    __privateAdd(this, _decoder_config, void 0);
+    __privateAdd(this, _encoder_config);
+    __privateAdd(this, _decoder_config);
     this.configuration = configuration;
     const { encoding = "utf-8", skipkeys = false, ensure_ascii = true, check_circular = true, allow_nan = true, sort_keys = true, indent, strict = true } = configuration;
     let separators = configuration.separators;
@@ -15400,8 +15374,8 @@ var _order, _inverseOrder;
 var _TransposeCodec = class _TransposeCodec {
   constructor(configuration, meta) {
     __publicField(this, "kind", "array_to_array");
-    __privateAdd(this, _order, void 0);
-    __privateAdd(this, _inverseOrder, void 0);
+    __privateAdd(this, _order);
+    __privateAdd(this, _inverseOrder);
     let value = configuration.order ?? "C";
     let rank2 = meta.shape.length;
     let order = new Array(rank2);
@@ -15452,8 +15426,8 @@ var _shape2, _strides;
 var _VLenUTF8 = class _VLenUTF8 {
   constructor(shape) {
     __publicField(this, "kind", "array_to_bytes");
-    __privateAdd(this, _shape2, void 0);
-    __privateAdd(this, _strides, void 0);
+    __privateAdd(this, _shape2);
+    __privateAdd(this, _strides);
     __privateSet(this, _shape2, shape);
     __privateSet(this, _strides, get_strides(shape, "C"));
   }
@@ -15589,20 +15563,20 @@ function create_sharded_chunk_getter(location, shard_shape, encode_shard_key, sh
     shape: [...index_shape, 2],
     codecs: sharding_config.index_codecs
   });
-  let cache3 = {};
+  let cache2 = {};
   return async (chunk_coord) => {
     let shard_coord = chunk_coord.map((d2, i3) => Math.floor(d2 / index_shape[i3]));
     let shard_path = location.resolve(encode_shard_key(shard_coord)).path;
     let index;
-    if (shard_path in cache3) {
-      index = cache3[shard_path];
+    if (shard_path in cache2) {
+      index = cache2[shard_path];
     } else {
       let checksum_size = 4;
       let index_size = 16 * index_shape.reduce((a2, b2) => a2 * b2, 1);
       let bytes = await get_range(shard_path, {
         suffixLength: index_size + checksum_size
       });
-      index = cache3[shard_path] = bytes ? await index_codec.decode(bytes) : null;
+      index = cache2[shard_path] = bytes ? await index_codec.decode(bytes) : null;
     }
     if (index === null) {
       return void 0;
@@ -15642,7 +15616,7 @@ var Group = class extends Location {
   constructor(store, path, metadata) {
     super(store, path);
     __publicField(this, "kind", "group");
-    __privateAdd(this, _metadata, void 0);
+    __privateAdd(this, _metadata);
     __privateSet(this, _metadata, metadata);
   }
   get attrs() {
@@ -15654,7 +15628,7 @@ function get_array_order(codecs) {
   const maybe_transpose_codec = codecs.find((c2) => c2.name === "transpose");
   return maybe_transpose_codec?.configuration?.order ?? "C";
 }
-var CONTEXT_MARKER = Symbol("zarrita.context");
+var CONTEXT_MARKER = /* @__PURE__ */ Symbol("zarrita.context");
 function get_context(obj) {
   return obj[CONTEXT_MARKER];
 }
@@ -15702,12 +15676,12 @@ function create_context(location, metadata) {
     }
   };
 }
-var _metadata2, _a4;
-var Array2 = class extends Location {
+var _a4, _b, _metadata2;
+var Array2 = class extends (_b = Location, _a4 = CONTEXT_MARKER, _b) {
   constructor(store, path, metadata) {
     super(store, path);
     __publicField(this, "kind", "array");
-    __privateAdd(this, _metadata2, void 0);
+    __privateAdd(this, _metadata2);
     __publicField(this, _a4);
     __privateSet(this, _metadata2, {
       ...metadata,
@@ -15763,7 +15737,6 @@ var Array2 = class extends Location {
     return is_dtype(this.dtype, query);
   }
 };
-_a4 = CONTEXT_MARKER;
 _metadata2 = new WeakMap();
 
 // node_modules/zarrita/dist/src/indexing/util.js
@@ -16623,14 +16596,14 @@ async function loadOmeZarr(source3, options = {}) {
   return load(store);
 }
 
-// node_modules/@loaders.gl/loader-utils/dist/lib/env-utils/assert.js
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/loader-utils/dist/lib/env-utils/assert.js
 function assert2(condition, message2) {
   if (!condition) {
     throw new Error(message2 || "loader assertion failed.");
   }
 }
 
-// node_modules/@loaders.gl/loader-utils/dist/lib/env-utils/globals.js
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/loader-utils/dist/lib/env-utils/globals.js
 var globals = {
   self: typeof self !== "undefined" && self,
   window: typeof window !== "undefined" && window,
@@ -16702,7 +16675,139 @@ function getBrowser(mockUserAgent) {
 }
 
 // node_modules/@probe.gl/env/dist/index.js
-var VERSION = true ? "4.1.0" : "untranspiled source";
+var VERSION = true ? "4.1.1" : "untranspiled source";
+
+// node_modules/@probe.gl/log/dist/utils/assert.js
+function assert3(condition, message2) {
+  if (!condition) {
+    throw new Error(message2 || "Assertion failed");
+  }
+}
+
+// node_modules/@probe.gl/log/dist/loggers/log-utils.js
+function normalizeLogLevel(logLevel) {
+  if (!logLevel) {
+    return 0;
+  }
+  let resolvedLevel;
+  switch (typeof logLevel) {
+    case "number":
+      resolvedLevel = logLevel;
+      break;
+    case "object":
+      resolvedLevel = logLevel.logLevel || logLevel.priority || 0;
+      break;
+    default:
+      return 0;
+  }
+  assert3(Number.isFinite(resolvedLevel) && resolvedLevel >= 0);
+  return resolvedLevel;
+}
+function normalizeArguments(opts) {
+  const { logLevel, message: message2 } = opts;
+  opts.logLevel = normalizeLogLevel(logLevel);
+  const args = opts.args ? Array.from(opts.args) : [];
+  while (args.length && args.shift() !== message2) {
+  }
+  switch (typeof logLevel) {
+    case "string":
+    case "function":
+      if (message2 !== void 0) {
+        args.unshift(message2);
+      }
+      opts.message = logLevel;
+      break;
+    case "object":
+      Object.assign(opts, logLevel);
+      break;
+    default:
+  }
+  if (typeof opts.message === "function") {
+    opts.message = opts.message();
+  }
+  const messageType = typeof opts.message;
+  assert3(messageType === "string" || messageType === "object");
+  return Object.assign(opts, { args }, opts.opts);
+}
+
+// node_modules/@probe.gl/log/dist/loggers/base-log.js
+var noop = () => {
+};
+var BaseLog = class {
+  constructor({ level = 0 } = {}) {
+    this.userData = {};
+    this._onceCache = /* @__PURE__ */ new Set();
+    this._level = level;
+  }
+  set level(newLevel) {
+    this.setLevel(newLevel);
+  }
+  get level() {
+    return this.getLevel();
+  }
+  setLevel(level) {
+    this._level = level;
+    return this;
+  }
+  getLevel() {
+    return this._level;
+  }
+  // Unconditional logging
+  warn(message2, ...args) {
+    return this._log("warn", 0, message2, args, { once: true });
+  }
+  error(message2, ...args) {
+    return this._log("error", 0, message2, args);
+  }
+  // Conditional logging
+  log(logLevel, message2, ...args) {
+    return this._log("log", logLevel, message2, args);
+  }
+  info(logLevel, message2, ...args) {
+    return this._log("info", logLevel, message2, args);
+  }
+  once(logLevel, message2, ...args) {
+    return this._log("once", logLevel, message2, args, { once: true });
+  }
+  _log(type, logLevel, message2, args, options = {}) {
+    const normalized = normalizeArguments({
+      logLevel,
+      message: message2,
+      args: this._buildArgs(logLevel, message2, args),
+      opts: options
+    });
+    return this._createLogFunction(type, normalized, options);
+  }
+  _buildArgs(logLevel, message2, args) {
+    return [logLevel, message2, ...args];
+  }
+  _createLogFunction(type, normalized, options) {
+    if (!this._shouldLog(normalized.logLevel)) {
+      return noop;
+    }
+    const tag = this._getOnceTag(options.tag ?? normalized.tag ?? normalized.message);
+    if ((options.once || normalized.once) && tag !== void 0) {
+      if (this._onceCache.has(tag)) {
+        return noop;
+      }
+      this._onceCache.add(tag);
+    }
+    return this._emit(type, normalized);
+  }
+  _shouldLog(logLevel) {
+    return this.getLevel() >= normalizeLogLevel(logLevel);
+  }
+  _getOnceTag(tag) {
+    if (tag === void 0) {
+      return void 0;
+    }
+    try {
+      return typeof tag === "string" ? tag : String(tag);
+    } catch {
+      return void 0;
+    }
+  }
+};
 
 // node_modules/@probe.gl/log/dist/utils/local-storage.js
 function getStorage(type) {
@@ -16821,13 +16926,6 @@ function autobind(obj, predefined = ["constructor"]) {
   }
 }
 
-// node_modules/@probe.gl/log/dist/utils/assert.js
-function assert3(condition, message2) {
-  if (!condition) {
-    throw new Error(message2 || "Assertion failed");
-  }
-}
-
 // node_modules/@probe.gl/log/dist/utils/hi-res-timestamp.js
 function getHiResTimestamp() {
   let timestamp;
@@ -16842,7 +16940,7 @@ function getHiResTimestamp() {
   return timestamp;
 }
 
-// node_modules/@probe.gl/log/dist/log.js
+// node_modules/@probe.gl/log/dist/loggers/probe-log.js
 var originalConsole = {
   debug: isBrowser2() ? console.debug || console.log : console.log,
   log: console.log,
@@ -16854,12 +16952,9 @@ var DEFAULT_LOG_CONFIGURATION = {
   enabled: true,
   level: 0
 };
-function noop() {
-}
-var cache = {};
-var ONCE = { once: true };
-var Log = class {
+var ProbeLog = class extends BaseLog {
   constructor({ id } = { id: "" }) {
+    super({ level: 0 });
     this.VERSION = VERSION;
     this._startTs = getHiResTimestamp();
     this._deltaTs = getHiResTimestamp();
@@ -16867,22 +16962,16 @@ var Log = class {
     this.LOG_THROTTLE_TIMEOUT = 0;
     this.id = id;
     this.userData = {};
-    this._storage = new LocalStorage(`__probe-${this.id}__`, DEFAULT_LOG_CONFIGURATION);
+    this._storage = new LocalStorage(`__probe-${this.id}__`, { [this.id]: DEFAULT_LOG_CONFIGURATION });
     this.timeStamp(`${this.id} started`);
     autobind(this);
     Object.seal(this);
   }
-  set level(newLevel) {
-    this.setLevel(newLevel);
-  }
-  get level() {
-    return this.getLevel();
-  }
   isEnabled() {
-    return this._storage.config.enabled;
+    return this._getConfiguration().enabled;
   }
   getLevel() {
-    return this._storage.config.level;
+    return this._getConfiguration().level;
   }
   /** @return milliseconds, with fractions */
   getTotal() {
@@ -16906,20 +16995,20 @@ var Log = class {
   }
   // Configure
   enable(enabled = true) {
-    this._storage.setConfiguration({ enabled });
+    this._updateConfiguration({ enabled });
     return this;
   }
   setLevel(level) {
-    this._storage.setConfiguration({ level });
+    this._updateConfiguration({ level });
     return this;
   }
   /** return the current status of the setting */
   get(setting) {
-    return this._storage.config[setting];
+    return this._getConfiguration()[setting];
   }
   // update the status of the setting
   set(setting, value) {
-    this._storage.setConfiguration({ [setting]: value });
+    this._updateConfiguration({ [setting]: value });
   }
   /** Logs the current settings as a table */
   settings() {
@@ -16935,11 +17024,16 @@ var Log = class {
       throw new Error(message2 || "Assertion failed");
     }
   }
-  warn(message2) {
-    return this._getLogFunction(0, message2, originalConsole.warn, arguments, ONCE);
+  warn(message2, ...args) {
+    return this._log("warn", 0, message2, args, {
+      method: originalConsole.warn,
+      once: true
+    });
   }
-  error(message2) {
-    return this._getLogFunction(0, message2, originalConsole.error, arguments);
+  error(message2, ...args) {
+    return this._log("error", 0, message2, args, {
+      method: originalConsole.error
+    });
   }
   /** Print a deprecation warning */
   deprecated(oldUsage, newUsage) {
@@ -16949,50 +17043,63 @@ var Log = class {
   removed(oldUsage, newUsage) {
     return this.error(`\`${oldUsage}\` has been removed. Use \`${newUsage}\` instead`);
   }
-  probe(logLevel, message2) {
-    return this._getLogFunction(logLevel, message2, originalConsole.log, arguments, {
+  probe(logLevel, message2, ...args) {
+    return this._log("log", logLevel, message2, args, {
+      method: originalConsole.log,
       time: true,
       once: true
     });
   }
-  log(logLevel, message2) {
-    return this._getLogFunction(logLevel, message2, originalConsole.debug, arguments);
+  log(logLevel, message2, ...args) {
+    return this._log("log", logLevel, message2, args, {
+      method: originalConsole.debug
+    });
   }
-  info(logLevel, message2) {
-    return this._getLogFunction(logLevel, message2, console.info, arguments);
+  info(logLevel, message2, ...args) {
+    return this._log("info", logLevel, message2, args, { method: console.info });
   }
-  once(logLevel, message2) {
-    return this._getLogFunction(logLevel, message2, originalConsole.debug || originalConsole.info, arguments, ONCE);
+  once(logLevel, message2, ...args) {
+    return this._log("once", logLevel, message2, args, {
+      method: originalConsole.debug || originalConsole.info,
+      once: true
+    });
   }
   /** Logs an object as a table */
   table(logLevel, table, columns) {
     if (table) {
-      return this._getLogFunction(logLevel, table, console.table || noop, columns && [columns], {
+      return this._log("table", logLevel, table, columns && [columns] || [], {
+        method: console.table || noop,
         tag: getTableHeader(table)
       });
     }
     return noop;
   }
   time(logLevel, message2) {
-    return this._getLogFunction(logLevel, message2, console.time ? console.time : console.info);
+    return this._log("time", logLevel, message2, [], {
+      method: console.time ? console.time : console.info
+    });
   }
   timeEnd(logLevel, message2) {
-    return this._getLogFunction(logLevel, message2, console.timeEnd ? console.timeEnd : console.info);
+    return this._log("time", logLevel, message2, [], {
+      method: console.timeEnd ? console.timeEnd : console.info
+    });
   }
   timeStamp(logLevel, message2) {
-    return this._getLogFunction(logLevel, message2, console.timeStamp || noop);
+    return this._log("time", logLevel, message2, [], {
+      method: console.timeStamp || noop
+    });
   }
   group(logLevel, message2, opts = { collapsed: false }) {
-    const options = normalizeArguments({ logLevel, message: message2, opts });
-    const { collapsed } = opts;
-    options.method = (collapsed ? console.groupCollapsed : console.group) || console.info;
-    return this._getLogFunction(options);
+    const method = (opts.collapsed ? console.groupCollapsed : console.group) || console.info;
+    return this._log("group", logLevel, message2, [], { method });
   }
   groupCollapsed(logLevel, message2, opts = {}) {
     return this.group(logLevel, message2, Object.assign({}, opts, { collapsed: true }));
   }
   groupEnd(logLevel) {
-    return this._getLogFunction(logLevel, "", console.groupEnd || noop);
+    return this._log("groupEnd", logLevel, "", [], {
+      method: console.groupEnd || noop
+    });
   }
   // EXPERIMENTAL
   withGroup(logLevel, message2, func) {
@@ -17008,78 +17115,34 @@ var Log = class {
       console.trace();
     }
   }
-  // PRIVATE METHODS
-  /** Deduces log level from a variety of arguments */
   _shouldLog(logLevel) {
-    return this.isEnabled() && this.getLevel() >= normalizeLogLevel(logLevel);
+    return this.isEnabled() && super._shouldLog(logLevel);
   }
-  _getLogFunction(logLevel, message2, method, args, opts) {
-    if (this._shouldLog(logLevel)) {
-      opts = normalizeArguments({ logLevel, message: message2, args, opts });
-      method = method || opts.method;
-      assert3(method);
-      opts.total = this.getTotal();
-      opts.delta = this.getDelta();
-      this._deltaTs = getHiResTimestamp();
-      const tag = opts.tag || opts.message;
-      if (opts.once && tag) {
-        if (!cache[tag]) {
-          cache[tag] = getHiResTimestamp();
-        } else {
-          return noop;
-        }
-      }
-      message2 = decorateMessage(this.id, opts.message, opts);
-      return method.bind(console, message2, ...opts.args);
+  _emit(_type, normalized) {
+    const method = normalized.method;
+    assert3(method);
+    normalized.total = this.getTotal();
+    normalized.delta = this.getDelta();
+    this._deltaTs = getHiResTimestamp();
+    const message2 = decorateMessage(this.id, normalized.message, normalized);
+    return method.bind(console, message2, ...normalized.args);
+  }
+  _getConfiguration() {
+    if (!this._storage.config[this.id]) {
+      this._updateConfiguration(DEFAULT_LOG_CONFIGURATION);
     }
-    return noop;
+    return this._storage.config[this.id];
+  }
+  _updateConfiguration(configuration) {
+    const currentConfiguration = this._storage.config[this.id] || {
+      ...DEFAULT_LOG_CONFIGURATION
+    };
+    this._storage.setConfiguration({
+      [this.id]: { ...currentConfiguration, ...configuration }
+    });
   }
 };
-Log.VERSION = VERSION;
-function normalizeLogLevel(logLevel) {
-  if (!logLevel) {
-    return 0;
-  }
-  let resolvedLevel;
-  switch (typeof logLevel) {
-    case "number":
-      resolvedLevel = logLevel;
-      break;
-    case "object":
-      resolvedLevel = logLevel.logLevel || logLevel.priority || 0;
-      break;
-    default:
-      return 0;
-  }
-  assert3(Number.isFinite(resolvedLevel) && resolvedLevel >= 0);
-  return resolvedLevel;
-}
-function normalizeArguments(opts) {
-  const { logLevel, message: message2 } = opts;
-  opts.logLevel = normalizeLogLevel(logLevel);
-  const args = opts.args ? Array.from(opts.args) : [];
-  while (args.length && args.shift() !== message2) {
-  }
-  switch (typeof logLevel) {
-    case "string":
-    case "function":
-      if (message2 !== void 0) {
-        args.unshift(message2);
-      }
-      opts.message = logLevel;
-      break;
-    case "object":
-      Object.assign(opts, logLevel);
-      break;
-    default:
-  }
-  if (typeof opts.message === "function") {
-    opts.message = opts.message();
-  }
-  const messageType = typeof opts.message;
-  assert3(messageType === "string" || messageType === "object");
-  return Object.assign(opts, { args }, opts.opts);
-}
+ProbeLog.VERSION = VERSION;
 function decorateMessage(id, message2, opts) {
   if (typeof message2 === "string") {
     const time = opts.time ? leftPad(formatTime(opts.total)) : "";
@@ -17101,24 +17164,39 @@ function getTableHeader(table) {
 globalThis.probe = {};
 
 // node_modules/@probe.gl/log/dist/index.js
-var dist_default = new Log({ id: "@probe.gl/log" });
+var dist_default = new ProbeLog({ id: "@probe.gl/log" });
 
-// node_modules/@loaders.gl/loader-utils/dist/lib/log-utils/log.js
-var VERSION2 = true ? "4.3.3" : "latest";
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/loader-utils/dist/lib/log-utils/log.js
+var VERSION2 = true ? "4.4.1" : "latest";
 var version = VERSION2[0] >= "0" && VERSION2[0] <= "9" ? `v${VERSION2}` : "";
 function createLog() {
-  const log3 = new Log({ id: "loaders.gl" });
-  globalThis.loaders = globalThis.loaders || {};
+  const log3 = new ProbeLog({ id: "loaders.gl" });
+  globalThis.loaders || (globalThis.loaders = {});
   globalThis.loaders.log = log3;
   globalThis.loaders.version = version;
-  globalThis.probe = globalThis.probe || {};
+  globalThis.probe || (globalThis.probe = {});
   globalThis.probe.loaders = log3;
   return log3;
 }
 var log = createLog();
 
-// node_modules/@loaders.gl/loader-utils/dist/lib/option-utils/merge-loader-options.js
-function mergeLoaderOptions(baseOptions, newOptions) {
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/loader-utils/dist/lib/javascript-utils/is-type.js
+var isBoolean = (value) => typeof value === "boolean";
+var isFunction = (value) => typeof value === "function";
+var isObject = (value) => value !== null && typeof value === "object";
+var isPureObject = (value) => isObject(value) && value.constructor === {}.constructor;
+var isSharedArrayBuffer = (value) => typeof SharedArrayBuffer !== "undefined" && value instanceof SharedArrayBuffer;
+var isArrayBufferLike = (value) => isObject(value) && typeof value.byteLength === "number" && typeof value.slice === "function";
+var isIterable = (value) => Boolean(value) && isFunction(value[Symbol.iterator]);
+var isAsyncIterable = (value) => Boolean(value) && isFunction(value[Symbol.asyncIterator]);
+var isResponse = (value) => typeof Response !== "undefined" && value instanceof Response || isObject(value) && isFunction(value.arrayBuffer) && isFunction(value.text) && isFunction(value.json);
+var isBlob = (value) => typeof Blob !== "undefined" && value instanceof Blob;
+var isReadableDOMStream = (value) => typeof ReadableStream !== "undefined" && value instanceof ReadableStream || isObject(value) && isFunction(value.tee) && isFunction(value.cancel) && isFunction(value.getReader);
+var isReadableNodeStream = (value) => isObject(value) && isFunction(value.read) && isFunction(value.pipe) && isBoolean(value.readable);
+var isReadableStream = (value) => isReadableDOMStream(value) || isReadableNodeStream(value);
+
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/loader-utils/dist/lib/option-utils/merge-options.js
+function mergeOptions(baseOptions, newOptions) {
   return mergeOptionsRecursively(baseOptions || {}, newOptions);
 }
 function mergeOptionsRecursively(baseOptions, newOptions, level = 0) {
@@ -17136,30 +17214,33 @@ function mergeOptionsRecursively(baseOptions, newOptions, level = 0) {
   return options;
 }
 
-// node_modules/@loaders.gl/worker-utils/dist/lib/env-utils/version.js
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/worker-utils/dist/lib/npm-tag.js
 var NPM_TAG = "latest";
+
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/worker-utils/dist/lib/env-utils/version.js
 function getVersion() {
   if (!globalThis._loadersgl_?.version) {
     globalThis._loadersgl_ = globalThis._loadersgl_ || {};
     if (false) {
       console.warn("loaders.gl: The __VERSION__ variable is not injected using babel plugin. Latest unstable workers would be fetched from the CDN.");
       globalThis._loadersgl_.version = NPM_TAG;
+      warningIssued = true;
     } else {
-      globalThis._loadersgl_.version = "4.3.3";
+      globalThis._loadersgl_.version = "4.4.1";
     }
   }
   return globalThis._loadersgl_.version;
 }
 var VERSION3 = getVersion();
 
-// node_modules/@loaders.gl/worker-utils/dist/lib/env-utils/assert.js
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/worker-utils/dist/lib/env-utils/assert.js
 function assert4(condition, message2) {
   if (!condition) {
     throw new Error(message2 || "loaders.gl assertion failed.");
   }
 }
 
-// node_modules/@loaders.gl/worker-utils/dist/lib/env-utils/globals.js
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/worker-utils/dist/lib/env-utils/globals.js
 var globals2 = {
   self: typeof self !== "undefined" && self,
   window: typeof window !== "undefined" && window,
@@ -17178,7 +17259,7 @@ var isMobile2 = typeof window !== "undefined" && typeof window.orientation !== "
 var matches2 = typeof process !== "undefined" && process.version && /v([0-9]*)/.exec(process.version);
 var nodeVersion2 = matches2 && parseFloat(matches2[1]) || 0;
 
-// node_modules/@loaders.gl/worker-utils/dist/lib/worker-farm/worker-job.js
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/worker-utils/dist/lib/worker-farm/worker-job.js
 var WorkerJob = class {
   constructor(jobName, workerThread) {
     __publicField(this, "name");
@@ -17227,13 +17308,13 @@ var WorkerJob = class {
   }
 };
 
-// node_modules/@loaders.gl/worker-utils/dist/lib/node/worker_threads-browser.js
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/worker-utils/dist/lib/node/worker_threads-browser.js
 var NodeWorker = class {
   terminate() {
   }
 };
 
-// node_modules/@loaders.gl/worker-utils/dist/lib/worker-utils/get-loadable-worker-url.js
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/worker-utils/dist/lib/worker-utils/get-loadable-worker-url.js
 var workerURLCache = /* @__PURE__ */ new Map();
 function getLoadableWorkerURL(props) {
   assert4(props.source && !props.url || !props.source && props.url);
@@ -17271,7 +17352,7 @@ function buildScriptSource(workerUrl) {
 }`;
 }
 
-// node_modules/@loaders.gl/worker-utils/dist/lib/worker-utils/get-transfer-list.js
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/worker-utils/dist/lib/worker-utils/get-transfer-list.js
 function getTransferList(object, recursive = true, transfers) {
   const transfersSet = transfers || /* @__PURE__ */ new Set();
   if (!object) {
@@ -17306,7 +17387,7 @@ function isTransferable(object) {
   return false;
 }
 
-// node_modules/@loaders.gl/worker-utils/dist/lib/worker-farm/worker-thread.js
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/worker-utils/dist/lib/worker-farm/worker-thread.js
 var NOOP = () => {
 };
 var WorkerThread = class {
@@ -17399,7 +17480,8 @@ var WorkerThread = class {
     if (this.url) {
       const absolute = this.url.includes(":/") || this.url.startsWith("/");
       const url = absolute ? this.url : `./${this.url}`;
-      worker = new NodeWorker(url, { eval: false });
+      const type = this.url.endsWith(".ts") || this.url.endsWith(".mjs") ? "module" : "commonjs";
+      worker = new NodeWorker(url, { eval: false, type });
     } else if (this.source) {
       worker = new NodeWorker(this.source, { eval: true });
     } else {
@@ -17417,7 +17499,7 @@ var WorkerThread = class {
   }
 };
 
-// node_modules/@loaders.gl/worker-utils/dist/lib/worker-farm/worker-pool.js
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/worker-utils/dist/lib/worker-farm/worker-pool.js
 var WorkerPool = class {
   /**
    * @param processor - worker function
@@ -17560,7 +17642,7 @@ var WorkerPool = class {
   }
 };
 
-// node_modules/@loaders.gl/worker-utils/dist/lib/worker-farm/worker-farm.js
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/worker-utils/dist/lib/worker-farm/worker-farm.js
 var DEFAULT_PROPS = {
   maxConcurrency: 3,
   maxMobileConcurrency: 1,
@@ -17643,7 +17725,7 @@ var _WorkerFarm = class _WorkerFarm {
 __publicField(_WorkerFarm, "_workerFarm");
 var WorkerFarm = _WorkerFarm;
 
-// node_modules/@loaders.gl/worker-utils/dist/lib/worker-api/get-worker-url.js
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/worker-utils/dist/lib/worker-api/get-worker-url.js
 function getWorkerURL(worker, options = {}) {
   const workerOptions = options[worker.id] || {};
   const workerFile = isBrowser3 ? `${worker.id}-worker.js` : `${worker.id}-worker-node.js`;
@@ -17651,7 +17733,8 @@ function getWorkerURL(worker, options = {}) {
   if (!url && worker.id === "compression") {
     url = options.workerUrl;
   }
-  if (options._workerType === "test") {
+  const workerType = options._workerType || options?.core?._workerType;
+  if (workerType === "test") {
     if (isBrowser3) {
       url = `modules/${worker.module}/dist/${workerFile}`;
     } else {
@@ -17670,7 +17753,7 @@ function getWorkerURL(worker, options = {}) {
   return url;
 }
 
-// node_modules/@loaders.gl/worker-utils/dist/lib/worker-api/validate-worker-version.js
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/worker-utils/dist/lib/worker-api/validate-worker-version.js
 function validateWorkerVersion(worker, coreVersion = VERSION3) {
   assert4(worker, "no worker provided");
   const workerVersion = worker.version;
@@ -17680,20 +17763,22 @@ function validateWorkerVersion(worker, coreVersion = VERSION3) {
   return true;
 }
 
-// node_modules/@loaders.gl/loader-utils/dist/lib/worker-loader-utils/parse-with-worker.js
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/loader-utils/dist/lib/worker-loader-utils/parse-with-worker.js
 function canParseWithWorker(loader, options) {
   if (!WorkerFarm.isSupported()) {
     return false;
   }
-  if (!isBrowser3 && !options?._nodeWorkers) {
+  const nodeWorkers = options?._nodeWorkers ?? options?.core?._nodeWorkers;
+  if (!isBrowser3 && !nodeWorkers) {
     return false;
   }
-  return loader.worker && options?.worker;
+  const useWorkers = options?.worker ?? options?.core?.worker;
+  return Boolean(loader.worker && useWorkers);
 }
 async function parseWithWorker(loader, data, options, context, parseOnMainThread) {
   const name2 = loader.id;
   const url = getWorkerURL(loader, options);
-  const workerFarm = WorkerFarm.getWorkerFarm(options);
+  const workerFarm = WorkerFarm.getWorkerFarm(options?.core);
   const workerPool = workerFarm.getWorkerPool({ name: name2, url });
   options = JSON.parse(JSON.stringify(options));
   context = JSON.parse(JSON.stringify(context || {}));
@@ -17735,7 +17820,7 @@ async function onMessage(parseOnMainThread, job, type, payload) {
   }
 }
 
-// node_modules/@loaders.gl/loader-utils/dist/lib/binary-utils/array-buffer-utils.js
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/loader-utils/dist/lib/binary-utils/array-buffer-utils.js
 function compareArrayBuffers(arrayBuffer1, arrayBuffer2, byteLength) {
   byteLength = byteLength || arrayBuffer1.byteLength;
   if (arrayBuffer1.byteLength < byteLength || arrayBuffer2.byteLength < byteLength) {
@@ -17765,13 +17850,29 @@ function concatenateArrayBuffersFromArray(sources) {
   return result.buffer;
 }
 
-// node_modules/@loaders.gl/loader-utils/dist/lib/iterators/async-iteration.js
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/loader-utils/dist/lib/iterators/async-iteration.js
 async function concatenateArrayBuffersAsync(asyncIterator) {
   const arrayBuffers = [];
   for await (const chunk of asyncIterator) {
-    arrayBuffers.push(chunk);
+    arrayBuffers.push(copyToArrayBuffer(chunk));
   }
   return concatenateArrayBuffers(...arrayBuffers);
+}
+function copyToArrayBuffer(chunk) {
+  if (chunk instanceof ArrayBuffer) {
+    return chunk;
+  }
+  if (ArrayBuffer.isView(chunk)) {
+    const { buffer, byteOffset, byteLength } = chunk;
+    return copyFromBuffer(buffer, byteOffset, byteLength);
+  }
+  return copyFromBuffer(chunk);
+}
+function copyFromBuffer(buffer, byteOffset = 0, byteLength = buffer.byteLength - byteOffset) {
+  const view = new Uint8Array(buffer, byteOffset, byteLength);
+  const copy6 = new Uint8Array(view.length);
+  copy6.set(view);
+  return copy6.buffer;
 }
 
 // node_modules/@probe.gl/stats/dist/utils/hi-res-timestamp.js
@@ -17967,6 +18068,1315 @@ var Stats = class {
   }
 };
 
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/loader-utils/dist/lib/path-utils/file-aliases.js
+var pathPrefix = "";
+var fileAliases = {};
+function resolvePath(filename2) {
+  for (const alias in fileAliases) {
+    if (filename2.startsWith(alias)) {
+      const replacement = fileAliases[alias];
+      filename2 = filename2.replace(alias, replacement);
+    }
+  }
+  if (!filename2.startsWith("http://") && !filename2.startsWith("https://")) {
+    filename2 = `${pathPrefix}${filename2}`;
+  }
+  return filename2;
+}
+
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/loader-utils/dist/lib/node/buffer.browser.js
+function toArrayBuffer(buffer) {
+  return buffer;
+}
+
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/loader-utils/dist/lib/binary-utils/memory-conversion-utils.js
+function isBuffer(value) {
+  return value && typeof value === "object" && value.isBuffer;
+}
+function toArrayBuffer2(data) {
+  if (isBuffer(data)) {
+    return toArrayBuffer(data);
+  }
+  if (data instanceof ArrayBuffer) {
+    return data;
+  }
+  if (isSharedArrayBuffer(data)) {
+    return copyToArrayBuffer2(data);
+  }
+  if (ArrayBuffer.isView(data)) {
+    const buffer = data.buffer;
+    if (data.byteOffset === 0 && data.byteLength === data.buffer.byteLength) {
+      return buffer;
+    }
+    return buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+  }
+  if (typeof data === "string") {
+    const text = data;
+    const uint8Array = new TextEncoder().encode(text);
+    return uint8Array.buffer;
+  }
+  if (data && typeof data === "object" && data._toArrayBuffer) {
+    return data._toArrayBuffer();
+  }
+  throw new Error("toArrayBuffer");
+}
+function ensureArrayBuffer(bufferSource) {
+  if (bufferSource instanceof ArrayBuffer) {
+    return bufferSource;
+  }
+  if (isSharedArrayBuffer(bufferSource)) {
+    return copyToArrayBuffer2(bufferSource);
+  }
+  const { buffer, byteOffset, byteLength } = bufferSource;
+  if (buffer instanceof ArrayBuffer && byteOffset === 0 && byteLength === buffer.byteLength) {
+    return buffer;
+  }
+  return copyToArrayBuffer2(buffer, byteOffset, byteLength);
+}
+function copyToArrayBuffer2(buffer, byteOffset = 0, byteLength = buffer.byteLength - byteOffset) {
+  const view = new Uint8Array(buffer, byteOffset, byteLength);
+  const copy6 = new Uint8Array(view.length);
+  copy6.set(view);
+  return copy6.buffer;
+}
+function toArrayBufferView(data) {
+  if (ArrayBuffer.isView(data)) {
+    return data;
+  }
+  return new Uint8Array(data);
+}
+
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/loader-utils/dist/lib/path-utils/path.js
+var path_exports = {};
+__export(path_exports, {
+  dirname: () => dirname,
+  filename: () => filename,
+  join: () => join,
+  resolve: () => resolve2
+});
+
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/loader-utils/dist/lib/path-utils/get-cwd.js
+function getCWD() {
+  if (typeof process !== "undefined" && typeof process.cwd !== "undefined") {
+    return process.cwd();
+  }
+  const pathname = window.location?.pathname;
+  return pathname?.slice(0, pathname.lastIndexOf("/") + 1) || "";
+}
+
+// node_modules/@loaders.gl/core/node_modules/@loaders.gl/loader-utils/dist/lib/path-utils/path.js
+function filename(url) {
+  const slashIndex = url ? url.lastIndexOf("/") : -1;
+  return slashIndex >= 0 ? url.substr(slashIndex + 1) : url;
+}
+function dirname(url) {
+  const slashIndex = url ? url.lastIndexOf("/") : -1;
+  return slashIndex >= 0 ? url.substr(0, slashIndex) : "";
+}
+function join(...parts) {
+  const separator = "/";
+  parts = parts.map((part, index) => {
+    if (index) {
+      part = part.replace(new RegExp(`^${separator}`), "");
+    }
+    if (index !== parts.length - 1) {
+      part = part.replace(new RegExp(`${separator}$`), "");
+    }
+    return part;
+  });
+  return parts.join(separator);
+}
+function resolve2(...components) {
+  const paths = [];
+  for (let _i = 0; _i < components.length; _i++) {
+    paths[_i] = components[_i];
+  }
+  let resolvedPath = "";
+  let resolvedAbsolute = false;
+  let cwd;
+  for (let i3 = paths.length - 1; i3 >= -1 && !resolvedAbsolute; i3--) {
+    let path;
+    if (i3 >= 0) {
+      path = paths[i3];
+    } else {
+      if (cwd === void 0) {
+        cwd = getCWD();
+      }
+      path = cwd;
+    }
+    if (path.length === 0) {
+      continue;
+    }
+    resolvedPath = `${path}/${resolvedPath}`;
+    resolvedAbsolute = path.charCodeAt(0) === SLASH;
+  }
+  resolvedPath = normalizeStringPosix(resolvedPath, !resolvedAbsolute);
+  if (resolvedAbsolute) {
+    return `/${resolvedPath}`;
+  } else if (resolvedPath.length > 0) {
+    return resolvedPath;
+  }
+  return ".";
+}
+var SLASH = 47;
+var DOT = 46;
+function normalizeStringPosix(path, allowAboveRoot) {
+  let res = "";
+  let lastSlash = -1;
+  let dots = 0;
+  let code;
+  let isAboveRoot = false;
+  for (let i3 = 0; i3 <= path.length; ++i3) {
+    if (i3 < path.length) {
+      code = path.charCodeAt(i3);
+    } else if (code === SLASH) {
+      break;
+    } else {
+      code = SLASH;
+    }
+    if (code === SLASH) {
+      if (lastSlash === i3 - 1 || dots === 1) {
+      } else if (lastSlash !== i3 - 1 && dots === 2) {
+        if (res.length < 2 || !isAboveRoot || res.charCodeAt(res.length - 1) !== DOT || res.charCodeAt(res.length - 2) !== DOT) {
+          if (res.length > 2) {
+            const start = res.length - 1;
+            let j2 = start;
+            for (; j2 >= 0; --j2) {
+              if (res.charCodeAt(j2) === SLASH) {
+                break;
+              }
+            }
+            if (j2 !== start) {
+              res = j2 === -1 ? "" : res.slice(0, j2);
+              lastSlash = i3;
+              dots = 0;
+              isAboveRoot = false;
+              continue;
+            }
+          } else if (res.length === 2 || res.length === 1) {
+            res = "";
+            lastSlash = i3;
+            dots = 0;
+            isAboveRoot = false;
+            continue;
+          }
+        }
+        if (allowAboveRoot) {
+          if (res.length > 0) {
+            res += "/..";
+          } else {
+            res = "..";
+          }
+          isAboveRoot = true;
+        }
+      } else {
+        const slice2 = path.slice(lastSlash + 1, i3);
+        if (res.length > 0) {
+          res += `/${slice2}`;
+        } else {
+          res = slice2;
+        }
+        isAboveRoot = false;
+      }
+      lastSlash = i3;
+      dots = 0;
+    } else if (code === DOT && dots !== -1) {
+      ++dots;
+    } else {
+      dots = -1;
+    }
+  }
+  return res;
+}
+
+// node_modules/@loaders.gl/core/dist/lib/fetch/fetch-error.js
+var FetchError = class extends Error {
+  constructor(message2, info) {
+    super(message2);
+    /** A best effort reason for why the fetch failed */
+    __publicField(this, "reason");
+    /** The URL that failed to load. Empty string if not available. */
+    __publicField(this, "url");
+    /** The Response object, if any. */
+    __publicField(this, "response");
+    this.reason = info.reason;
+    this.url = info.url;
+    this.response = info.response;
+  }
+};
+
+// node_modules/@loaders.gl/core/dist/lib/utils/mime-type-utils.js
+var DATA_URL_PATTERN = /^data:([-\w.]+\/[-\w.+]+)(;|,)/;
+var MIME_TYPE_PATTERN = /^([-\w.]+\/[-\w.+]+)/;
+function compareMIMETypes(mimeType1, mimeType2) {
+  if (mimeType1.toLowerCase() === mimeType2.toLowerCase()) {
+    return true;
+  }
+  return false;
+}
+function parseMIMEType(mimeString) {
+  const matches4 = MIME_TYPE_PATTERN.exec(mimeString);
+  if (matches4) {
+    return matches4[1];
+  }
+  return mimeString;
+}
+function parseMIMETypeFromURL(url) {
+  const matches4 = DATA_URL_PATTERN.exec(url);
+  if (matches4) {
+    return matches4[1];
+  }
+  return "";
+}
+
+// node_modules/@loaders.gl/core/dist/lib/utils/url-utils.js
+var QUERY_STRING_PATTERN = /\?.*/;
+function extractQueryString(url) {
+  const matches4 = url.match(QUERY_STRING_PATTERN);
+  return matches4 && matches4[0];
+}
+function stripQueryString(url) {
+  return url.replace(QUERY_STRING_PATTERN, "");
+}
+function shortenUrlForDisplay(url) {
+  if (url.length < 50) {
+    return url;
+  }
+  const urlEnd = url.slice(url.length - 15);
+  const urlStart = url.substr(0, 32);
+  return `${urlStart}...${urlEnd}`;
+}
+
+// node_modules/@loaders.gl/core/dist/lib/utils/resource-utils.js
+function getResourceUrl(resource) {
+  if (isResponse(resource)) {
+    return resource.url;
+  }
+  if (isBlob(resource)) {
+    const fileName = "name" in resource ? resource.name : "";
+    return fileName || "";
+  }
+  if (typeof resource === "string") {
+    return resource;
+  }
+  return "";
+}
+function getResourceMIMEType(resource) {
+  if (isResponse(resource)) {
+    const contentTypeHeader = resource.headers.get("content-type") || "";
+    const noQueryUrl = stripQueryString(resource.url);
+    return parseMIMEType(contentTypeHeader) || parseMIMETypeFromURL(noQueryUrl);
+  }
+  if (isBlob(resource)) {
+    return resource.type || "";
+  }
+  if (typeof resource === "string") {
+    return parseMIMETypeFromURL(resource);
+  }
+  return "";
+}
+function getResourceContentLength(resource) {
+  if (isResponse(resource)) {
+    const response = resource;
+    return response.headers["content-length"] || -1;
+  }
+  if (isBlob(resource)) {
+    const blob = resource;
+    return blob.size;
+  }
+  if (typeof resource === "string") {
+    return resource.length;
+  }
+  if (resource instanceof ArrayBuffer) {
+    return resource.byteLength;
+  }
+  if (ArrayBuffer.isView(resource)) {
+    return resource.byteLength;
+  }
+  return -1;
+}
+
+// node_modules/@loaders.gl/core/dist/lib/utils/response-utils.js
+async function makeResponse(resource) {
+  if (isResponse(resource)) {
+    return resource;
+  }
+  const headers = {};
+  const contentLength = getResourceContentLength(resource);
+  if (contentLength >= 0) {
+    headers["content-length"] = String(contentLength);
+  }
+  const url = getResourceUrl(resource);
+  const type = getResourceMIMEType(resource);
+  if (type) {
+    headers["content-type"] = type;
+  }
+  const initialDataUrl = await getInitialDataUrl(resource);
+  if (initialDataUrl) {
+    headers["x-first-bytes"] = initialDataUrl;
+  }
+  if (typeof resource === "string") {
+    resource = new TextEncoder().encode(resource);
+  }
+  const response = new Response(resource, { headers });
+  Object.defineProperty(response, "url", { value: url });
+  return response;
+}
+async function checkResponse(response) {
+  if (!response.ok) {
+    const error = await getResponseError(response);
+    throw error;
+  }
+}
+async function getResponseError(response) {
+  const shortUrl = shortenUrlForDisplay(response.url);
+  let message2 = `Failed to fetch resource (${response.status}) ${response.statusText}: ${shortUrl}`;
+  message2 = message2.length > 100 ? `${message2.slice(0, 100)}...` : message2;
+  const info = {
+    reason: response.statusText,
+    url: response.url,
+    response
+  };
+  try {
+    const contentType = response.headers.get("Content-Type");
+    info.reason = !response.bodyUsed && contentType?.includes("application/json") ? await response.json() : await response.text();
+  } catch (error) {
+  }
+  return new FetchError(message2, info);
+}
+async function getInitialDataUrl(resource) {
+  const INITIAL_DATA_LENGTH = 5;
+  if (typeof resource === "string") {
+    return `data:,${resource.slice(0, INITIAL_DATA_LENGTH)}`;
+  }
+  if (resource instanceof Blob) {
+    const blobSlice = resource.slice(0, 5);
+    return await new Promise((resolve3) => {
+      const reader = new FileReader();
+      reader.onload = (event) => resolve3(event?.target?.result);
+      reader.readAsDataURL(blobSlice);
+    });
+  }
+  if (resource instanceof ArrayBuffer) {
+    const slice2 = resource.slice(0, INITIAL_DATA_LENGTH);
+    const base64 = arrayBufferToBase64(slice2);
+    return `data:base64,${base64}`;
+  }
+  return null;
+}
+function arrayBufferToBase64(buffer) {
+  let binary = "";
+  const bytes = new Uint8Array(buffer);
+  for (let i3 = 0; i3 < bytes.byteLength; i3++) {
+    binary += String.fromCharCode(bytes[i3]);
+  }
+  return btoa(binary);
+}
+
+// node_modules/@loaders.gl/core/dist/lib/fetch/fetch-file.js
+function isNodePath(url) {
+  return !isRequestURL(url) && !isDataURL(url);
+}
+function isRequestURL(url) {
+  return url.startsWith("http:") || url.startsWith("https:");
+}
+function isDataURL(url) {
+  return url.startsWith("data:");
+}
+async function fetchFile(urlOrData, fetchOptions) {
+  if (typeof urlOrData === "string") {
+    const url = resolvePath(urlOrData);
+    if (isNodePath(url)) {
+      if (globalThis.loaders?.fetchNode) {
+        return globalThis.loaders?.fetchNode(url, fetchOptions);
+      }
+    }
+    return await fetch(url, fetchOptions);
+  }
+  return await makeResponse(urlOrData);
+}
+
+// node_modules/@loaders.gl/core/dist/lib/loader-utils/loggers.js
+var probeLog = new ProbeLog({ id: "loaders.gl" });
+var NullLog = class {
+  log() {
+    return () => {
+    };
+  }
+  info() {
+    return () => {
+    };
+  }
+  warn() {
+    return () => {
+    };
+  }
+  error() {
+    return () => {
+    };
+  }
+};
+var ConsoleLog = class {
+  constructor() {
+    __publicField(this, "console");
+    this.console = console;
+  }
+  log(...args) {
+    return this.console.log.bind(this.console, ...args);
+  }
+  info(...args) {
+    return this.console.info.bind(this.console, ...args);
+  }
+  warn(...args) {
+    return this.console.warn.bind(this.console, ...args);
+  }
+  error(...args) {
+    return this.console.error.bind(this.console, ...args);
+  }
+};
+
+// node_modules/@loaders.gl/core/dist/lib/loader-utils/option-defaults.js
+var DEFAULT_LOADER_OPTIONS = {
+  core: {
+    baseUrl: void 0,
+    // baseUrl
+    fetch: null,
+    mimeType: void 0,
+    fallbackMimeType: void 0,
+    ignoreRegisteredLoaders: void 0,
+    nothrow: false,
+    log: new ConsoleLog(),
+    // A probe.gl compatible (`log.log()()` syntax) that just logs to console
+    useLocalLibraries: false,
+    CDN: "https://unpkg.com/@loaders.gl",
+    worker: true,
+    // By default, use worker if provided by loader.
+    maxConcurrency: 3,
+    // How many worker instances should be created for each loader.
+    maxMobileConcurrency: 1,
+    // How many worker instances should be created for each loader on mobile devices.
+    reuseWorkers: isBrowser,
+    // By default reuse workers in browser (Node.js refuses to terminate if browsers are running)
+    _nodeWorkers: false,
+    // By default do not support node workers
+    _workerType: "",
+    // 'test' to use locally generated workers
+    limit: 0,
+    _limitMB: 0,
+    batchSize: "auto",
+    batchDebounceMs: 0,
+    metadata: false,
+    // TODO - currently only implemented for parseInBatches, adds initial metadata batch,
+    transforms: []
+  }
+};
+var REMOVED_LOADER_OPTIONS = {
+  // deprecated top-level alias
+  baseUri: "core.baseUrl",
+  fetch: "core.fetch",
+  mimeType: "core.mimeType",
+  fallbackMimeType: "core.fallbackMimeType",
+  ignoreRegisteredLoaders: "core.ignoreRegisteredLoaders",
+  nothrow: "core.nothrow",
+  log: "core.log",
+  useLocalLibraries: "core.useLocalLibraries",
+  CDN: "core.CDN",
+  worker: "core.worker",
+  maxConcurrency: "core.maxConcurrency",
+  maxMobileConcurrency: "core.maxMobileConcurrency",
+  reuseWorkers: "core.reuseWorkers",
+  _nodeWorkers: "core.nodeWorkers",
+  _workerType: "core._workerType",
+  _worker: "core._workerType",
+  limit: "core.limit",
+  _limitMB: "core._limitMB",
+  batchSize: "core.batchSize",
+  batchDebounceMs: "core.batchDebounceMs",
+  metadata: "core.metadata",
+  transforms: "core.transforms",
+  // Older deprecations
+  throws: "nothrow",
+  dataType: "(no longer used)",
+  uri: "core.baseUrl",
+  // Warn if fetch options are used on toplevel
+  method: "core.fetch.method",
+  headers: "core.fetch.headers",
+  body: "core.fetch.body",
+  mode: "core.fetch.mode",
+  credentials: "core.fetch.credentials",
+  cache: "core.fetch.cache",
+  redirect: "core.fetch.redirect",
+  referrer: "core.fetch.referrer",
+  referrerPolicy: "core.fetch.referrerPolicy",
+  integrity: "core.fetch.integrity",
+  keepalive: "core.fetch.keepalive",
+  signal: "core.fetch.signal"
+};
+
+// node_modules/@loaders.gl/core/dist/lib/loader-utils/option-utils.js
+var CORE_LOADER_OPTION_KEYS = [
+  "baseUrl",
+  "fetch",
+  "mimeType",
+  "fallbackMimeType",
+  "ignoreRegisteredLoaders",
+  "nothrow",
+  "log",
+  "useLocalLibraries",
+  "CDN",
+  "worker",
+  "maxConcurrency",
+  "maxMobileConcurrency",
+  "reuseWorkers",
+  "_nodeWorkers",
+  "_workerType",
+  "limit",
+  "_limitMB",
+  "batchSize",
+  "batchDebounceMs",
+  "metadata",
+  "transforms"
+];
+function getGlobalLoaderState() {
+  globalThis.loaders = globalThis.loaders || {};
+  const { loaders } = globalThis;
+  if (!loaders._state) {
+    loaders._state = {};
+  }
+  return loaders._state;
+}
+function getGlobalLoaderOptions() {
+  const state = getGlobalLoaderState();
+  state.globalOptions = state.globalOptions || {
+    ...DEFAULT_LOADER_OPTIONS,
+    core: { ...DEFAULT_LOADER_OPTIONS.core }
+  };
+  return normalizeLoaderOptions(state.globalOptions);
+}
+function normalizeOptions(options, loader, loaders, url) {
+  loaders = loaders || [];
+  loaders = Array.isArray(loaders) ? loaders : [loaders];
+  validateOptions(options, loaders);
+  return normalizeLoaderOptions(normalizeOptionsInternal(loader, options, url));
+}
+function normalizeLoaderOptions(options) {
+  const normalized = cloneLoaderOptions(options);
+  moveDeprecatedTopLevelOptionsToCore(normalized);
+  for (const key of CORE_LOADER_OPTION_KEYS) {
+    if (normalized.core && normalized.core[key] !== void 0) {
+      delete normalized[key];
+    }
+  }
+  if (normalized.core && normalized.core._workerType !== void 0) {
+    delete normalized._worker;
+  }
+  return normalized;
+}
+function validateOptions(options, loaders) {
+  validateOptionsObject(options, null, DEFAULT_LOADER_OPTIONS, REMOVED_LOADER_OPTIONS, loaders);
+  for (const loader of loaders) {
+    const idOptions = options && options[loader.id] || {};
+    const loaderOptions = loader.options && loader.options[loader.id] || {};
+    const deprecatedOptions = loader.deprecatedOptions && loader.deprecatedOptions[loader.id] || {};
+    validateOptionsObject(idOptions, loader.id, loaderOptions, deprecatedOptions, loaders);
+  }
+}
+function validateOptionsObject(options, id, defaultOptions2, deprecatedOptions, loaders) {
+  const loaderName = id || "Top level";
+  const prefix = id ? `${id}.` : "";
+  for (const key in options) {
+    const isSubOptions = !id && isObject(options[key]);
+    const isBaseUriOption = key === "baseUri" && !id;
+    const isWorkerUrlOption = key === "workerUrl" && id;
+    if (!(key in defaultOptions2) && !isBaseUriOption && !isWorkerUrlOption) {
+      if (key in deprecatedOptions) {
+        if (probeLog.level > 0) {
+          probeLog.warn(`${loaderName} loader option '${prefix}${key}' no longer supported, use '${deprecatedOptions[key]}'`)();
+        }
+      } else if (!isSubOptions) {
+        if (probeLog.level > 0) {
+          const suggestion = findSimilarOption(key, loaders);
+          probeLog.warn(`${loaderName} loader option '${prefix}${key}' not recognized. ${suggestion}`)();
+        }
+      }
+    }
+  }
+}
+function findSimilarOption(optionKey, loaders) {
+  const lowerCaseOptionKey = optionKey.toLowerCase();
+  let bestSuggestion = "";
+  for (const loader of loaders) {
+    for (const key in loader.options) {
+      if (optionKey === key) {
+        return `Did you mean '${loader.id}.${key}'?`;
+      }
+      const lowerCaseKey = key.toLowerCase();
+      const isPartialMatch = lowerCaseOptionKey.startsWith(lowerCaseKey) || lowerCaseKey.startsWith(lowerCaseOptionKey);
+      if (isPartialMatch) {
+        bestSuggestion = bestSuggestion || `Did you mean '${loader.id}.${key}'?`;
+      }
+    }
+  }
+  return bestSuggestion;
+}
+function normalizeOptionsInternal(loader, options, url) {
+  const loaderDefaultOptions = loader.options || {};
+  const mergedOptions = { ...loaderDefaultOptions };
+  if (loaderDefaultOptions.core) {
+    mergedOptions.core = { ...loaderDefaultOptions.core };
+  }
+  moveDeprecatedTopLevelOptionsToCore(mergedOptions);
+  if (mergedOptions.core?.log === null) {
+    mergedOptions.core = { ...mergedOptions.core, log: new NullLog() };
+  }
+  mergeNestedFields(mergedOptions, normalizeLoaderOptions(getGlobalLoaderOptions()));
+  const userOptions = normalizeLoaderOptions(options);
+  mergeNestedFields(mergedOptions, userOptions);
+  addUrlOptions(mergedOptions, url);
+  addDeprecatedTopLevelOptions(mergedOptions);
+  return mergedOptions;
+}
+function mergeNestedFields(mergedOptions, options) {
+  for (const key in options) {
+    if (key in options) {
+      const value = options[key];
+      if (isPureObject(value) && isPureObject(mergedOptions[key])) {
+        mergedOptions[key] = {
+          ...mergedOptions[key],
+          ...options[key]
+        };
+      } else {
+        mergedOptions[key] = options[key];
+      }
+    }
+  }
+}
+function addUrlOptions(options, url) {
+  if (!url) {
+    return;
+  }
+  const hasCoreBaseUrl = options.core?.baseUrl !== void 0;
+  if (!hasCoreBaseUrl) {
+    options.core || (options.core = {});
+    options.core.baseUrl = path_exports.dirname(stripQueryString(url));
+  }
+}
+function cloneLoaderOptions(options) {
+  const clonedOptions = { ...options };
+  if (options.core) {
+    clonedOptions.core = { ...options.core };
+  }
+  return clonedOptions;
+}
+function moveDeprecatedTopLevelOptionsToCore(options) {
+  if (options.baseUri !== void 0) {
+    options.core || (options.core = {});
+    if (options.core.baseUrl === void 0) {
+      options.core.baseUrl = options.baseUri;
+    }
+  }
+  for (const key of CORE_LOADER_OPTION_KEYS) {
+    if (options[key] !== void 0) {
+      const coreOptions = options.core = options.core || {};
+      const coreRecord = coreOptions;
+      if (coreRecord[key] === void 0) {
+        coreRecord[key] = options[key];
+      }
+    }
+  }
+  const workerTypeAlias = options._worker;
+  if (workerTypeAlias !== void 0) {
+    options.core || (options.core = {});
+    if (options.core._workerType === void 0) {
+      options.core._workerType = workerTypeAlias;
+    }
+  }
+}
+function addDeprecatedTopLevelOptions(options) {
+  const coreOptions = options.core;
+  if (!coreOptions) {
+    return;
+  }
+  for (const key of CORE_LOADER_OPTION_KEYS) {
+    if (coreOptions[key] !== void 0) {
+      options[key] = coreOptions[key];
+    }
+  }
+}
+
+// node_modules/@loaders.gl/core/dist/lib/loader-utils/normalize-loader.js
+function isLoaderObject(loader) {
+  if (!loader) {
+    return false;
+  }
+  if (Array.isArray(loader)) {
+    loader = loader[0];
+  }
+  const hasExtensions = Array.isArray(loader?.extensions);
+  return hasExtensions;
+}
+function normalizeLoader(loader) {
+  assert2(loader, "null loader");
+  assert2(isLoaderObject(loader), "invalid loader");
+  let options;
+  if (Array.isArray(loader)) {
+    options = loader[1];
+    loader = loader[0];
+    loader = {
+      ...loader,
+      options: { ...loader.options, ...options }
+    };
+  }
+  if (loader?.parseTextSync || loader?.parseText) {
+    loader.text = true;
+  }
+  if (!loader.text) {
+    loader.binary = true;
+  }
+  return loader;
+}
+
+// node_modules/@loaders.gl/core/dist/lib/api/register-loaders.js
+var getGlobalLoaderRegistry = () => {
+  const state = getGlobalLoaderState();
+  state.loaderRegistry = state.loaderRegistry || [];
+  return state.loaderRegistry;
+};
+function registerLoaders(loaders) {
+  const loaderRegistry = getGlobalLoaderRegistry();
+  loaders = Array.isArray(loaders) ? loaders : [loaders];
+  for (const loader of loaders) {
+    const normalizedLoader = normalizeLoader(loader);
+    if (!loaderRegistry.find((registeredLoader) => normalizedLoader === registeredLoader)) {
+      loaderRegistry.unshift(normalizedLoader);
+    }
+  }
+}
+function getRegisteredLoaders() {
+  return getGlobalLoaderRegistry();
+}
+
+// node_modules/@loaders.gl/core/dist/lib/api/select-loader.js
+var EXT_PATTERN = /\.([^.]+)$/;
+async function selectLoader(data, loaders = [], options, context) {
+  if (!validHTTPResponse(data)) {
+    return null;
+  }
+  const normalizedOptions = normalizeLoaderOptions(options || {});
+  normalizedOptions.core || (normalizedOptions.core = {});
+  if (data instanceof Response && mayContainText(data)) {
+    const text = await data.clone().text();
+    const textLoader = selectLoaderSync(text, loaders, { ...normalizedOptions, core: { ...normalizedOptions.core, nothrow: true } }, context);
+    if (textLoader) {
+      return textLoader;
+    }
+  }
+  let loader = selectLoaderSync(data, loaders, { ...normalizedOptions, core: { ...normalizedOptions.core, nothrow: true } }, context);
+  if (loader) {
+    return loader;
+  }
+  if (isBlob(data)) {
+    data = await data.slice(0, 10).arrayBuffer();
+    loader = selectLoaderSync(data, loaders, normalizedOptions, context);
+  }
+  if (!loader && data instanceof Response && mayContainText(data)) {
+    const text = await data.clone().text();
+    loader = selectLoaderSync(text, loaders, normalizedOptions, context);
+  }
+  if (!loader && !normalizedOptions.core.nothrow) {
+    throw new Error(getNoValidLoaderMessage(data));
+  }
+  return loader;
+}
+function mayContainText(response) {
+  const mimeType = getResourceMIMEType(response);
+  return Boolean(mimeType && (mimeType.startsWith("text/") || mimeType === "application/json" || mimeType.endsWith("+json")));
+}
+function selectLoaderSync(data, loaders = [], options, context) {
+  if (!validHTTPResponse(data)) {
+    return null;
+  }
+  const normalizedOptions = normalizeLoaderOptions(options || {});
+  normalizedOptions.core || (normalizedOptions.core = {});
+  if (loaders && !Array.isArray(loaders)) {
+    return normalizeLoader(loaders);
+  }
+  let candidateLoaders = [];
+  if (loaders) {
+    candidateLoaders = candidateLoaders.concat(loaders);
+  }
+  if (!normalizedOptions.core.ignoreRegisteredLoaders) {
+    candidateLoaders.push(...getRegisteredLoaders());
+  }
+  normalizeLoaders(candidateLoaders);
+  const loader = selectLoaderInternal(data, candidateLoaders, normalizedOptions, context);
+  if (!loader && !normalizedOptions.core.nothrow) {
+    throw new Error(getNoValidLoaderMessage(data));
+  }
+  return loader;
+}
+function selectLoaderInternal(data, loaders, options, context) {
+  const url = getResourceUrl(data);
+  const type = getResourceMIMEType(data);
+  const testUrl = stripQueryString(url) || context?.url;
+  let loader = null;
+  let reason = "";
+  if (options?.core?.mimeType) {
+    loader = findLoaderByMIMEType(loaders, options?.core?.mimeType);
+    reason = `match forced by supplied MIME type ${options?.core?.mimeType}`;
+  }
+  loader = loader || findLoaderByUrl(loaders, testUrl);
+  reason = reason || (loader ? `matched url ${testUrl}` : "");
+  loader = loader || findLoaderByMIMEType(loaders, type);
+  reason = reason || (loader ? `matched MIME type ${type}` : "");
+  loader = loader || findLoaderByInitialBytes(loaders, data);
+  reason = reason || (loader ? `matched initial data ${getFirstCharacters(data)}` : "");
+  if (options?.core?.fallbackMimeType) {
+    loader = loader || findLoaderByMIMEType(loaders, options?.core?.fallbackMimeType);
+    reason = reason || (loader ? `matched fallback MIME type ${type}` : "");
+  }
+  if (reason) {
+    log.log(1, `selectLoader selected ${loader?.name}: ${reason}.`);
+  }
+  return loader;
+}
+function validHTTPResponse(data) {
+  if (data instanceof Response) {
+    if (data.status === 204) {
+      return false;
+    }
+  }
+  return true;
+}
+function getNoValidLoaderMessage(data) {
+  const url = getResourceUrl(data);
+  const type = getResourceMIMEType(data);
+  let message2 = "No valid loader found (";
+  message2 += url ? `${path_exports.filename(url)}, ` : "no url provided, ";
+  message2 += `MIME type: ${type ? `"${type}"` : "not provided"}, `;
+  const firstCharacters = data ? getFirstCharacters(data) : "";
+  message2 += firstCharacters ? ` first bytes: "${firstCharacters}"` : "first bytes: not available";
+  message2 += ")";
+  return message2;
+}
+function normalizeLoaders(loaders) {
+  for (const loader of loaders) {
+    normalizeLoader(loader);
+  }
+}
+function findLoaderByUrl(loaders, url) {
+  const match = url && EXT_PATTERN.exec(url);
+  const extension = match && match[1];
+  return extension ? findLoaderByExtension(loaders, extension) : null;
+}
+function findLoaderByExtension(loaders, extension) {
+  extension = extension.toLowerCase();
+  for (const loader of loaders) {
+    for (const loaderExtension of loader.extensions) {
+      if (loaderExtension.toLowerCase() === extension) {
+        return loader;
+      }
+    }
+  }
+  return null;
+}
+function findLoaderByMIMEType(loaders, mimeType) {
+  for (const loader of loaders) {
+    if (loader.mimeTypes?.some((mimeType1) => compareMIMETypes(mimeType, mimeType1))) {
+      return loader;
+    }
+    if (compareMIMETypes(mimeType, `application/x.${loader.id}`)) {
+      return loader;
+    }
+  }
+  return null;
+}
+function findLoaderByInitialBytes(loaders, data) {
+  if (!data) {
+    return null;
+  }
+  for (const loader of loaders) {
+    if (typeof data === "string") {
+      if (testDataAgainstText(data, loader)) {
+        return loader;
+      }
+    } else if (ArrayBuffer.isView(data)) {
+      if (testDataAgainstBinary(data.buffer, data.byteOffset, loader)) {
+        return loader;
+      }
+    } else if (data instanceof ArrayBuffer) {
+      const byteOffset = 0;
+      if (testDataAgainstBinary(data, byteOffset, loader)) {
+        return loader;
+      }
+    }
+  }
+  return null;
+}
+function testDataAgainstText(data, loader) {
+  if (loader.testText) {
+    return loader.testText(data);
+  }
+  const tests = Array.isArray(loader.tests) ? loader.tests : [loader.tests];
+  return tests.some((test) => data.startsWith(test));
+}
+function testDataAgainstBinary(data, byteOffset, loader) {
+  const tests = Array.isArray(loader.tests) ? loader.tests : [loader.tests];
+  return tests.some((test) => testBinary(data, byteOffset, loader, test));
+}
+function testBinary(data, byteOffset, loader, test) {
+  if (isArrayBufferLike(test)) {
+    return compareArrayBuffers(test, data, test.byteLength);
+  }
+  switch (typeof test) {
+    case "function":
+      return test(ensureArrayBuffer(data));
+    case "string":
+      const magic = getMagicString(data, byteOffset, test.length);
+      return test === magic;
+    default:
+      return false;
+  }
+}
+function getFirstCharacters(data, length5 = 5) {
+  if (typeof data === "string") {
+    return data.slice(0, length5);
+  } else if (ArrayBuffer.isView(data)) {
+    return getMagicString(data.buffer, data.byteOffset, length5);
+  } else if (data instanceof ArrayBuffer) {
+    const byteOffset = 0;
+    return getMagicString(data, byteOffset, length5);
+  }
+  return "";
+}
+function getMagicString(arrayBuffer2, byteOffset, length5) {
+  if (arrayBuffer2.byteLength < byteOffset + length5) {
+    return "";
+  }
+  const dataView = new DataView(arrayBuffer2);
+  let magic = "";
+  for (let i3 = 0; i3 < length5; i3++) {
+    magic += String.fromCharCode(dataView.getUint8(byteOffset + i3));
+  }
+  return magic;
+}
+
+// node_modules/@loaders.gl/core/dist/iterators/make-iterator/make-string-iterator.js
+var DEFAULT_CHUNK_SIZE = 256 * 1024;
+function* makeStringIterator(string, options) {
+  const chunkSize = options?.chunkSize || DEFAULT_CHUNK_SIZE;
+  let offset = 0;
+  const textEncoder = new TextEncoder();
+  while (offset < string.length) {
+    const chunkLength = Math.min(string.length - offset, chunkSize);
+    const chunk = string.slice(offset, offset + chunkLength);
+    offset += chunkLength;
+    yield ensureArrayBuffer(textEncoder.encode(chunk));
+  }
+}
+
+// node_modules/@loaders.gl/core/dist/iterators/make-iterator/make-array-buffer-iterator.js
+var DEFAULT_CHUNK_SIZE2 = 256 * 1024;
+function* makeArrayBufferIterator(arrayBuffer2, options = {}) {
+  const { chunkSize = DEFAULT_CHUNK_SIZE2 } = options;
+  let byteOffset = 0;
+  while (byteOffset < arrayBuffer2.byteLength) {
+    const chunkByteLength = Math.min(arrayBuffer2.byteLength - byteOffset, chunkSize);
+    const chunk = new ArrayBuffer(chunkByteLength);
+    const sourceArray = new Uint8Array(arrayBuffer2, byteOffset, chunkByteLength);
+    const chunkArray = new Uint8Array(chunk);
+    chunkArray.set(sourceArray);
+    byteOffset += chunkByteLength;
+    yield chunk;
+  }
+}
+
+// node_modules/@loaders.gl/core/dist/iterators/make-iterator/make-blob-iterator.js
+var DEFAULT_CHUNK_SIZE3 = 1024 * 1024;
+async function* makeBlobIterator(blob, options) {
+  const chunkSize = options?.chunkSize || DEFAULT_CHUNK_SIZE3;
+  let offset = 0;
+  while (offset < blob.size) {
+    const end = offset + chunkSize;
+    const chunk = await blob.slice(offset, end).arrayBuffer();
+    offset = end;
+    yield chunk;
+  }
+}
+
+// node_modules/@loaders.gl/core/dist/iterators/make-iterator/make-stream-iterator.js
+function makeStreamIterator(stream, options) {
+  return isBrowser ? makeBrowserStreamIterator(stream, options) : makeNodeStreamIterator(stream, options);
+}
+async function* makeBrowserStreamIterator(stream, options) {
+  const reader = stream.getReader();
+  let nextBatchPromise;
+  try {
+    while (true) {
+      const currentBatchPromise = nextBatchPromise || reader.read();
+      if (options?._streamReadAhead) {
+        nextBatchPromise = reader.read();
+      }
+      const { done, value } = await currentBatchPromise;
+      if (done) {
+        return;
+      }
+      yield toArrayBuffer2(value);
+    }
+  } catch (error) {
+    reader.releaseLock();
+  }
+}
+async function* makeNodeStreamIterator(stream, options) {
+  for await (const chunk of stream) {
+    yield toArrayBuffer2(chunk);
+  }
+}
+
+// node_modules/@loaders.gl/core/dist/iterators/make-iterator/make-iterator.js
+function makeIterator(data, options) {
+  if (typeof data === "string") {
+    return makeStringIterator(data, options);
+  }
+  if (data instanceof ArrayBuffer) {
+    return makeArrayBufferIterator(data, options);
+  }
+  if (isBlob(data)) {
+    return makeBlobIterator(data, options);
+  }
+  if (isReadableStream(data)) {
+    return makeStreamIterator(data, options);
+  }
+  if (isResponse(data)) {
+    const responseBody = data.body;
+    if (!responseBody) {
+      throw new Error("Readable stream not available on Response");
+    }
+    return makeStreamIterator(responseBody, options);
+  }
+  throw new Error("makeIterator");
+}
+
+// node_modules/@loaders.gl/core/dist/lib/loader-utils/get-data.js
+var ERR_DATA = "Cannot convert supplied data type";
+function getArrayBufferOrStringFromDataSync(data, loader, options) {
+  if (loader.text && typeof data === "string") {
+    return data;
+  }
+  if (isBuffer(data)) {
+    data = data.buffer;
+  }
+  if (isArrayBufferLike(data)) {
+    const bufferSource = toArrayBufferView(data);
+    if (loader.text && !loader.binary) {
+      const textDecoder = new TextDecoder("utf8");
+      return textDecoder.decode(bufferSource);
+    }
+    return toArrayBuffer2(bufferSource);
+  }
+  throw new Error(ERR_DATA);
+}
+async function getArrayBufferOrStringFromData(data, loader, options) {
+  if (typeof data === "string" || isArrayBufferLike(data)) {
+    return getArrayBufferOrStringFromDataSync(data, loader, options);
+  }
+  if (isBlob(data)) {
+    data = await makeResponse(data);
+  }
+  if (isResponse(data)) {
+    await checkResponse(data);
+    return loader.binary ? await data.arrayBuffer() : await data.text();
+  }
+  if (isReadableStream(data)) {
+    data = makeIterator(data, options);
+  }
+  if (isIterable(data) || isAsyncIterable(data)) {
+    return concatenateArrayBuffersAsync(data);
+  }
+  throw new Error(ERR_DATA);
+}
+
+// node_modules/@loaders.gl/core/dist/lib/loader-utils/get-fetch-function.js
+function getFetchFunction(options, context) {
+  const globalOptions = getGlobalLoaderOptions();
+  const loaderOptions = options || globalOptions;
+  const fetchOption = loaderOptions.fetch ?? loaderOptions.core?.fetch;
+  if (typeof fetchOption === "function") {
+    return fetchOption;
+  }
+  if (isObject(fetchOption)) {
+    return (url) => fetchFile(url, fetchOption);
+  }
+  if (context?.fetch) {
+    return context?.fetch;
+  }
+  return fetchFile;
+}
+
+// node_modules/@loaders.gl/core/dist/lib/loader-utils/loader-context.js
+function getLoaderContext(context, options, parentContext) {
+  if (parentContext) {
+    return parentContext;
+  }
+  const newContext = {
+    fetch: getFetchFunction(options, context),
+    ...context
+  };
+  if (newContext.url) {
+    const baseUrl = stripQueryString(newContext.url);
+    newContext.baseUrl = baseUrl;
+    newContext.queryString = extractQueryString(newContext.url);
+    newContext.filename = path_exports.filename(baseUrl);
+    newContext.baseUrl = path_exports.dirname(baseUrl);
+  }
+  if (!Array.isArray(newContext.loaders)) {
+    newContext.loaders = null;
+  }
+  return newContext;
+}
+function getLoadersFromContext(loaders, context) {
+  if (loaders && !Array.isArray(loaders)) {
+    return loaders;
+  }
+  let candidateLoaders;
+  if (loaders) {
+    candidateLoaders = Array.isArray(loaders) ? loaders : [loaders];
+  }
+  if (context && context.loaders) {
+    const contextLoaders = Array.isArray(context.loaders) ? context.loaders : [context.loaders];
+    candidateLoaders = candidateLoaders ? [...candidateLoaders, ...contextLoaders] : contextLoaders;
+  }
+  return candidateLoaders && candidateLoaders.length ? candidateLoaders : void 0;
+}
+
+// node_modules/@loaders.gl/core/dist/lib/api/parse.js
+async function parse(data, loaders, options, context) {
+  if (loaders && !Array.isArray(loaders) && !isLoaderObject(loaders)) {
+    context = void 0;
+    options = loaders;
+    loaders = void 0;
+  }
+  data = await data;
+  options = options || {};
+  const url = getResourceUrl(data);
+  const typedLoaders = loaders;
+  const candidateLoaders = getLoadersFromContext(typedLoaders, context);
+  const loader = await selectLoader(data, candidateLoaders, options);
+  if (!loader) {
+    return null;
+  }
+  const strictOptions = normalizeOptions(options, loader, candidateLoaders, url);
+  context = getLoaderContext(
+    // @ts-expect-error
+    { url, _parse: parse, loaders: candidateLoaders },
+    strictOptions,
+    context || null
+  );
+  return await parseWithLoader(loader, data, strictOptions, context);
+}
+async function parseWithLoader(loader, data, options, context) {
+  validateWorkerVersion(loader);
+  options = mergeOptions(loader.options, options);
+  if (isResponse(data)) {
+    const { ok, redirected, status, statusText, type, url } = data;
+    const headers = Object.fromEntries(data.headers.entries());
+    context.response = { headers, ok, redirected, status, statusText, type, url };
+  }
+  data = await getArrayBufferOrStringFromData(data, loader, options);
+  const loaderWithParser = loader;
+  if (loaderWithParser.parseTextSync && typeof data === "string") {
+    return loaderWithParser.parseTextSync(data, options, context);
+  }
+  if (canParseWithWorker(loader, options)) {
+    return await parseWithWorker(loader, data, options, context, parse);
+  }
+  if (loaderWithParser.parseText && typeof data === "string") {
+    return await loaderWithParser.parseText(data, options, context);
+  }
+  if (loaderWithParser.parse) {
+    return await loaderWithParser.parse(data, options, context);
+  }
+  assert4(!loaderWithParser.parseSync);
+  throw new Error(`${loader.id} loader - no parser found and worker is disabled`);
+}
+
+// node_modules/@math.gl/types/dist/is-array.js
+function isTypedArray(value) {
+  return ArrayBuffer.isView(value) && !(value instanceof DataView);
+}
+function isNumberArray(value) {
+  if (Array.isArray(value)) {
+    return value.length === 0 || typeof value[0] === "number";
+  }
+  return false;
+}
+function isNumericArray(value) {
+  return isTypedArray(value) || isNumberArray(value);
+}
+
+// node_modules/@loaders.gl/core/dist/lib/api/load.js
+async function load2(url, loaders, options, context) {
+  let resolvedLoaders;
+  let resolvedOptions;
+  if (!Array.isArray(loaders) && !isLoaderObject(loaders)) {
+    resolvedLoaders = [];
+    resolvedOptions = loaders;
+    context = void 0;
+  } else {
+    resolvedLoaders = loaders;
+    resolvedOptions = options;
+  }
+  const fetch2 = getFetchFunction(resolvedOptions);
+  let data = url;
+  if (typeof url === "string") {
+    data = await fetch2(url);
+  }
+  if (isBlob(url)) {
+    data = await fetch2(url);
+  }
+  if (typeof url === "string") {
+    const normalizedOptions = normalizeLoaderOptions(resolvedOptions || {});
+    if (!normalizedOptions.core?.baseUrl) {
+      resolvedOptions = {
+        ...resolvedOptions,
+        core: {
+          ...resolvedOptions?.core,
+          baseUrl: url
+        }
+      };
+    }
+  }
+  return Array.isArray(resolvedLoaders) ? await parse(data, resolvedLoaders, resolvedOptions) : await parse(data, resolvedLoaders, resolvedOptions);
+}
+
+// node_modules/@loaders.gl/images/dist/lib/utils/version.js
+var VERSION4 = true ? "4.3.3" : "latest";
+
+// node_modules/@loaders.gl/loader-utils/dist/lib/env-utils/assert.js
+function assert5(condition, message2) {
+  if (!condition) {
+    throw new Error(message2 || "loader assertion failed.");
+  }
+}
+
+// node_modules/@loaders.gl/loader-utils/dist/lib/env-utils/globals.js
+var globals3 = {
+  self: typeof self !== "undefined" && self,
+  window: typeof window !== "undefined" && window,
+  global: typeof global !== "undefined" && global,
+  document: typeof document !== "undefined" && document
+};
+var self_3 = globals3.self || globals3.window || globals3.global || {};
+var window_4 = globals3.window || globals3.self || globals3.global || {};
+var global_4 = globals3.global || globals3.self || globals3.window || {};
+var document_4 = globals3.document || {};
+var isBrowser4 = (
+  // @ts-ignore process does not exist on browser
+  Boolean(typeof process !== "object" || String(process) !== "[object process]" || process.browser)
+);
+var matches3 = typeof process !== "undefined" && process.version && /v([0-9]*)/.exec(process.version);
+var nodeVersion3 = matches3 && parseFloat(matches3[1]) || 0;
+
 // node_modules/@loaders.gl/loader-utils/dist/lib/request-utils/request-scheduler.js
 var STAT_QUEUED_REQUESTS = "Queued Requests";
 var STAT_ACTIVE_REQUESTS = "Active Requests";
@@ -18100,1125 +19510,12 @@ var RequestScheduler = class {
   }
 };
 
-// node_modules/@loaders.gl/loader-utils/dist/lib/path-utils/file-aliases.js
-var pathPrefix = "";
-var fileAliases = {};
-function resolvePath(filename2) {
-  for (const alias in fileAliases) {
-    if (filename2.startsWith(alias)) {
-      const replacement = fileAliases[alias];
-      filename2 = filename2.replace(alias, replacement);
-    }
-  }
-  if (!filename2.startsWith("http://") && !filename2.startsWith("https://")) {
-    filename2 = `${pathPrefix}${filename2}`;
-  }
-  return filename2;
-}
-
-// node_modules/@loaders.gl/loader-utils/dist/lib/node/buffer.browser.js
-function toArrayBuffer(buffer) {
-  return buffer;
-}
-
-// node_modules/@loaders.gl/loader-utils/dist/lib/binary-utils/memory-conversion-utils.js
-function isBuffer(value) {
-  return value && typeof value === "object" && value.isBuffer;
-}
-function toArrayBuffer2(data) {
-  if (isBuffer(data)) {
-    return toArrayBuffer(data);
-  }
-  if (data instanceof ArrayBuffer) {
-    return data;
-  }
-  if (ArrayBuffer.isView(data)) {
-    if (data.byteOffset === 0 && data.byteLength === data.buffer.byteLength) {
-      return data.buffer;
-    }
-    return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
-  }
-  if (typeof data === "string") {
-    const text = data;
-    const uint8Array = new TextEncoder().encode(text);
-    return uint8Array.buffer;
-  }
-  if (data && typeof data === "object" && data._toArrayBuffer) {
-    return data._toArrayBuffer();
-  }
-  throw new Error("toArrayBuffer");
-}
-
-// node_modules/@loaders.gl/loader-utils/dist/lib/path-utils/path.js
-var path_exports = {};
-__export(path_exports, {
-  dirname: () => dirname,
-  filename: () => filename,
-  join: () => join,
-  resolve: () => resolve2
-});
-
-// node_modules/@loaders.gl/loader-utils/dist/lib/path-utils/get-cwd.js
-function getCWD() {
-  if (typeof process !== "undefined" && typeof process.cwd !== "undefined") {
-    return process.cwd();
-  }
-  const pathname = window.location?.pathname;
-  return pathname?.slice(0, pathname.lastIndexOf("/") + 1) || "";
-}
-
-// node_modules/@loaders.gl/loader-utils/dist/lib/path-utils/path.js
-function filename(url) {
-  const slashIndex = url ? url.lastIndexOf("/") : -1;
-  return slashIndex >= 0 ? url.substr(slashIndex + 1) : "";
-}
-function dirname(url) {
-  const slashIndex = url ? url.lastIndexOf("/") : -1;
-  return slashIndex >= 0 ? url.substr(0, slashIndex) : "";
-}
-function join(...parts) {
-  const separator = "/";
-  parts = parts.map((part, index) => {
-    if (index) {
-      part = part.replace(new RegExp(`^${separator}`), "");
-    }
-    if (index !== parts.length - 1) {
-      part = part.replace(new RegExp(`${separator}$`), "");
-    }
-    return part;
-  });
-  return parts.join(separator);
-}
-function resolve2(...components) {
-  const paths = [];
-  for (let _i = 0; _i < components.length; _i++) {
-    paths[_i] = components[_i];
-  }
-  let resolvedPath = "";
-  let resolvedAbsolute = false;
-  let cwd;
-  for (let i3 = paths.length - 1; i3 >= -1 && !resolvedAbsolute; i3--) {
-    let path;
-    if (i3 >= 0) {
-      path = paths[i3];
-    } else {
-      if (cwd === void 0) {
-        cwd = getCWD();
-      }
-      path = cwd;
-    }
-    if (path.length === 0) {
-      continue;
-    }
-    resolvedPath = `${path}/${resolvedPath}`;
-    resolvedAbsolute = path.charCodeAt(0) === SLASH;
-  }
-  resolvedPath = normalizeStringPosix(resolvedPath, !resolvedAbsolute);
-  if (resolvedAbsolute) {
-    return `/${resolvedPath}`;
-  } else if (resolvedPath.length > 0) {
-    return resolvedPath;
-  }
-  return ".";
-}
-var SLASH = 47;
-var DOT = 46;
-function normalizeStringPosix(path, allowAboveRoot) {
-  let res = "";
-  let lastSlash = -1;
-  let dots = 0;
-  let code;
-  let isAboveRoot = false;
-  for (let i3 = 0; i3 <= path.length; ++i3) {
-    if (i3 < path.length) {
-      code = path.charCodeAt(i3);
-    } else if (code === SLASH) {
-      break;
-    } else {
-      code = SLASH;
-    }
-    if (code === SLASH) {
-      if (lastSlash === i3 - 1 || dots === 1) {
-      } else if (lastSlash !== i3 - 1 && dots === 2) {
-        if (res.length < 2 || !isAboveRoot || res.charCodeAt(res.length - 1) !== DOT || res.charCodeAt(res.length - 2) !== DOT) {
-          if (res.length > 2) {
-            const start = res.length - 1;
-            let j2 = start;
-            for (; j2 >= 0; --j2) {
-              if (res.charCodeAt(j2) === SLASH) {
-                break;
-              }
-            }
-            if (j2 !== start) {
-              res = j2 === -1 ? "" : res.slice(0, j2);
-              lastSlash = i3;
-              dots = 0;
-              isAboveRoot = false;
-              continue;
-            }
-          } else if (res.length === 2 || res.length === 1) {
-            res = "";
-            lastSlash = i3;
-            dots = 0;
-            isAboveRoot = false;
-            continue;
-          }
-        }
-        if (allowAboveRoot) {
-          if (res.length > 0) {
-            res += "/..";
-          } else {
-            res = "..";
-          }
-          isAboveRoot = true;
-        }
-      } else {
-        const slice2 = path.slice(lastSlash + 1, i3);
-        if (res.length > 0) {
-          res += `/${slice2}`;
-        } else {
-          res = slice2;
-        }
-        isAboveRoot = false;
-      }
-      lastSlash = i3;
-      dots = 0;
-    } else if (code === DOT && dots !== -1) {
-      ++dots;
-    } else {
-      dots = -1;
-    }
-  }
-  return res;
-}
-
-// node_modules/@loaders.gl/core/dist/javascript-utils/is-type.js
-var isBoolean = (x2) => typeof x2 === "boolean";
-var isFunction = (x2) => typeof x2 === "function";
-var isObject = (x2) => x2 !== null && typeof x2 === "object";
-var isPureObject = (x2) => isObject(x2) && x2.constructor === {}.constructor;
-var isIterable = (x2) => Boolean(x2) && typeof x2[Symbol.iterator] === "function";
-var isAsyncIterable = (x2) => x2 && typeof x2[Symbol.asyncIterator] === "function";
-var isResponse = (x2) => typeof Response !== "undefined" && x2 instanceof Response || x2 && x2.arrayBuffer && x2.text && x2.json;
-var isBlob = (x2) => typeof Blob !== "undefined" && x2 instanceof Blob;
-var isBuffer2 = (x2) => x2 && typeof x2 === "object" && x2.isBuffer;
-var isReadableDOMStream = (x2) => typeof ReadableStream !== "undefined" && x2 instanceof ReadableStream || isObject(x2) && isFunction(x2.tee) && isFunction(x2.cancel) && isFunction(x2.getReader);
-var isReadableNodeStream = (x2) => isObject(x2) && isFunction(x2.read) && isFunction(x2.pipe) && isBoolean(x2.readable);
-var isReadableStream = (x2) => isReadableDOMStream(x2) || isReadableNodeStream(x2);
-
-// node_modules/@loaders.gl/core/dist/lib/fetch/fetch-error.js
-var FetchError = class extends Error {
-  constructor(message2, info) {
-    super(message2);
-    /** A best effort reason for why the fetch failed */
-    __publicField(this, "reason");
-    /** The URL that failed to load. Empty string if not available. */
-    __publicField(this, "url");
-    /** The Response object, if any. */
-    __publicField(this, "response");
-    this.reason = info.reason;
-    this.url = info.url;
-    this.response = info.response;
-  }
-};
-
-// node_modules/@loaders.gl/core/dist/lib/utils/mime-type-utils.js
-var DATA_URL_PATTERN = /^data:([-\w.]+\/[-\w.+]+)(;|,)/;
-var MIME_TYPE_PATTERN = /^([-\w.]+\/[-\w.+]+)/;
-function compareMIMETypes(mimeType1, mimeType2) {
-  if (mimeType1.toLowerCase() === mimeType2.toLowerCase()) {
-    return true;
-  }
-  return false;
-}
-function parseMIMEType(mimeString) {
-  const matches3 = MIME_TYPE_PATTERN.exec(mimeString);
-  if (matches3) {
-    return matches3[1];
-  }
-  return mimeString;
-}
-function parseMIMETypeFromURL(url) {
-  const matches3 = DATA_URL_PATTERN.exec(url);
-  if (matches3) {
-    return matches3[1];
-  }
-  return "";
-}
-
-// node_modules/@loaders.gl/core/dist/lib/utils/url-utils.js
-var QUERY_STRING_PATTERN = /\?.*/;
-function extractQueryString(url) {
-  const matches3 = url.match(QUERY_STRING_PATTERN);
-  return matches3 && matches3[0];
-}
-function stripQueryString(url) {
-  return url.replace(QUERY_STRING_PATTERN, "");
-}
-function shortenUrlForDisplay(url) {
-  if (url.length < 50) {
-    return url;
-  }
-  const urlEnd = url.slice(url.length - 15);
-  const urlStart = url.substr(0, 32);
-  return `${urlStart}...${urlEnd}`;
-}
-
-// node_modules/@loaders.gl/core/dist/lib/utils/resource-utils.js
-function getResourceUrl(resource) {
-  if (isResponse(resource)) {
-    const response = resource;
-    return response.url;
-  }
-  if (isBlob(resource)) {
-    const blob = resource;
-    return blob.name || "";
-  }
-  if (typeof resource === "string") {
-    return resource;
-  }
-  return "";
-}
-function getResourceMIMEType(resource) {
-  if (isResponse(resource)) {
-    const response = resource;
-    const contentTypeHeader = response.headers.get("content-type") || "";
-    const noQueryUrl = stripQueryString(response.url);
-    return parseMIMEType(contentTypeHeader) || parseMIMETypeFromURL(noQueryUrl);
-  }
-  if (isBlob(resource)) {
-    const blob = resource;
-    return blob.type || "";
-  }
-  if (typeof resource === "string") {
-    return parseMIMETypeFromURL(resource);
-  }
-  return "";
-}
-function getResourceContentLength(resource) {
-  if (isResponse(resource)) {
-    const response = resource;
-    return response.headers["content-length"] || -1;
-  }
-  if (isBlob(resource)) {
-    const blob = resource;
-    return blob.size;
-  }
-  if (typeof resource === "string") {
-    return resource.length;
-  }
-  if (resource instanceof ArrayBuffer) {
-    return resource.byteLength;
-  }
-  if (ArrayBuffer.isView(resource)) {
-    return resource.byteLength;
-  }
-  return -1;
-}
-
-// node_modules/@loaders.gl/core/dist/lib/utils/response-utils.js
-async function makeResponse(resource) {
-  if (isResponse(resource)) {
-    return resource;
-  }
-  const headers = {};
-  const contentLength = getResourceContentLength(resource);
-  if (contentLength >= 0) {
-    headers["content-length"] = String(contentLength);
-  }
-  const url = getResourceUrl(resource);
-  const type = getResourceMIMEType(resource);
-  if (type) {
-    headers["content-type"] = type;
-  }
-  const initialDataUrl = await getInitialDataUrl(resource);
-  if (initialDataUrl) {
-    headers["x-first-bytes"] = initialDataUrl;
-  }
-  if (typeof resource === "string") {
-    resource = new TextEncoder().encode(resource);
-  }
-  const response = new Response(resource, { headers });
-  Object.defineProperty(response, "url", { value: url });
-  return response;
-}
-async function checkResponse(response) {
-  if (!response.ok) {
-    const error = await getResponseError(response);
-    throw error;
-  }
-}
-async function getResponseError(response) {
-  const shortUrl = shortenUrlForDisplay(response.url);
-  let message2 = `Failed to fetch resource (${response.status}) ${response.statusText}: ${shortUrl}`;
-  message2 = message2.length > 100 ? `${message2.slice(0, 100)}...` : message2;
-  const info = {
-    reason: response.statusText,
-    url: response.url,
-    response
-  };
-  try {
-    const contentType = response.headers.get("Content-Type");
-    info.reason = !response.bodyUsed && contentType?.includes("application/json") ? await response.json() : await response.text();
-  } catch (error) {
-  }
-  return new FetchError(message2, info);
-}
-async function getInitialDataUrl(resource) {
-  const INITIAL_DATA_LENGTH = 5;
-  if (typeof resource === "string") {
-    return `data:,${resource.slice(0, INITIAL_DATA_LENGTH)}`;
-  }
-  if (resource instanceof Blob) {
-    const blobSlice = resource.slice(0, 5);
-    return await new Promise((resolve3) => {
-      const reader = new FileReader();
-      reader.onload = (event) => resolve3(event?.target?.result);
-      reader.readAsDataURL(blobSlice);
-    });
-  }
-  if (resource instanceof ArrayBuffer) {
-    const slice2 = resource.slice(0, INITIAL_DATA_LENGTH);
-    const base64 = arrayBufferToBase64(slice2);
-    return `data:base64,${base64}`;
-  }
-  return null;
-}
-function arrayBufferToBase64(buffer) {
-  let binary = "";
-  const bytes = new Uint8Array(buffer);
-  for (let i3 = 0; i3 < bytes.byteLength; i3++) {
-    binary += String.fromCharCode(bytes[i3]);
-  }
-  return btoa(binary);
-}
-
-// node_modules/@loaders.gl/core/dist/lib/fetch/fetch-file.js
-function isNodePath(url) {
-  return !isRequestURL(url) && !isDataURL(url);
-}
-function isRequestURL(url) {
-  return url.startsWith("http:") || url.startsWith("https:");
-}
-function isDataURL(url) {
-  return url.startsWith("data:");
-}
-async function fetchFile(urlOrData, fetchOptions) {
-  if (typeof urlOrData === "string") {
-    const url = resolvePath(urlOrData);
-    if (isNodePath(url)) {
-      if (globalThis.loaders?.fetchNode) {
-        return globalThis.loaders?.fetchNode(url, fetchOptions);
-      }
-    }
-    return await fetch(url, fetchOptions);
-  }
-  return await makeResponse(urlOrData);
-}
-
-// node_modules/@loaders.gl/core/dist/lib/loader-utils/loggers.js
-var probeLog = new Log({ id: "loaders.gl" });
-var NullLog = class {
-  log() {
-    return () => {
-    };
-  }
-  info() {
-    return () => {
-    };
-  }
-  warn() {
-    return () => {
-    };
-  }
-  error() {
-    return () => {
-    };
-  }
-};
-var ConsoleLog = class {
-  constructor() {
-    __publicField(this, "console");
-    this.console = console;
-  }
-  log(...args) {
-    return this.console.log.bind(this.console, ...args);
-  }
-  info(...args) {
-    return this.console.info.bind(this.console, ...args);
-  }
-  warn(...args) {
-    return this.console.warn.bind(this.console, ...args);
-  }
-  error(...args) {
-    return this.console.error.bind(this.console, ...args);
-  }
-};
-
-// node_modules/@loaders.gl/core/dist/lib/loader-utils/option-defaults.js
-var DEFAULT_LOADER_OPTIONS = {
-  // baseUri
-  fetch: null,
-  mimeType: void 0,
-  nothrow: false,
-  log: new ConsoleLog(),
-  // A probe.gl compatible (`log.log()()` syntax) that just logs to console
-  useLocalLibraries: false,
-  CDN: "https://unpkg.com/@loaders.gl",
-  worker: true,
-  // By default, use worker if provided by loader.
-  maxConcurrency: 3,
-  // How many worker instances should be created for each loader.
-  maxMobileConcurrency: 1,
-  // How many worker instances should be created for each loader on mobile devices.
-  reuseWorkers: isBrowser,
-  // By default reuse workers in browser (Node.js refuses to terminate if browsers are running)
-  _nodeWorkers: false,
-  // By default do not support node workers
-  _workerType: "",
-  // 'test' to use locally generated workers
-  limit: 0,
-  _limitMB: 0,
-  batchSize: "auto",
-  batchDebounceMs: 0,
-  metadata: false,
-  // TODO - currently only implemented for parseInBatches, adds initial metadata batch,
-  transforms: []
-};
-var REMOVED_LOADER_OPTIONS = {
-  throws: "nothrow",
-  dataType: "(no longer used)",
-  uri: "baseUri",
-  // Warn if fetch options are used on top-level
-  method: "fetch.method",
-  headers: "fetch.headers",
-  body: "fetch.body",
-  mode: "fetch.mode",
-  credentials: "fetch.credentials",
-  cache: "fetch.cache",
-  redirect: "fetch.redirect",
-  referrer: "fetch.referrer",
-  referrerPolicy: "fetch.referrerPolicy",
-  integrity: "fetch.integrity",
-  keepalive: "fetch.keepalive",
-  signal: "fetch.signal"
-};
-
-// node_modules/@loaders.gl/core/dist/lib/loader-utils/option-utils.js
-function getGlobalLoaderState() {
-  globalThis.loaders = globalThis.loaders || {};
-  const { loaders } = globalThis;
-  if (!loaders._state) {
-    loaders._state = {};
-  }
-  return loaders._state;
-}
-function getGlobalLoaderOptions() {
-  const state = getGlobalLoaderState();
-  state.globalOptions = state.globalOptions || { ...DEFAULT_LOADER_OPTIONS };
-  return state.globalOptions;
-}
-function normalizeOptions(options, loader, loaders, url) {
-  loaders = loaders || [];
-  loaders = Array.isArray(loaders) ? loaders : [loaders];
-  validateOptions(options, loaders);
-  return normalizeOptionsInternal(loader, options, url);
-}
-function validateOptions(options, loaders) {
-  validateOptionsObject(options, null, DEFAULT_LOADER_OPTIONS, REMOVED_LOADER_OPTIONS, loaders);
-  for (const loader of loaders) {
-    const idOptions = options && options[loader.id] || {};
-    const loaderOptions = loader.options && loader.options[loader.id] || {};
-    const deprecatedOptions = loader.deprecatedOptions && loader.deprecatedOptions[loader.id] || {};
-    validateOptionsObject(idOptions, loader.id, loaderOptions, deprecatedOptions, loaders);
-  }
-}
-function validateOptionsObject(options, id, defaultOptions2, deprecatedOptions, loaders) {
-  const loaderName = id || "Top level";
-  const prefix = id ? `${id}.` : "";
-  for (const key in options) {
-    const isSubOptions = !id && isObject(options[key]);
-    const isBaseUriOption = key === "baseUri" && !id;
-    const isWorkerUrlOption = key === "workerUrl" && id;
-    if (!(key in defaultOptions2) && !isBaseUriOption && !isWorkerUrlOption) {
-      if (key in deprecatedOptions) {
-        probeLog.warn(`${loaderName} loader option '${prefix}${key}' no longer supported, use '${deprecatedOptions[key]}'`)();
-      } else if (!isSubOptions) {
-        const suggestion = findSimilarOption(key, loaders);
-        probeLog.warn(`${loaderName} loader option '${prefix}${key}' not recognized. ${suggestion}`)();
-      }
-    }
-  }
-}
-function findSimilarOption(optionKey, loaders) {
-  const lowerCaseOptionKey = optionKey.toLowerCase();
-  let bestSuggestion = "";
-  for (const loader of loaders) {
-    for (const key in loader.options) {
-      if (optionKey === key) {
-        return `Did you mean '${loader.id}.${key}'?`;
-      }
-      const lowerCaseKey = key.toLowerCase();
-      const isPartialMatch = lowerCaseOptionKey.startsWith(lowerCaseKey) || lowerCaseKey.startsWith(lowerCaseOptionKey);
-      if (isPartialMatch) {
-        bestSuggestion = bestSuggestion || `Did you mean '${loader.id}.${key}'?`;
-      }
-    }
-  }
-  return bestSuggestion;
-}
-function normalizeOptionsInternal(loader, options, url) {
-  const loaderDefaultOptions = loader.options || {};
-  const mergedOptions = { ...loaderDefaultOptions };
-  addUrlOptions(mergedOptions, url);
-  if (mergedOptions.log === null) {
-    mergedOptions.log = new NullLog();
-  }
-  mergeNestedFields(mergedOptions, getGlobalLoaderOptions());
-  mergeNestedFields(mergedOptions, options);
-  return mergedOptions;
-}
-function mergeNestedFields(mergedOptions, options) {
-  for (const key in options) {
-    if (key in options) {
-      const value = options[key];
-      if (isPureObject(value) && isPureObject(mergedOptions[key])) {
-        mergedOptions[key] = {
-          ...mergedOptions[key],
-          ...options[key]
-        };
-      } else {
-        mergedOptions[key] = options[key];
-      }
-    }
-  }
-}
-function addUrlOptions(options, url) {
-  if (url && !("baseUri" in options)) {
-    options.baseUri = url;
-  }
-}
-
-// node_modules/@loaders.gl/core/dist/lib/loader-utils/normalize-loader.js
-function isLoaderObject(loader) {
-  if (!loader) {
-    return false;
-  }
-  if (Array.isArray(loader)) {
-    loader = loader[0];
-  }
-  const hasExtensions = Array.isArray(loader?.extensions);
-  return hasExtensions;
-}
-function normalizeLoader(loader) {
-  assert2(loader, "null loader");
-  assert2(isLoaderObject(loader), "invalid loader");
-  let options;
-  if (Array.isArray(loader)) {
-    options = loader[1];
-    loader = loader[0];
-    loader = {
-      ...loader,
-      options: { ...loader.options, ...options }
-    };
-  }
-  if (loader?.parseTextSync || loader?.parseText) {
-    loader.text = true;
-  }
-  if (!loader.text) {
-    loader.binary = true;
-  }
-  return loader;
-}
-
-// node_modules/@loaders.gl/core/dist/lib/api/register-loaders.js
-var getGlobalLoaderRegistry = () => {
-  const state = getGlobalLoaderState();
-  state.loaderRegistry = state.loaderRegistry || [];
-  return state.loaderRegistry;
-};
-function registerLoaders(loaders) {
-  const loaderRegistry = getGlobalLoaderRegistry();
-  loaders = Array.isArray(loaders) ? loaders : [loaders];
-  for (const loader of loaders) {
-    const normalizedLoader = normalizeLoader(loader);
-    if (!loaderRegistry.find((registeredLoader) => normalizedLoader === registeredLoader)) {
-      loaderRegistry.unshift(normalizedLoader);
-    }
-  }
-}
-function getRegisteredLoaders() {
-  return getGlobalLoaderRegistry();
-}
-
-// node_modules/@loaders.gl/core/dist/lib/api/select-loader.js
-var EXT_PATTERN = /\.([^.]+)$/;
-async function selectLoader(data, loaders = [], options, context) {
-  if (!validHTTPResponse(data)) {
-    return null;
-  }
-  let loader = selectLoaderSync(data, loaders, { ...options, nothrow: true }, context);
-  if (loader) {
-    return loader;
-  }
-  if (isBlob(data)) {
-    data = await data.slice(0, 10).arrayBuffer();
-    loader = selectLoaderSync(data, loaders, options, context);
-  }
-  if (!loader && !options?.nothrow) {
-    throw new Error(getNoValidLoaderMessage(data));
-  }
-  return loader;
-}
-function selectLoaderSync(data, loaders = [], options, context) {
-  if (!validHTTPResponse(data)) {
-    return null;
-  }
-  if (loaders && !Array.isArray(loaders)) {
-    return normalizeLoader(loaders);
-  }
-  let candidateLoaders = [];
-  if (loaders) {
-    candidateLoaders = candidateLoaders.concat(loaders);
-  }
-  if (!options?.ignoreRegisteredLoaders) {
-    candidateLoaders.push(...getRegisteredLoaders());
-  }
-  normalizeLoaders(candidateLoaders);
-  const loader = selectLoaderInternal(data, candidateLoaders, options, context);
-  if (!loader && !options?.nothrow) {
-    throw new Error(getNoValidLoaderMessage(data));
-  }
-  return loader;
-}
-function selectLoaderInternal(data, loaders, options, context) {
-  const url = getResourceUrl(data);
-  const type = getResourceMIMEType(data);
-  const testUrl = stripQueryString(url) || context?.url;
-  let loader = null;
-  let reason = "";
-  if (options?.mimeType) {
-    loader = findLoaderByMIMEType(loaders, options?.mimeType);
-    reason = `match forced by supplied MIME type ${options?.mimeType}`;
-  }
-  loader = loader || findLoaderByUrl(loaders, testUrl);
-  reason = reason || (loader ? `matched url ${testUrl}` : "");
-  loader = loader || findLoaderByMIMEType(loaders, type);
-  reason = reason || (loader ? `matched MIME type ${type}` : "");
-  loader = loader || findLoaderByInitialBytes(loaders, data);
-  reason = reason || (loader ? `matched initial data ${getFirstCharacters(data)}` : "");
-  if (options?.fallbackMimeType) {
-    loader = loader || findLoaderByMIMEType(loaders, options?.fallbackMimeType);
-    reason = reason || (loader ? `matched fallback MIME type ${type}` : "");
-  }
-  if (reason) {
-    log.log(1, `selectLoader selected ${loader?.name}: ${reason}.`);
-  }
-  return loader;
-}
-function validHTTPResponse(data) {
-  if (data instanceof Response) {
-    if (data.status === 204) {
-      return false;
-    }
-  }
-  return true;
-}
-function getNoValidLoaderMessage(data) {
-  const url = getResourceUrl(data);
-  const type = getResourceMIMEType(data);
-  let message2 = "No valid loader found (";
-  message2 += url ? `${path_exports.filename(url)}, ` : "no url provided, ";
-  message2 += `MIME type: ${type ? `"${type}"` : "not provided"}, `;
-  const firstCharacters = data ? getFirstCharacters(data) : "";
-  message2 += firstCharacters ? ` first bytes: "${firstCharacters}"` : "first bytes: not available";
-  message2 += ")";
-  return message2;
-}
-function normalizeLoaders(loaders) {
-  for (const loader of loaders) {
-    normalizeLoader(loader);
-  }
-}
-function findLoaderByUrl(loaders, url) {
-  const match = url && EXT_PATTERN.exec(url);
-  const extension = match && match[1];
-  return extension ? findLoaderByExtension(loaders, extension) : null;
-}
-function findLoaderByExtension(loaders, extension) {
-  extension = extension.toLowerCase();
-  for (const loader of loaders) {
-    for (const loaderExtension of loader.extensions) {
-      if (loaderExtension.toLowerCase() === extension) {
-        return loader;
-      }
-    }
-  }
-  return null;
-}
-function findLoaderByMIMEType(loaders, mimeType) {
-  for (const loader of loaders) {
-    if (loader.mimeTypes?.some((mimeType1) => compareMIMETypes(mimeType, mimeType1))) {
-      return loader;
-    }
-    if (compareMIMETypes(mimeType, `application/x.${loader.id}`)) {
-      return loader;
-    }
-  }
-  return null;
-}
-function findLoaderByInitialBytes(loaders, data) {
-  if (!data) {
-    return null;
-  }
-  for (const loader of loaders) {
-    if (typeof data === "string") {
-      if (testDataAgainstText(data, loader)) {
-        return loader;
-      }
-    } else if (ArrayBuffer.isView(data)) {
-      if (testDataAgainstBinary(data.buffer, data.byteOffset, loader)) {
-        return loader;
-      }
-    } else if (data instanceof ArrayBuffer) {
-      const byteOffset = 0;
-      if (testDataAgainstBinary(data, byteOffset, loader)) {
-        return loader;
-      }
-    }
-  }
-  return null;
-}
-function testDataAgainstText(data, loader) {
-  if (loader.testText) {
-    return loader.testText(data);
-  }
-  const tests = Array.isArray(loader.tests) ? loader.tests : [loader.tests];
-  return tests.some((test) => data.startsWith(test));
-}
-function testDataAgainstBinary(data, byteOffset, loader) {
-  const tests = Array.isArray(loader.tests) ? loader.tests : [loader.tests];
-  return tests.some((test) => testBinary(data, byteOffset, loader, test));
-}
-function testBinary(data, byteOffset, loader, test) {
-  if (test instanceof ArrayBuffer) {
-    return compareArrayBuffers(test, data, test.byteLength);
-  }
-  switch (typeof test) {
-    case "function":
-      return test(data);
-    case "string":
-      const magic = getMagicString(data, byteOffset, test.length);
-      return test === magic;
-    default:
-      return false;
-  }
-}
-function getFirstCharacters(data, length5 = 5) {
-  if (typeof data === "string") {
-    return data.slice(0, length5);
-  } else if (ArrayBuffer.isView(data)) {
-    return getMagicString(data.buffer, data.byteOffset, length5);
-  } else if (data instanceof ArrayBuffer) {
-    const byteOffset = 0;
-    return getMagicString(data, byteOffset, length5);
-  }
-  return "";
-}
-function getMagicString(arrayBuffer2, byteOffset, length5) {
-  if (arrayBuffer2.byteLength < byteOffset + length5) {
-    return "";
-  }
-  const dataView = new DataView(arrayBuffer2);
-  let magic = "";
-  for (let i3 = 0; i3 < length5; i3++) {
-    magic += String.fromCharCode(dataView.getUint8(byteOffset + i3));
-  }
-  return magic;
-}
-
-// node_modules/@loaders.gl/core/dist/iterators/make-iterator/make-string-iterator.js
-var DEFAULT_CHUNK_SIZE = 256 * 1024;
-function* makeStringIterator(string, options) {
-  const chunkSize = options?.chunkSize || DEFAULT_CHUNK_SIZE;
-  let offset = 0;
-  const textEncoder = new TextEncoder();
-  while (offset < string.length) {
-    const chunkLength = Math.min(string.length - offset, chunkSize);
-    const chunk = string.slice(offset, offset + chunkLength);
-    offset += chunkLength;
-    yield textEncoder.encode(chunk);
-  }
-}
-
-// node_modules/@loaders.gl/core/dist/iterators/make-iterator/make-array-buffer-iterator.js
-var DEFAULT_CHUNK_SIZE2 = 256 * 1024;
-function* makeArrayBufferIterator(arrayBuffer2, options = {}) {
-  const { chunkSize = DEFAULT_CHUNK_SIZE2 } = options;
-  let byteOffset = 0;
-  while (byteOffset < arrayBuffer2.byteLength) {
-    const chunkByteLength = Math.min(arrayBuffer2.byteLength - byteOffset, chunkSize);
-    const chunk = new ArrayBuffer(chunkByteLength);
-    const sourceArray = new Uint8Array(arrayBuffer2, byteOffset, chunkByteLength);
-    const chunkArray = new Uint8Array(chunk);
-    chunkArray.set(sourceArray);
-    byteOffset += chunkByteLength;
-    yield chunk;
-  }
-}
-
-// node_modules/@loaders.gl/core/dist/iterators/make-iterator/make-blob-iterator.js
-var DEFAULT_CHUNK_SIZE3 = 1024 * 1024;
-async function* makeBlobIterator(blob, options) {
-  const chunkSize = options?.chunkSize || DEFAULT_CHUNK_SIZE3;
-  let offset = 0;
-  while (offset < blob.size) {
-    const end = offset + chunkSize;
-    const chunk = await blob.slice(offset, end).arrayBuffer();
-    offset = end;
-    yield chunk;
-  }
-}
-
-// node_modules/@loaders.gl/core/dist/iterators/make-iterator/make-stream-iterator.js
-function makeStreamIterator(stream, options) {
-  return isBrowser ? makeBrowserStreamIterator(stream, options) : makeNodeStreamIterator(stream, options);
-}
-async function* makeBrowserStreamIterator(stream, options) {
-  const reader = stream.getReader();
-  let nextBatchPromise;
-  try {
-    while (true) {
-      const currentBatchPromise = nextBatchPromise || reader.read();
-      if (options?._streamReadAhead) {
-        nextBatchPromise = reader.read();
-      }
-      const { done, value } = await currentBatchPromise;
-      if (done) {
-        return;
-      }
-      yield toArrayBuffer2(value);
-    }
-  } catch (error) {
-    reader.releaseLock();
-  }
-}
-async function* makeNodeStreamIterator(stream, options) {
-  for await (const chunk of stream) {
-    yield toArrayBuffer2(chunk);
-  }
-}
-
-// node_modules/@loaders.gl/core/dist/iterators/make-iterator/make-iterator.js
-function makeIterator(data, options) {
-  if (typeof data === "string") {
-    return makeStringIterator(data, options);
-  }
-  if (data instanceof ArrayBuffer) {
-    return makeArrayBufferIterator(data, options);
-  }
-  if (isBlob(data)) {
-    return makeBlobIterator(data, options);
-  }
-  if (isReadableStream(data)) {
-    return makeStreamIterator(data, options);
-  }
-  if (isResponse(data)) {
-    const response = data;
-    return makeStreamIterator(response.body, options);
-  }
-  throw new Error("makeIterator");
-}
-
-// node_modules/@loaders.gl/core/dist/lib/loader-utils/get-data.js
-var ERR_DATA = "Cannot convert supplied data type";
-function getArrayBufferOrStringFromDataSync(data, loader, options) {
-  if (loader.text && typeof data === "string") {
-    return data;
-  }
-  if (isBuffer2(data)) {
-    data = data.buffer;
-  }
-  if (data instanceof ArrayBuffer) {
-    const arrayBuffer2 = data;
-    if (loader.text && !loader.binary) {
-      const textDecoder = new TextDecoder("utf8");
-      return textDecoder.decode(arrayBuffer2);
-    }
-    return arrayBuffer2;
-  }
-  if (ArrayBuffer.isView(data)) {
-    if (loader.text && !loader.binary) {
-      const textDecoder = new TextDecoder("utf8");
-      return textDecoder.decode(data);
-    }
-    let arrayBuffer2 = data.buffer;
-    const byteLength = data.byteLength || data.length;
-    if (data.byteOffset !== 0 || byteLength !== arrayBuffer2.byteLength) {
-      arrayBuffer2 = arrayBuffer2.slice(data.byteOffset, data.byteOffset + byteLength);
-    }
-    return arrayBuffer2;
-  }
-  throw new Error(ERR_DATA);
-}
-async function getArrayBufferOrStringFromData(data, loader, options) {
-  const isArrayBuffer = data instanceof ArrayBuffer || ArrayBuffer.isView(data);
-  if (typeof data === "string" || isArrayBuffer) {
-    return getArrayBufferOrStringFromDataSync(data, loader, options);
-  }
-  if (isBlob(data)) {
-    data = await makeResponse(data);
-  }
-  if (isResponse(data)) {
-    const response = data;
-    await checkResponse(response);
-    return loader.binary ? await response.arrayBuffer() : await response.text();
-  }
-  if (isReadableStream(data)) {
-    data = makeIterator(data, options);
-  }
-  if (isIterable(data) || isAsyncIterable(data)) {
-    return concatenateArrayBuffersAsync(data);
-  }
-  throw new Error(ERR_DATA);
-}
-
-// node_modules/@loaders.gl/core/dist/lib/loader-utils/get-fetch-function.js
-function getFetchFunction(options, context) {
-  const globalOptions = getGlobalLoaderOptions();
-  const loaderOptions = options || globalOptions;
-  if (typeof loaderOptions.fetch === "function") {
-    return loaderOptions.fetch;
-  }
-  if (isObject(loaderOptions.fetch)) {
-    return (url) => fetchFile(url, loaderOptions.fetch);
-  }
-  if (context?.fetch) {
-    return context?.fetch;
-  }
-  return fetchFile;
-}
-
-// node_modules/@loaders.gl/core/dist/lib/loader-utils/loader-context.js
-function getLoaderContext(context, options, parentContext) {
-  if (parentContext) {
-    return parentContext;
-  }
-  const newContext = {
-    fetch: getFetchFunction(options, context),
-    ...context
-  };
-  if (newContext.url) {
-    const baseUrl = stripQueryString(newContext.url);
-    newContext.baseUrl = baseUrl;
-    newContext.queryString = extractQueryString(newContext.url);
-    newContext.filename = path_exports.filename(baseUrl);
-    newContext.baseUrl = path_exports.dirname(baseUrl);
-  }
-  if (!Array.isArray(newContext.loaders)) {
-    newContext.loaders = null;
-  }
-  return newContext;
-}
-function getLoadersFromContext(loaders, context) {
-  if (loaders && !Array.isArray(loaders)) {
-    return loaders;
-  }
-  let candidateLoaders;
-  if (loaders) {
-    candidateLoaders = Array.isArray(loaders) ? loaders : [loaders];
-  }
-  if (context && context.loaders) {
-    const contextLoaders = Array.isArray(context.loaders) ? context.loaders : [context.loaders];
-    candidateLoaders = candidateLoaders ? [...candidateLoaders, ...contextLoaders] : contextLoaders;
-  }
-  return candidateLoaders && candidateLoaders.length ? candidateLoaders : void 0;
-}
-
-// node_modules/@loaders.gl/core/dist/lib/api/parse.js
-async function parse(data, loaders, options, context) {
-  if (loaders && !Array.isArray(loaders) && !isLoaderObject(loaders)) {
-    context = void 0;
-    options = loaders;
-    loaders = void 0;
-  }
-  data = await data;
-  options = options || {};
-  const url = getResourceUrl(data);
-  const typedLoaders = loaders;
-  const candidateLoaders = getLoadersFromContext(typedLoaders, context);
-  const loader = await selectLoader(data, candidateLoaders, options);
-  if (!loader) {
-    return null;
-  }
-  options = normalizeOptions(options, loader, candidateLoaders, url);
-  context = getLoaderContext(
-    // @ts-expect-error
-    { url, _parse: parse, loaders: candidateLoaders },
-    options,
-    context || null
-  );
-  return await parseWithLoader(loader, data, options, context);
-}
-async function parseWithLoader(loader, data, options, context) {
-  validateWorkerVersion(loader);
-  options = mergeLoaderOptions(loader.options, options);
-  if (isResponse(data)) {
-    const response = data;
-    const { ok, redirected, status, statusText, type, url } = response;
-    const headers = Object.fromEntries(response.headers.entries());
-    context.response = { headers, ok, redirected, status, statusText, type, url };
-  }
-  data = await getArrayBufferOrStringFromData(data, loader, options);
-  const loaderWithParser = loader;
-  if (loaderWithParser.parseTextSync && typeof data === "string") {
-    return loaderWithParser.parseTextSync(data, options, context);
-  }
-  if (canParseWithWorker(loader, options)) {
-    return await parseWithWorker(loader, data, options, context, parse);
-  }
-  if (loaderWithParser.parseText && typeof data === "string") {
-    return await loaderWithParser.parseText(data, options, context);
-  }
-  if (loaderWithParser.parse) {
-    return await loaderWithParser.parse(data, options, context);
-  }
-  assert4(!loaderWithParser.parseSync);
-  throw new Error(`${loader.id} loader - no parser found and worker is disabled`);
-}
-
-// node_modules/@loaders.gl/core/dist/lib/api/load.js
-async function load2(url, loaders, options, context) {
-  let resolvedLoaders;
-  let resolvedOptions;
-  if (!Array.isArray(loaders) && !isLoaderObject(loaders)) {
-    resolvedLoaders = [];
-    resolvedOptions = loaders;
-    context = void 0;
-  } else {
-    resolvedLoaders = loaders;
-    resolvedOptions = options;
-  }
-  const fetch2 = getFetchFunction(resolvedOptions);
-  let data = url;
-  if (typeof url === "string") {
-    data = await fetch2(url);
-  }
-  if (isBlob(url)) {
-    data = await fetch2(url);
-  }
-  return Array.isArray(resolvedLoaders) ? await parse(data, resolvedLoaders, resolvedOptions) : await parse(data, resolvedLoaders, resolvedOptions);
-}
-
-// node_modules/@loaders.gl/images/dist/lib/utils/version.js
-var VERSION4 = true ? "4.3.3" : "latest";
-
 // node_modules/@loaders.gl/images/dist/lib/category-api/image-type.js
 var parseImageNode = globalThis.loaders?.parseImageNode;
 var IMAGE_SUPPORTED = typeof Image !== "undefined";
 var IMAGE_BITMAP_SUPPORTED = typeof ImageBitmap !== "undefined";
 var NODE_IMAGE_SUPPORTED = Boolean(parseImageNode);
-var DATA_SUPPORTED = isBrowser ? true : NODE_IMAGE_SUPPORTED;
+var DATA_SUPPORTED = isBrowser4 ? true : NODE_IMAGE_SUPPORTED;
 function isImageTypeSupported(type) {
   switch (type) {
     case "auto":
@@ -19542,7 +19839,7 @@ function toDataView(data) {
 async function parseToNodeImage(arrayBuffer2, options) {
   const { mimeType } = getBinaryImageMetadata(arrayBuffer2) || {};
   const parseImageNode2 = globalThis.loaders?.parseImageNode;
-  assert2(parseImageNode2);
+  assert5(parseImageNode2);
   return await parseImageNode2(arrayBuffer2, mimeType);
 }
 
@@ -19565,7 +19862,7 @@ async function parseImage(arrayBuffer2, options, context) {
       image = await parseToNodeImage(arrayBuffer2, options);
       break;
     default:
-      assert2(false);
+      assert5(false);
   }
   if (imageType === "data") {
     image = getImageData(image);
@@ -19619,7 +19916,7 @@ var ImageLoader = {
 };
 
 // node_modules/@deck.gl/core/dist/utils/log.js
-var defaultLogger = new Log({ id: "deck" });
+var defaultLogger = new ProbeLog({ id: "deck" });
 var log_default = defaultLogger;
 
 // node_modules/@deck.gl/core/dist/debug/loggers.js
@@ -19780,7 +20077,7 @@ function checkVersion() {
 var VERSION5 = checkVersion();
 
 // node_modules/@luma.gl/shadertools/dist/lib/utils/assert.js
-function assert5(condition, message2) {
+function assert6(condition, message2) {
   if (!condition) {
     throw new Error(message2 || "shadertools: assertion failed.");
   }
@@ -19915,31 +20212,37 @@ function injectShader(source3, stage, inject, injectStandardStubs = false) {
     const fragmentString = `${fragments.join("\n")}
 `;
     switch (key) {
+      // declarations are injected before the main function
       case "vs:#decl":
         if (isVertex) {
           source3 = source3.replace(DECLARATION_INJECT_MARKER, fragmentString);
         }
         break;
+      // inject code at the beginning of the main function
       case "vs:#main-start":
         if (isVertex) {
           source3 = source3.replace(REGEX_START_OF_MAIN, (match) => match + fragmentString);
         }
         break;
+      // inject code at the end of main function
       case "vs:#main-end":
         if (isVertex) {
           source3 = source3.replace(REGEX_END_OF_MAIN, (match) => fragmentString + match);
         }
         break;
+      // declarations are injected before the main function
       case "fs:#decl":
         if (!isVertex) {
           source3 = source3.replace(DECLARATION_INJECT_MARKER, fragmentString);
         }
         break;
+      // inject code at the beginning of the main function
       case "fs:#main-start":
         if (!isVertex) {
           source3 = source3.replace(REGEX_START_OF_MAIN, (match) => match + fragmentString);
         }
         break;
+      // inject code at the end of main function
       case "fs:#main-end":
         if (!isVertex) {
           source3 = source3.replace(REGEX_END_OF_MAIN, (match) => fragmentString + match);
@@ -20280,7 +20583,7 @@ function assembleShaderWGSL(platformInfo, options) {
     inject = {},
     log: log3
   } = options;
-  assert5(typeof source3 === "string", "shader source must be a string");
+  assert6(typeof source3 === "string", "shader source must be a string");
   const coreSource = source3;
   let assembledSource = "";
   const hookFunctionMap = normalizeShaderHooks(hookFunctions);
@@ -20336,7 +20639,7 @@ function assembleShaderWGSL(platformInfo, options) {
 }
 function assembleShaderGLSL(platformInfo, options) {
   const { id, source: source3, stage, language = "glsl", modules, defines: defines2 = {}, hookFunctions = [], inject = {}, prologue = true, log: log3 } = options;
-  assert5(typeof source3 === "string", "shader source must be a string");
+  assert6(typeof source3 === "string", "shader source must be a string");
   const sourceVersion = language === "glsl" ? getShaderInfo(source3).version : -1;
   const targetVersion = platformInfo.shaderLanguageVersion;
   const sourceVersionDirective = sourceVersion === 100 ? "#version 100" : "#version 300 es";
@@ -20463,7 +20766,7 @@ function getShaderModuleSource(module, stage) {
       moduleSource = module.source || "";
       break;
     default:
-      assert5(false);
+      assert6(false);
   }
   if (!module.name) {
     throw new Error("Shader module must have a name");
@@ -20689,7 +20992,7 @@ var StatsManager = class {
 var lumaStats = new StatsManager();
 
 // node_modules/@luma.gl/core/dist/utils/log.js
-var log2 = new Log({ id: "luma.gl" });
+var log2 = new ProbeLog({ id: "luma.gl" });
 
 // node_modules/@luma.gl/core/dist/utils/uid.js
 var uidCounters = {};
@@ -21158,9 +21461,9 @@ function decodeTextureFormat(format) {
       formatInfo.blockHeight = blockSize.blockHeight;
     }
   }
-  const matches3 = RGB_FORMAT_REGEX.exec(format);
-  if (matches3) {
-    const [, channels2, length5, type, srgb, suffix] = matches3;
+  const matches4 = RGB_FORMAT_REGEX.exec(format);
+  if (matches4) {
+    const [, channels2, length5, type, srgb, suffix] = matches4;
     const dataType = `${type}${length5}`;
     const decodedType = decodeVertexType(dataType);
     const bits = decodedType.byteLength * 8;
@@ -21232,9 +21535,9 @@ function decodeTextureFormatUsingTable(format) {
 }
 function getCompressedTextureBlockSize(format) {
   const REGEX = /.*-(\d+)x(\d+)-.*/;
-  const matches3 = REGEX.exec(format);
-  if (matches3) {
-    const [, blockWidth, blockHeight] = matches3;
+  const matches4 = REGEX.exec(format);
+  if (matches4) {
+    const [, blockWidth, blockHeight] = matches4;
     return { blockWidth: Number(blockWidth), blockHeight: Number(blockHeight) };
   }
   return null;
@@ -22866,8 +23169,10 @@ function alignTo(size, count2) {
   switch (count2) {
     case 1:
       return size;
+    // Pad upwards to even multiple of 2
     case 2:
       return size + size % 2;
+    // Pad upwards to even multiple of 2
     default:
       return size + (4 - size % 4) % 4;
   }
@@ -22887,14 +23192,14 @@ function getScratchArray(Type, length5) {
 }
 
 // node_modules/@luma.gl/core/dist/utils/is-array.js
-function isTypedArray(value) {
+function isTypedArray2(value) {
   return ArrayBuffer.isView(value) && !(value instanceof DataView);
 }
-function isNumberArray(value) {
+function isNumberArray2(value) {
   if (Array.isArray(value)) {
     return value.length === 0 || typeof value[0] === "number";
   }
-  return isTypedArray(value);
+  return isTypedArray2(value);
 }
 
 // node_modules/@luma.gl/core/dist/portable/uniform-buffer-layout.js
@@ -22944,7 +23249,7 @@ var UniformBufferLayout = class {
         }
         typedArray[offset] = Number(value);
       } else {
-        if (!isNumberArray(value)) {
+        if (!isNumberArray2(value)) {
           log2.warn(`Supplied value for multi component / array uniform ${name2} is not a numeric array: ${value}`)();
           continue;
         }
@@ -22971,10 +23276,10 @@ function arrayEqual(a2, b2, limit = 16) {
   }
   const arrayA = a2;
   const arrayB = b2;
-  if (!isNumberArray(arrayA)) {
+  if (!isNumberArray2(arrayA)) {
     return false;
   }
-  if (isNumberArray(arrayB) && arrayA.length === arrayB.length) {
+  if (isNumberArray2(arrayB) && arrayA.length === arrayB.length) {
     for (let i3 = 0; i3 < arrayA.length; ++i3) {
       if (arrayB[i3] !== arrayA[i3]) {
         return false;
@@ -22984,7 +23289,7 @@ function arrayEqual(a2, b2, limit = 16) {
   return true;
 }
 function arrayCopy(a2) {
-  if (isNumberArray(a2)) {
+  if (isNumberArray2(a2)) {
     return a2.slice();
   }
   return a2;
@@ -23367,20 +23672,14 @@ var a = class extends e {
     let e2 = this.name;
     if (null !== this.format) {
       if ("vec2" === e2 || "vec3" === e2 || "vec4" === e2 || "mat2x2" === e2 || "mat2x3" === e2 || "mat2x4" === e2 || "mat3x2" === e2 || "mat3x3" === e2 || "mat3x4" === e2 || "mat4x2" === e2 || "mat4x3" === e2 || "mat4x4" === e2) {
-        if ("f32" === this.format.name)
-          return e2 += "f", e2;
-        if ("i32" === this.format.name)
-          return e2 += "i", e2;
-        if ("u32" === this.format.name)
-          return e2 += "u", e2;
-        if ("bool" === this.format.name)
-          return e2 += "b", e2;
-        if ("f16" === this.format.name)
-          return e2 += "h", e2;
+        if ("f32" === this.format.name) return e2 += "f", e2;
+        if ("i32" === this.format.name) return e2 += "i", e2;
+        if ("u32" === this.format.name) return e2 += "u", e2;
+        if ("bool" === this.format.name) return e2 += "b", e2;
+        if ("f16" === this.format.name) return e2 += "h", e2;
       }
       e2 += `<${this.format.name}>`;
-    } else if ("vec2" === e2 || "vec3" === e2 || "vec4" === e2)
-      return e2;
+    } else if ("vec2" === e2 || "vec3" === e2 || "vec4" === e2) return e2;
     return e2;
   }
 };
@@ -23466,15 +23765,12 @@ function y(e2) {
   g2[0] = e2;
   const t2 = _[0], n2 = t2 >> 31 & 1;
   let s2 = t2 >> 23 & 255, r2 = 8388607 & t2;
-  if (255 === s2)
-    return x[0] = n2 << 15 | 31744 | (0 !== r2 ? 512 : 0), x[0];
+  if (255 === s2) return x[0] = n2 << 15 | 31744 | (0 !== r2 ? 512 : 0), x[0];
   if (0 === s2) {
-    if (0 === r2)
-      return x[0] = n2 << 15, x[0];
+    if (0 === r2) return x[0] = n2 << 15, x[0];
     r2 |= 8388608;
     let e3 = 113;
-    for (; !(8388608 & r2); )
-      r2 <<= 1, e3--;
+    for (; !(8388608 & r2); ) r2 <<= 1, e3--;
     return s2 = 127 - e3, r2 &= 8388607, s2 > 0 ? (r2 = (r2 >> 126 - s2) + (r2 >> 127 - s2 & 1), x[0] = n2 << 15 | s2 << 10 | r2 >> 13, x[0]) : (x[0] = n2 << 15, x[0]);
   }
   return s2 = s2 - 127 + 15, s2 >= 31 ? (x[0] = n2 << 15 | 31744, x[0]) : s2 <= 0 ? s2 < -10 ? (x[0] = n2 << 15, x[0]) : (r2 = (8388608 | r2) >> 1 - s2, x[0] = n2 << 15 | r2 >> 13, x[0]) : (r2 >>= 13, x[0] = n2 << 15 | s2 << 10 | r2, x[0]);
@@ -23601,83 +23897,81 @@ function k(e2, t2, n2, s2, r2, a2, i3, o3, c2) {
     }
     case "rg11b10ufloat": {
       const t3 = new Uint32Array(e2.buffer, l2, 1)[0], n3 = (4192256 & t3) >> 11, s3 = (4290772992 & t3) >> 22;
-      return [w2(2047 & t3), w2(n3), function(e3) {
+      return [w2(2047 & t3), w2(n3), (function(e3) {
         const t4 = 112 + (e3 >> 5 & 31) << 23 | (31 & e3) << 18;
         return b[0] = t4, v[0];
-      }(s3), 1];
+      })(s3), 1];
     }
   }
   return null;
 }
 function I2(e2, t2, n2, s2) {
   const r2 = [0, 0, 0, 0];
-  for (let a2 = 0; a2 < s2; ++a2)
-    switch (n2) {
-      case "8unorm":
-        r2[a2] = e2[t2] / 255, t2++;
-        break;
-      case "8snorm":
-        r2[a2] = e2[t2] / 255 * 2 - 1, t2++;
-        break;
-      case "8uint":
-        r2[a2] = e2[t2], t2++;
-        break;
-      case "8sint":
-        r2[a2] = e2[t2] - 127, t2++;
-        break;
-      case "16uint":
-        r2[a2] = e2[t2] | e2[t2 + 1] << 8, t2 += 2;
-        break;
-      case "16sint":
-        r2[a2] = (e2[t2] | e2[t2 + 1] << 8) - 32768, t2 += 2;
-        break;
-      case "16float":
-        r2[a2] = m(e2[t2] | e2[t2 + 1] << 8), t2 += 2;
-        break;
-      case "32uint":
-      case "32sint":
-        r2[a2] = e2[t2] | e2[t2 + 1] << 8 | e2[t2 + 2] << 16 | e2[t2 + 3] << 24, t2 += 4;
-        break;
-      case "32float":
-        r2[a2] = new Float32Array(e2.buffer, t2, 1)[0], t2 += 4;
-    }
+  for (let a2 = 0; a2 < s2; ++a2) switch (n2) {
+    case "8unorm":
+      r2[a2] = e2[t2] / 255, t2++;
+      break;
+    case "8snorm":
+      r2[a2] = e2[t2] / 255 * 2 - 1, t2++;
+      break;
+    case "8uint":
+      r2[a2] = e2[t2], t2++;
+      break;
+    case "8sint":
+      r2[a2] = e2[t2] - 127, t2++;
+      break;
+    case "16uint":
+      r2[a2] = e2[t2] | e2[t2 + 1] << 8, t2 += 2;
+      break;
+    case "16sint":
+      r2[a2] = (e2[t2] | e2[t2 + 1] << 8) - 32768, t2 += 2;
+      break;
+    case "16float":
+      r2[a2] = m(e2[t2] | e2[t2 + 1] << 8), t2 += 2;
+      break;
+    case "32uint":
+    case "32sint":
+      r2[a2] = e2[t2] | e2[t2 + 1] << 8 | e2[t2 + 2] << 16 | e2[t2 + 3] << 24, t2 += 4;
+      break;
+    case "32float":
+      r2[a2] = new Float32Array(e2.buffer, t2, 1)[0], t2 += 4;
+  }
   return r2;
 }
 function T(e2, t2, n2, s2, r2) {
-  for (let a2 = 0; a2 < s2; ++a2)
-    switch (n2) {
-      case "8unorm":
-        e2[t2] = 255 * r2[a2], t2++;
-        break;
-      case "8snorm":
-        e2[t2] = 0.5 * (r2[a2] + 1) * 255, t2++;
-        break;
-      case "8uint":
-        e2[t2] = r2[a2], t2++;
-        break;
-      case "8sint":
-        e2[t2] = r2[a2] + 127, t2++;
-        break;
-      case "16uint":
-        new Uint16Array(e2.buffer, t2, 1)[0] = r2[a2], t2 += 2;
-        break;
-      case "16sint":
-        new Int16Array(e2.buffer, t2, 1)[0] = r2[a2], t2 += 2;
-        break;
-      case "16float": {
-        const n3 = y(r2[a2]);
-        new Uint16Array(e2.buffer, t2, 1)[0] = n3, t2 += 2;
-        break;
-      }
-      case "32uint":
-        new Uint32Array(e2.buffer, t2, 1)[0] = r2[a2], t2 += 4;
-        break;
-      case "32sint":
-        new Int32Array(e2.buffer, t2, 1)[0] = r2[a2], t2 += 4;
-        break;
-      case "32float":
-        new Float32Array(e2.buffer, t2, 1)[0] = r2[a2], t2 += 4;
+  for (let a2 = 0; a2 < s2; ++a2) switch (n2) {
+    case "8unorm":
+      e2[t2] = 255 * r2[a2], t2++;
+      break;
+    case "8snorm":
+      e2[t2] = 0.5 * (r2[a2] + 1) * 255, t2++;
+      break;
+    case "8uint":
+      e2[t2] = r2[a2], t2++;
+      break;
+    case "8sint":
+      e2[t2] = r2[a2] + 127, t2++;
+      break;
+    case "16uint":
+      new Uint16Array(e2.buffer, t2, 1)[0] = r2[a2], t2 += 2;
+      break;
+    case "16sint":
+      new Int16Array(e2.buffer, t2, 1)[0] = r2[a2], t2 += 2;
+      break;
+    case "16float": {
+      const n3 = y(r2[a2]);
+      new Uint16Array(e2.buffer, t2, 1)[0] = n3, t2 += 2;
+      break;
     }
+    case "32uint":
+      new Uint32Array(e2.buffer, t2, 1)[0] = r2[a2], t2 += 4;
+      break;
+    case "32sint":
+      new Int32Array(e2.buffer, t2, 1)[0] = r2[a2], t2 += 4;
+      break;
+    case "32float":
+      new Float32Array(e2.buffer, t2, 1)[0] = r2[a2], t2 += 4;
+  }
   return r2;
 }
 var S = { r8unorm: { bytesPerBlock: 1, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 1 }, r8snorm: { bytesPerBlock: 1, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 1 }, r8uint: { bytesPerBlock: 1, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 1 }, r8sint: { bytesPerBlock: 1, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 1 }, rg8unorm: { bytesPerBlock: 2, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 2 }, rg8snorm: { bytesPerBlock: 2, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 2 }, rg8uint: { bytesPerBlock: 2, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 2 }, rg8sint: { bytesPerBlock: 2, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 2 }, rgba8unorm: { bytesPerBlock: 4, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 4 }, "rgba8unorm-srgb": { bytesPerBlock: 4, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 4 }, rgba8snorm: { bytesPerBlock: 4, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 4 }, rgba8uint: { bytesPerBlock: 4, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 4 }, rgba8sint: { bytesPerBlock: 4, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 4 }, bgra8unorm: { bytesPerBlock: 4, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 4 }, "bgra8unorm-srgb": { bytesPerBlock: 4, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 4 }, r16uint: { bytesPerBlock: 2, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 1 }, r16sint: { bytesPerBlock: 2, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 1 }, r16float: { bytesPerBlock: 2, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 1 }, rg16uint: { bytesPerBlock: 4, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 2 }, rg16sint: { bytesPerBlock: 4, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 2 }, rg16float: { bytesPerBlock: 4, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 2 }, rgba16uint: { bytesPerBlock: 8, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 4 }, rgba16sint: { bytesPerBlock: 8, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 4 }, rgba16float: { bytesPerBlock: 8, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 4 }, r32uint: { bytesPerBlock: 4, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 1 }, r32sint: { bytesPerBlock: 4, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 1 }, r32float: { bytesPerBlock: 4, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 1 }, rg32uint: { bytesPerBlock: 8, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 2 }, rg32sint: { bytesPerBlock: 8, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 2 }, rg32float: { bytesPerBlock: 8, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 2 }, rgba32uint: { bytesPerBlock: 16, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 4 }, rgba32sint: { bytesPerBlock: 16, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 4 }, rgba32float: { bytesPerBlock: 16, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 4 }, rgb10a2uint: { bytesPerBlock: 4, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 4 }, rgb10a2unorm: { bytesPerBlock: 4, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 4 }, rg11b10ufloat: { bytesPerBlock: 4, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 4 }, stencil8: { bytesPerBlock: 1, blockWidth: 1, blockHeight: 1, isCompressed: false, isDepthStencil: true, hasDepth: false, hasStencil: true, channels: 1 }, depth16unorm: { bytesPerBlock: 2, blockWidth: 1, blockHeight: 1, isCompressed: false, isDepthStencil: true, hasDepth: true, hasStencil: false, channels: 1 }, depth24plus: { bytesPerBlock: 4, blockWidth: 1, blockHeight: 1, isCompressed: false, isDepthStencil: true, hasDepth: true, hasStencil: false, depthOnlyFormat: "depth32float", channels: 1 }, "depth24plus-stencil8": { bytesPerBlock: 8, blockWidth: 1, blockHeight: 1, isCompressed: false, isDepthStencil: true, hasDepth: true, hasStencil: true, depthOnlyFormat: "depth32float", channels: 1 }, depth32float: { bytesPerBlock: 4, blockWidth: 1, blockHeight: 1, isCompressed: false, isDepthStencil: true, hasDepth: true, hasStencil: false, channels: 1 }, "depth32float-stencil8": { bytesPerBlock: 8, blockWidth: 1, blockHeight: 1, isCompressed: false, isDepthStencil: true, hasDepth: true, hasStencil: true, stencilOnlyFormat: "depth32float", channels: 1 }, rgb9e5ufloat: { bytesPerBlock: 4, blockWidth: 1, blockHeight: 1, isCompressed: false, channels: 4 }, "bc1-rgba-unorm": { bytesPerBlock: 8, blockWidth: 4, blockHeight: 4, isCompressed: true, channels: 4 }, "bc1-rgba-unorm-srgb": { bytesPerBlock: 8, blockWidth: 4, blockHeight: 4, isCompressed: true, channels: 4 }, "bc2-rgba-unorm": { bytesPerBlock: 16, blockWidth: 4, blockHeight: 4, isCompressed: true, channels: 4 }, "bc2-rgba-unorm-srgb": { bytesPerBlock: 16, blockWidth: 4, blockHeight: 4, isCompressed: true, channels: 4 }, "bc3-rgba-unorm": { bytesPerBlock: 16, blockWidth: 4, blockHeight: 4, isCompressed: true, channels: 4 }, "bc3-rgba-unorm-srgb": { bytesPerBlock: 16, blockWidth: 4, blockHeight: 4, isCompressed: true, channels: 4 }, "bc4-r-unorm": { bytesPerBlock: 8, blockWidth: 4, blockHeight: 4, isCompressed: true, channels: 1 }, "bc4-r-snorm": { bytesPerBlock: 8, blockWidth: 4, blockHeight: 4, isCompressed: true, channels: 1 }, "bc5-rg-unorm": { bytesPerBlock: 16, blockWidth: 4, blockHeight: 4, isCompressed: true, channels: 2 }, "bc5-rg-snorm": { bytesPerBlock: 16, blockWidth: 4, blockHeight: 4, isCompressed: true, channels: 2 }, "bc6h-rgb-ufloat": { bytesPerBlock: 16, blockWidth: 4, blockHeight: 4, isCompressed: true, channels: 4 }, "bc6h-rgb-float": { bytesPerBlock: 16, blockWidth: 4, blockHeight: 4, isCompressed: true, channels: 4 }, "bc7-rgba-unorm": { bytesPerBlock: 16, blockWidth: 4, blockHeight: 4, isCompressed: true, channels: 4 }, "bc7-rgba-unorm-srgb": { bytesPerBlock: 16, blockWidth: 4, blockHeight: 4, isCompressed: true, channels: 4 }, "etc2-rgb8unorm": { bytesPerBlock: 8, blockWidth: 4, blockHeight: 4, isCompressed: true, channels: 4 }, "etc2-rgb8unorm-srgb": { bytesPerBlock: 8, blockWidth: 4, blockHeight: 4, isCompressed: true, channels: 4 }, "etc2-rgb8a1unorm": { bytesPerBlock: 8, blockWidth: 4, blockHeight: 4, isCompressed: true, channels: 4 }, "etc2-rgb8a1unorm-srgb": { bytesPerBlock: 8, blockWidth: 4, blockHeight: 4, isCompressed: true, channels: 4 }, "etc2-rgba8unorm": { bytesPerBlock: 16, blockWidth: 4, blockHeight: 4, isCompressed: true, channels: 4 }, "etc2-rgba8unorm-srgb": { bytesPerBlock: 16, blockWidth: 4, blockHeight: 4, isCompressed: true, channels: 4 }, "eac-r11unorm": { bytesPerBlock: 8, blockWidth: 1, blockHeight: 1, isCompressed: true, channels: 1 }, "eac-r11snorm": { bytesPerBlock: 8, blockWidth: 1, blockHeight: 1, isCompressed: true, channels: 1 }, "eac-rg11unorm": { bytesPerBlock: 16, blockWidth: 1, blockHeight: 1, isCompressed: true, channels: 2 }, "eac-rg11snorm": { bytesPerBlock: 16, blockWidth: 1, blockHeight: 1, isCompressed: true, channels: 2 }, "astc-4x4-unorm": { bytesPerBlock: 16, blockWidth: 4, blockHeight: 4, isCompressed: true, channels: 4 }, "astc-4x4-unorm-srgb": { bytesPerBlock: 16, blockWidth: 4, blockHeight: 4, isCompressed: true, channels: 4 }, "astc-5x4-unorm": { bytesPerBlock: 16, blockWidth: 5, blockHeight: 4, isCompressed: true, channels: 4 }, "astc-5x4-unorm-srgb": { bytesPerBlock: 16, blockWidth: 5, blockHeight: 4, isCompressed: true, channels: 4 }, "astc-5x5-unorm": { bytesPerBlock: 16, blockWidth: 5, blockHeight: 5, isCompressed: true, channels: 4 }, "astc-5x5-unorm-srgb": { bytesPerBlock: 16, blockWidth: 5, blockHeight: 5, isCompressed: true, channels: 4 }, "astc-6x5-unorm": { bytesPerBlock: 16, blockWidth: 6, blockHeight: 5, isCompressed: true, channels: 4 }, "astc-6x5-unorm-srgb": { bytesPerBlock: 16, blockWidth: 6, blockHeight: 5, isCompressed: true, channels: 4 }, "astc-6x6-unorm": { bytesPerBlock: 16, blockWidth: 6, blockHeight: 6, isCompressed: true, channels: 4 }, "astc-6x6-unorm-srgb": { bytesPerBlock: 16, blockWidth: 6, blockHeight: 6, isCompressed: true, channels: 4 }, "astc-8x5-unorm": { bytesPerBlock: 16, blockWidth: 8, blockHeight: 5, isCompressed: true, channels: 4 }, "astc-8x5-unorm-srgb": { bytesPerBlock: 16, blockWidth: 8, blockHeight: 5, isCompressed: true, channels: 4 }, "astc-8x6-unorm": { bytesPerBlock: 16, blockWidth: 8, blockHeight: 6, isCompressed: true, channels: 4 }, "astc-8x6-unorm-srgb": { bytesPerBlock: 16, blockWidth: 8, blockHeight: 6, isCompressed: true, channels: 4 }, "astc-8x8-unorm": { bytesPerBlock: 16, blockWidth: 8, blockHeight: 8, isCompressed: true, channels: 4 }, "astc-8x8-unorm-srgb": { bytesPerBlock: 16, blockWidth: 8, blockHeight: 8, isCompressed: true, channels: 4 }, "astc-10x5-unorm": { bytesPerBlock: 16, blockWidth: 10, blockHeight: 5, isCompressed: true, channels: 4 }, "astc-10x5-unorm-srgb": { bytesPerBlock: 16, blockWidth: 10, blockHeight: 5, isCompressed: true, channels: 4 }, "astc-10x6-unorm": { bytesPerBlock: 16, blockWidth: 10, blockHeight: 6, isCompressed: true, channels: 4 }, "astc-10x6-unorm-srgb": { bytesPerBlock: 16, blockWidth: 10, blockHeight: 6, isCompressed: true, channels: 4 }, "astc-10x8-unorm": { bytesPerBlock: 16, blockWidth: 10, blockHeight: 8, isCompressed: true, channels: 4 }, "astc-10x8-unorm-srgb": { bytesPerBlock: 16, blockWidth: 10, blockHeight: 8, isCompressed: true, channels: 4 }, "astc-10x10-unorm": { bytesPerBlock: 16, blockWidth: 10, blockHeight: 10, isCompressed: true, channels: 4 }, "astc-10x10-unorm-srgb": { bytesPerBlock: 16, blockWidth: 10, blockHeight: 10, isCompressed: true, channels: 4 }, "astc-12x10-unorm": { bytesPerBlock: 16, blockWidth: 12, blockHeight: 10, isCompressed: true, channels: 4 }, "astc-12x10-unorm-srgb": { bytesPerBlock: 16, blockWidth: 12, blockHeight: 10, isCompressed: true, channels: 4 }, "astc-12x12-unorm": { bytesPerBlock: 16, blockWidth: 12, blockHeight: 12, isCompressed: true, channels: 4 }, "astc-12x12-unorm-srgb": { bytesPerBlock: 16, blockWidth: 12, blockHeight: 12, isCompressed: true, channels: 4 } };
@@ -23697,8 +23991,7 @@ var A2 = class _A {
   searchBlock(e2, t2) {
     if (e2) {
       t2(E2.instance);
-      for (const n2 of e2)
-        n2 instanceof Array ? this.searchBlock(n2, t2) : n2.search(t2);
+      for (const n2 of e2) n2 instanceof Array ? this.searchBlock(n2, t2) : n2.search(t2);
       t2($.instance);
     }
   }
@@ -23730,12 +24023,9 @@ var D2 = class extends C2 {
     return "function";
   }
   search(e2) {
-    if (this.attributes)
-      for (const t2 of this.attributes)
-        e2(t2);
+    if (this.attributes) for (const t2 of this.attributes) e2(t2);
     e2(this);
-    for (const t2 of this.args)
-      e2(t2);
+    for (const t2 of this.args) e2(t2);
     this.searchBlock(this.body, e2);
   }
 };
@@ -23844,8 +24134,7 @@ var z;
 })(W || (W = {})), ((e2) => {
   e2.parse = function(t2) {
     const n2 = t2;
-    if ("parse" == n2)
-      throw new Error("Invalid value for IncrementOperator");
+    if ("parse" == n2) throw new Error("Invalid value for IncrementOperator");
     return e2[n2];
   };
 })(W || (W = {}));
@@ -23865,8 +24154,7 @@ var R = class extends C2 {
 })(q || (q = {})), ((e2) => {
   e2.parse = function(e3) {
     const t2 = e3;
-    if ("parse" == t2)
-      throw new Error("Invalid value for AssignOperator");
+    if ("parse" == t2) throw new Error("Invalid value for AssignOperator");
     return t2;
   };
 })(q || (q = {}));
@@ -23892,8 +24180,7 @@ var X = class extends C2 {
     return L.has(this.name);
   }
   search(e2) {
-    for (const t2 of this.args)
-      t2.search(e2);
+    for (const t2 of this.args) t2.search(e2);
     e2(this);
   }
 };
@@ -23918,8 +24205,7 @@ var Z = class extends C2 {
   }
   search(e2) {
     e2(this);
-    for (const t2 of this.cases)
-      t2.search(e2);
+    for (const t2 of this.cases) t2.search(e2);
   }
 };
 var Q2 = class extends C2 {
@@ -24016,8 +24302,7 @@ var ae = class _ae extends C2 {
   }
   static maxFormatType(e2) {
     let t2 = e2[0];
-    if ("f32" === t2.name)
-      return t2;
+    if ("f32" === t2.name) return t2;
     for (let n2 = 1; n2 < e2.length; ++n2) {
       const s2 = _ae._priority.get(t2.name);
       _ae._priority.get(e2[n2].name) < s2 && (t2 = e2[n2]);
@@ -24045,14 +24330,11 @@ var oe = class extends ae {
     return true;
   }
   getMemberIndex(e2) {
-    for (let t2 = 0; t2 < this.members.length; t2++)
-      if (this.members[t2].name == e2)
-        return t2;
+    for (let t2 = 0; t2 < this.members.length; t2++) if (this.members[t2].name == e2) return t2;
     return -1;
   }
   search(e2) {
-    for (const t2 of this.members)
-      e2(t2);
+    for (const t2 of this.members) e2(t2);
   }
 };
 var ce = class extends ae {
@@ -24066,20 +24348,14 @@ var ce = class extends ae {
     let e2 = this.name;
     if (null !== this.format) {
       if ("vec2" === e2 || "vec3" === e2 || "vec4" === e2 || "mat2x2" === e2 || "mat2x3" === e2 || "mat2x4" === e2 || "mat3x2" === e2 || "mat3x3" === e2 || "mat3x4" === e2 || "mat4x2" === e2 || "mat4x3" === e2 || "mat4x4" === e2) {
-        if ("f32" === this.format.name)
-          return e2 += "f", e2;
-        if ("i32" === this.format.name)
-          return e2 += "i", e2;
-        if ("u32" === this.format.name)
-          return e2 += "u", e2;
-        if ("bool" === this.format.name)
-          return e2 += "b", e2;
-        if ("f16" === this.format.name)
-          return e2 += "h", e2;
+        if ("f32" === this.format.name) return e2 += "f", e2;
+        if ("i32" === this.format.name) return e2 += "i", e2;
+        if ("u32" === this.format.name) return e2 += "u", e2;
+        if ("bool" === this.format.name) return e2 += "b", e2;
+        if ("f16" === this.format.name) return e2 += "h", e2;
       }
       e2 += `<${this.format.name}>`;
-    } else if ("vec2" === e2 || "vec3" === e2 || "vec4" === e2)
-      return e2;
+    } else if ("vec2" === e2 || "vec3" === e2 || "vec4" === e2) return e2;
     return e2;
   }
 };
@@ -24138,9 +24414,7 @@ var de = class extends fe {
     return "createExpr";
   }
   search(e2) {
-    if (e2(this), this.args)
-      for (const t2 of this.args)
-        t2.search(e2);
+    if (e2(this), this.args) for (const t2 of this.args) t2.search(e2);
   }
   constEvaluate(e2, t2) {
     return t2 && (t2[0] = this.type), e2.evalExpression(this, e2.context);
@@ -24163,8 +24437,7 @@ var me = class extends fe {
     return e2.evalExpression(this, e2.context);
   }
   search(e2) {
-    for (const t2 of this.args)
-      t2.search(e2);
+    for (const t2 of this.args) t2.search(e2);
     e2(this);
   }
 };
@@ -24400,12 +24673,9 @@ var Be = class _Be extends Ne {
     super(t2, n2), e2 instanceof Int32Array || e2 instanceof Uint32Array || e2 instanceof Float32Array ? this.data = e2 : "x32" === this.typeInfo.name ? e2 - Math.floor(e2) !== 0 ? this.data = new Float32Array([e2]) : this.data = e2 >= 0 ? new Uint32Array([e2]) : new Int32Array([e2]) : "i32" === this.typeInfo.name || "bool" === this.typeInfo.name ? this.data = new Int32Array([e2]) : "u32" === this.typeInfo.name ? this.data = new Uint32Array([e2]) : "f32" === this.typeInfo.name || "f16" === this.typeInfo.name ? this.data = new Float32Array([e2]) : console.error("ScalarData2: Invalid type", t2);
   }
   clone() {
-    if (this.data instanceof Float32Array)
-      return new _Be(new Float32Array(this.data), this.typeInfo, null);
-    if (this.data instanceof Int32Array)
-      return new _Be(new Int32Array(this.data), this.typeInfo, null);
-    if (this.data instanceof Uint32Array)
-      return new _Be(new Uint32Array(this.data), this.typeInfo, null);
+    if (this.data instanceof Float32Array) return new _Be(new Float32Array(this.data), this.typeInfo, null);
+    if (this.data instanceof Int32Array) return new _Be(new Int32Array(this.data), this.typeInfo, null);
+    if (this.data instanceof Uint32Array) return new _Be(new Uint32Array(this.data), this.typeInfo, null);
     throw "ScalarData: Invalid data type";
   }
   get value() {
@@ -24415,10 +24685,8 @@ var Be = class _Be extends Ne {
     this.data[0] = e2;
   }
   setDataValue(e2, t2, n2, s2) {
-    if (n2)
-      return void console.error("SetDataValue: Scalar data does not support postfix", n2);
-    if (!(t2 instanceof _Be))
-      return void console.error("SetDataValue: Invalid value", t2);
+    if (n2) return void console.error("SetDataValue: Scalar data does not support postfix", n2);
+    if (!(t2 instanceof _Be)) return void console.error("SetDataValue: Invalid value", t2);
     let r2 = t2.data[0];
     "i32" === this.typeInfo.name || "u32" === this.typeInfo.name ? r2 = Math.floor(r2) : "bool" === this.typeInfo.name && (r2 = r2 ? 1 : 0), this.data[0] = r2;
   }
@@ -24435,31 +24703,25 @@ function Fe(e2, t2, n2) {
 }
 var Me = class _Me extends Ne {
   constructor(e2, t2, n2 = null) {
-    if (super(t2, n2), e2 instanceof Float32Array || e2 instanceof Uint32Array || e2 instanceof Int32Array)
-      this.data = e2;
+    if (super(t2, n2), e2 instanceof Float32Array || e2 instanceof Uint32Array || e2 instanceof Int32Array) this.data = e2;
     else {
       const t3 = this.typeInfo.name;
       "vec2f" === t3 || "vec3f" === t3 || "vec4f" === t3 ? this.data = new Float32Array(e2) : "vec2i" === t3 || "vec3i" === t3 || "vec4i" === t3 ? this.data = new Int32Array(e2) : "vec2u" === t3 || "vec3u" === t3 || "vec4u" === t3 ? this.data = new Uint32Array(e2) : "vec2h" === t3 || "vec3h" === t3 || "vec4h" === t3 ? this.data = new Float32Array(e2) : "vec2b" === t3 || "vec3b" === t3 || "vec4b" === t3 ? this.data = new Int32Array(e2) : "vec2" === t3 || "vec3" === t3 || "vec4" === t3 ? this.data = new Float32Array(e2) : console.error(`VectorData: Invalid type ${t3}`);
     }
   }
   clone() {
-    if (this.data instanceof Float32Array)
-      return new _Me(new Float32Array(this.data), this.typeInfo, null);
-    if (this.data instanceof Int32Array)
-      return new _Me(new Int32Array(this.data), this.typeInfo, null);
-    if (this.data instanceof Uint32Array)
-      return new _Me(new Uint32Array(this.data), this.typeInfo, null);
+    if (this.data instanceof Float32Array) return new _Me(new Float32Array(this.data), this.typeInfo, null);
+    if (this.data instanceof Int32Array) return new _Me(new Int32Array(this.data), this.typeInfo, null);
+    if (this.data instanceof Uint32Array) return new _Me(new Uint32Array(this.data), this.typeInfo, null);
     throw "VectorData: Invalid data type";
   }
   setDataValue(e2, t2, n2, s2) {
     n2 instanceof pe ? console.error("TODO: Set vector postfix") : t2 instanceof _Me ? this.data = t2.data : console.error("SetDataValue: Invalid value", t2);
   }
   getSubData(e2, t2, n2) {
-    if (null === t2)
-      return this;
+    if (null === t2) return this;
     let s2 = e2.getTypeInfo("f32");
-    if (this.typeInfo instanceof a)
-      s2 = this.typeInfo.format || s2;
+    if (this.typeInfo instanceof a) s2 = this.typeInfo.format || s2;
     else {
       const t3 = this.typeInfo.name;
       "vec2f" === t3 || "vec3f" === t3 || "vec4f" === t3 ? s2 = e2.getTypeInfo("f32") : "vec2i" === t3 || "vec3i" === t3 || "vec4i" === t3 ? s2 = e2.getTypeInfo("i32") : "vec2b" === t3 || "vec3b" === t3 || "vec4b" === t3 ? s2 = e2.getTypeInfo("bool") : "vec2u" === t3 || "vec3u" === t3 || "vec4u" === t3 ? s2 = e2.getTypeInfo("u32") : "vec2h" === t3 || "vec3h" === t3 || "vec4h" === t3 ? s2 = e2.getTypeInfo("f16") : console.error(`GetSubData: Unknown type ${t3}`);
@@ -24470,17 +24732,14 @@ var Me = class _Me extends Ne {
         const a2 = t2.index;
         let i3 = -1;
         if (a2 instanceof xe) {
-          if (!(a2.value instanceof Be))
-            return console.error(`GetSubData: Invalid array index ${a2.value}`), null;
+          if (!(a2.value instanceof Be)) return console.error(`GetSubData: Invalid array index ${a2.value}`), null;
           i3 = a2.value.value;
         } else {
           const t3 = e2.evalExpression(a2, n2);
-          if (!(t3 instanceof Be))
-            return console.error("GetSubData: Unknown index type", a2), null;
+          if (!(t3 instanceof Be)) return console.error("GetSubData: Unknown index type", a2), null;
           i3 = t3.value;
         }
-        if (i3 < 0 || i3 >= r2.data.length)
-          return console.error("GetSubData: Index out of range", i3), null;
+        if (i3 < 0 || i3 >= r2.data.length) return console.error("GetSubData: Index out of range", i3), null;
         if (r2.data instanceof Float32Array) {
           const e3 = new Float32Array(r2.data.buffer, r2.data.byteOffset + 4 * i3, 1);
           return new Be(e3, s2);
@@ -24495,21 +24754,16 @@ var Me = class _Me extends Ne {
         }
         throw "GetSubData: Invalid data type";
       }
-      if (!(t2 instanceof pe))
-        return console.error("GetSubData: Unknown postfix", t2), null;
+      if (!(t2 instanceof pe)) return console.error("GetSubData: Unknown postfix", t2), null;
       {
         const n3 = t2.value.toLowerCase();
         if (1 === n3.length) {
           let e3 = 0;
-          if ("x" === n3 || "r" === n3)
-            e3 = 0;
-          else if ("y" === n3 || "g" === n3)
-            e3 = 1;
-          else if ("z" === n3 || "b" === n3)
-            e3 = 2;
+          if ("x" === n3 || "r" === n3) e3 = 0;
+          else if ("y" === n3 || "g" === n3) e3 = 1;
+          else if ("z" === n3 || "b" === n3) e3 = 2;
           else {
-            if ("w" !== n3 && "a" !== n3)
-              return console.error(`GetSubData: Unknown member ${n3}`), null;
+            if ("w" !== n3 && "a" !== n3) return console.error(`GetSubData: Unknown member ${n3}`), null;
             e3 = 3;
           }
           if (this.data instanceof Float32Array) {
@@ -24526,8 +24780,7 @@ var Me = class _Me extends Ne {
           }
         }
         const a2 = [];
-        for (const e3 of n3)
-          "x" === e3 || "r" === e3 ? a2.push(this.data[0]) : "y" === e3 || "g" === e3 ? a2.push(this.data[1]) : "z" === e3 || "b" === e3 ? a2.push(this.data[2]) : "w" === e3 || "a" === e3 ? a2.push(this.data[3]) : console.error(`GetDataValue: Unknown member ${e3}`);
+        for (const e3 of n3) "x" === e3 || "r" === e3 ? a2.push(this.data[0]) : "y" === e3 || "g" === e3 ? a2.push(this.data[1]) : "z" === e3 || "b" === e3 ? a2.push(this.data[2]) : "w" === e3 || "a" === e3 ? a2.push(this.data[3]) : console.error(`GetDataValue: Unknown member ${e3}`);
         r2 = Fe(e2, a2, s2.name);
       }
       t2 = t2.postfix;
@@ -24536,8 +24789,7 @@ var Me = class _Me extends Ne {
   }
   toString() {
     let e2 = `${this.data[0]}`;
-    for (let t2 = 1; t2 < this.data.length; ++t2)
-      e2 += `, ${this.data[t2]}`;
+    for (let t2 = 1; t2 < this.data.length; ++t2) e2 += `, ${this.data[t2]}`;
     return e2;
   }
 };
@@ -24552,46 +24804,34 @@ var Ue = class _Ue extends Ne {
     n2 instanceof pe ? console.error("TODO: Set matrix postfix") : t2 instanceof _Ue ? this.data = t2.data : console.error("SetDataValue: Invalid value", t2);
   }
   getSubData(e2, t2, n2) {
-    if (null === t2)
-      return this;
+    if (null === t2) return this;
     const s2 = this.typeInfo.name;
-    if (e2.getTypeInfo("f32"), this.typeInfo instanceof a)
-      this.typeInfo.format;
-    else if (s2.endsWith("f"))
-      e2.getTypeInfo("f32");
-    else if (s2.endsWith("i"))
-      e2.getTypeInfo("i32");
-    else if (s2.endsWith("u"))
-      e2.getTypeInfo("u32");
+    if (e2.getTypeInfo("f32"), this.typeInfo instanceof a) this.typeInfo.format;
+    else if (s2.endsWith("f")) e2.getTypeInfo("f32");
+    else if (s2.endsWith("i")) e2.getTypeInfo("i32");
+    else if (s2.endsWith("u")) e2.getTypeInfo("u32");
     else {
-      if (!s2.endsWith("h"))
-        return console.error(`GetDataValue: Unknown type ${s2}`), null;
+      if (!s2.endsWith("h")) return console.error(`GetDataValue: Unknown type ${s2}`), null;
       e2.getTypeInfo("f16");
     }
     if (t2 instanceof ve) {
       const r2 = t2.index;
       let a2 = -1;
       if (r2 instanceof xe) {
-        if (!(r2.value instanceof Be))
-          return console.error(`GetDataValue: Invalid array index ${r2.value}`), null;
+        if (!(r2.value instanceof Be)) return console.error(`GetDataValue: Invalid array index ${r2.value}`), null;
         a2 = r2.value.value;
       } else {
         const t3 = e2.evalExpression(r2, n2);
-        if (!(t3 instanceof Be))
-          return console.error("GetDataValue: Unknown index type", r2), null;
+        if (!(t3 instanceof Be)) return console.error("GetDataValue: Unknown index type", r2), null;
         a2 = t3.value;
       }
-      if (a2 < 0 || a2 >= this.data.length)
-        return console.error("GetDataValue: Index out of range", a2), null;
+      if (a2 < 0 || a2 >= this.data.length) return console.error("GetDataValue: Index out of range", a2), null;
       const i3 = s2.endsWith("h") ? "h" : "f";
       let o3;
-      if ("mat2x2" === s2 || "mat2x2f" === s2 || "mat2x2h" === s2 || "mat3x2" === s2 || "mat3x2f" === s2 || "mat3x2h" === s2 || "mat4x2" === s2 || "mat4x2f" === s2 || "mat4x2h" === s2)
-        o3 = new Me(new Float32Array(this.data.buffer, this.data.byteOffset + 2 * a2 * 4, 2), e2.getTypeInfo(`vec2${i3}`));
-      else if ("mat2x3" === s2 || "mat2x3f" === s2 || "mat2x3h" === s2 || "mat3x3" === s2 || "mat3x3f" === s2 || "mat3x3h" === s2 || "mat4x3" === s2 || "mat4x3f" === s2 || "mat4x3h" === s2)
-        o3 = new Me(new Float32Array(this.data.buffer, this.data.byteOffset + 3 * a2 * 4, 3), e2.getTypeInfo(`vec3${i3}`));
+      if ("mat2x2" === s2 || "mat2x2f" === s2 || "mat2x2h" === s2 || "mat3x2" === s2 || "mat3x2f" === s2 || "mat3x2h" === s2 || "mat4x2" === s2 || "mat4x2f" === s2 || "mat4x2h" === s2) o3 = new Me(new Float32Array(this.data.buffer, this.data.byteOffset + 2 * a2 * 4, 2), e2.getTypeInfo(`vec2${i3}`));
+      else if ("mat2x3" === s2 || "mat2x3f" === s2 || "mat2x3h" === s2 || "mat3x3" === s2 || "mat3x3f" === s2 || "mat3x3h" === s2 || "mat4x3" === s2 || "mat4x3f" === s2 || "mat4x3h" === s2) o3 = new Me(new Float32Array(this.data.buffer, this.data.byteOffset + 3 * a2 * 4, 3), e2.getTypeInfo(`vec3${i3}`));
       else {
-        if ("mat2x4" !== s2 && "mat2x4f" !== s2 && "mat2x4h" !== s2 && "mat3x4" !== s2 && "mat3x4f" !== s2 && "mat3x4h" !== s2 && "mat4x4" !== s2 && "mat4x4f" !== s2 && "mat4x4h" !== s2)
-          return console.error(`GetDataValue: Unknown type ${s2}`), null;
+        if ("mat2x4" !== s2 && "mat2x4f" !== s2 && "mat2x4h" !== s2 && "mat3x4" !== s2 && "mat3x4f" !== s2 && "mat3x4h" !== s2 && "mat4x4" !== s2 && "mat4x4f" !== s2 && "mat4x4h" !== s2) return console.error(`GetDataValue: Unknown type ${s2}`), null;
         o3 = new Me(new Float32Array(this.data.buffer, this.data.byteOffset + 4 * a2 * 4, 4), e2.getTypeInfo(`vec4${i3}`));
       }
       return t2.postfix ? o3.getSubData(e2, t2.postfix, n2) : o3;
@@ -24600,8 +24840,7 @@ var Ue = class _Ue extends Ne {
   }
   toString() {
     let e2 = `${this.data[0]}`;
-    for (let t2 = 1; t2 < this.data.length; ++t2)
-      e2 += `, ${this.data[t2]}`;
+    for (let t2 = 1; t2 < this.data.length; ++t2) e2 += `, ${this.data[t2]}`;
     return e2;
   }
 };
@@ -24614,56 +24853,43 @@ var Pe = class _Pe extends Ne {
     return new _Pe(e2.buffer, this.typeInfo, 0, null);
   }
   setDataValue(t2, r2, a2, i3) {
-    if (null === r2)
-      return void console.log("setDataValue: NULL data.");
+    if (null === r2) return void console.log("setDataValue: NULL data.");
     let o3 = this.offset, c2 = this.typeInfo;
     for (; a2; ) {
-      if (a2 instanceof ve)
-        if (c2 instanceof s) {
-          const e2 = a2.index;
-          if (e2 instanceof xe) {
-            if (!(e2.value instanceof Be))
-              return void console.error(`SetDataValue: Invalid index type ${e2.value}`);
-            o3 += e2.value.value * c2.stride;
-          } else {
-            const n2 = t2.evalExpression(e2, i3);
-            if (!(n2 instanceof Be))
-              return void console.error("SetDataValue: Unknown index type", e2);
-            o3 += n2.value * c2.stride;
-          }
-          c2 = c2.format;
-        } else
-          console.error(`SetDataValue: Type ${c2.getTypeName()} is not an array`);
+      if (a2 instanceof ve) if (c2 instanceof s) {
+        const e2 = a2.index;
+        if (e2 instanceof xe) {
+          if (!(e2.value instanceof Be)) return void console.error(`SetDataValue: Invalid index type ${e2.value}`);
+          o3 += e2.value.value * c2.stride;
+        } else {
+          const n2 = t2.evalExpression(e2, i3);
+          if (!(n2 instanceof Be)) return void console.error("SetDataValue: Unknown index type", e2);
+          o3 += n2.value * c2.stride;
+        }
+        c2 = c2.format;
+      } else console.error(`SetDataValue: Type ${c2.getTypeName()} is not an array`);
       else {
-        if (!(a2 instanceof pe))
-          return void console.error("SetDataValue: Unknown postfix type", a2);
+        if (!(a2 instanceof pe)) return void console.error("SetDataValue: Unknown postfix type", a2);
         {
           const t3 = a2.value;
           if (c2 instanceof n) {
             let e2 = false;
-            for (const n2 of c2.members)
-              if (n2.name === t3) {
-                o3 += n2.offset, c2 = n2.type, e2 = true;
-                break;
-              }
-            if (!e2)
-              return void console.error(`SetDataValue: Member ${t3} not found`);
+            for (const n2 of c2.members) if (n2.name === t3) {
+              o3 += n2.offset, c2 = n2.type, e2 = true;
+              break;
+            }
+            if (!e2) return void console.error(`SetDataValue: Member ${t3} not found`);
           } else if (c2 instanceof e) {
             const e2 = c2.getTypeName();
             let n2 = 0;
-            if ("x" === t3 || "r" === t3)
-              n2 = 0;
-            else if ("y" === t3 || "g" === t3)
-              n2 = 1;
-            else if ("z" === t3 || "b" === t3)
-              n2 = 2;
+            if ("x" === t3 || "r" === t3) n2 = 0;
+            else if ("y" === t3 || "g" === t3) n2 = 1;
+            else if ("z" === t3 || "b" === t3) n2 = 2;
             else {
-              if ("w" !== t3 && "a" !== t3)
-                return void console.error(`SetDataValue: Unknown member ${t3}`);
+              if ("w" !== t3 && "a" !== t3) return void console.error(`SetDataValue: Unknown member ${t3}`);
               n2 = 3;
             }
-            if (!(r2 instanceof Be))
-              return void console.error("SetDataValue: Invalid value", r2);
+            if (!(r2 instanceof Be)) return void console.error("SetDataValue: Invalid value", r2);
             const s2 = r2.value;
             return "vec2f" === e2 ? void (new Float32Array(this.buffer, o3, 2)[n2] = s2) : "vec3f" === e2 ? void (new Float32Array(this.buffer, o3, 3)[n2] = s2) : "vec4f" === e2 ? void (new Float32Array(this.buffer, o3, 4)[n2] = s2) : "vec2i" === e2 ? void (new Int32Array(this.buffer, o3, 2)[n2] = s2) : "vec3i" === e2 ? void (new Int32Array(this.buffer, o3, 3)[n2] = s2) : "vec4i" === e2 ? void (new Int32Array(this.buffer, o3, 4)[n2] = s2) : "vec2u" === e2 ? void (new Uint32Array(this.buffer, o3, 2)[n2] = s2) : "vec3u" === e2 ? void (new Uint32Array(this.buffer, o3, 3)[n2] = s2) : "vec4u" === e2 ? void (new Uint32Array(this.buffer, o3, 4)[n2] = s2) : void console.error(`SetDataValue: Type ${e2} is not a struct`);
           }
@@ -24675,139 +24901,126 @@ var Pe = class _Pe extends Ne {
   }
   setData(e2, t2, n2, s2, r2) {
     const a2 = n2.getTypeName();
-    if ("f32" !== a2 && "f16" !== a2)
-      if ("i32" !== a2 && "atomic<i32>" !== a2 && "x32" !== a2)
-        if ("u32" !== a2 && "atomic<u32>" !== a2)
-          if ("bool" !== a2) {
-            if ("vec2f" === a2 || "vec2h" === a2) {
-              const e3 = new Float32Array(this.buffer, s2, 2);
-              return void (t2 instanceof Me ? (e3[0] = t2.data[0], e3[1] = t2.data[1]) : (e3[0] = t2[0], e3[1] = t2[1]));
-            }
-            if ("vec3f" === a2 || "vec3h" === a2) {
-              const e3 = new Float32Array(this.buffer, s2, 3);
-              return void (t2 instanceof Me ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2]));
-            }
-            if ("vec4f" === a2 || "vec4h" === a2) {
-              const e3 = new Float32Array(this.buffer, s2, 4);
-              return void (t2 instanceof Me ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2], e3[3] = t2.data[3]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2], e3[3] = t2[3]));
-            }
-            if ("vec2i" === a2) {
-              const e3 = new Int32Array(this.buffer, s2, 2);
-              return void (t2 instanceof Me ? (e3[0] = t2.data[0], e3[1] = t2.data[1]) : (e3[0] = t2[0], e3[1] = t2[1]));
-            }
-            if ("vec3i" === a2) {
-              const e3 = new Int32Array(this.buffer, s2, 3);
-              return void (t2 instanceof Me ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2]));
-            }
-            if ("vec4i" === a2) {
-              const e3 = new Int32Array(this.buffer, s2, 4);
-              return void (t2 instanceof Me ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2], e3[3] = t2.data[3]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2], e3[3] = t2[3]));
-            }
-            if ("vec2u" === a2) {
-              const e3 = new Uint32Array(this.buffer, s2, 2);
-              return void (t2 instanceof Me ? (e3[0] = t2.data[0], e3[1] = t2.data[1]) : (e3[0] = t2[0], e3[1] = t2[1]));
-            }
-            if ("vec3u" === a2) {
-              const e3 = new Uint32Array(this.buffer, s2, 3);
-              return void (t2 instanceof Me ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2]));
-            }
-            if ("vec4u" === a2) {
-              const e3 = new Uint32Array(this.buffer, s2, 4);
-              return void (t2 instanceof Me ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2], e3[3] = t2.data[3]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2], e3[3] = t2[3]));
-            }
-            if ("vec2b" === a2) {
-              const e3 = new Uint32Array(this.buffer, s2, 2);
-              return void (t2 instanceof Me ? (e3[0] = t2.data[0], e3[1] = t2.data[1]) : (e3[0] = t2[0], e3[1] = t2[1]));
-            }
-            if ("vec3b" === a2) {
-              const e3 = new Uint32Array(this.buffer, s2, 3);
-              return void (t2 instanceof Me ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2]));
-            }
-            if ("vec4b" === a2) {
-              const e3 = new Uint32Array(this.buffer, s2, 4);
-              return void (t2 instanceof Me ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2], e3[3] = t2.data[3]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2], e3[3] = t2[3]));
-            }
-            if ("mat2x2f" === a2 || "mat2x2h" === a2) {
-              const e3 = new Float32Array(this.buffer, s2, 4);
-              return void (t2 instanceof Ue ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2], e3[3] = t2.data[3]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2], e3[3] = t2[3]));
-            }
-            if ("mat2x3f" === a2 || "mat2x3h" === a2) {
-              const e3 = new Float32Array(this.buffer, s2, 6);
-              return void (t2 instanceof Ue ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2], e3[3] = t2.data[3], e3[4] = t2.data[4], e3[5] = t2.data[5]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2], e3[3] = t2[3], e3[4] = t2[4], e3[5] = t2[5]));
-            }
-            if ("mat2x4f" === a2 || "mat2x4h" === a2) {
-              const e3 = new Float32Array(this.buffer, s2, 8);
-              return void (t2 instanceof Ue ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2], e3[3] = t2.data[3], e3[4] = t2.data[4], e3[5] = t2.data[5], e3[6] = t2.data[6], e3[7] = t2.data[7]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2], e3[3] = t2[3], e3[4] = t2[4], e3[5] = t2[5], e3[6] = t2[6], e3[7] = t2[7]));
-            }
-            if ("mat3x2f" === a2 || "mat3x2h" === a2) {
-              const e3 = new Float32Array(this.buffer, s2, 6);
-              return void (t2 instanceof Ue ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2], e3[3] = t2.data[3], e3[4] = t2.data[4], e3[5] = t2.data[5]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2], e3[3] = t2[3], e3[4] = t2[4], e3[5] = t2[5]));
-            }
-            if ("mat3x3f" === a2 || "mat3x3h" === a2) {
-              const e3 = new Float32Array(this.buffer, s2, 9);
-              return void (t2 instanceof Ue ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2], e3[3] = t2.data[3], e3[4] = t2.data[4], e3[5] = t2.data[5], e3[6] = t2.data[6], e3[7] = t2.data[7], e3[8] = t2.data[8]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2], e3[3] = t2[3], e3[4] = t2[4], e3[5] = t2[5], e3[6] = t2[6], e3[7] = t2[7], e3[8] = t2[8]));
-            }
-            if ("mat3x4f" === a2 || "mat3x4h" === a2) {
-              const e3 = new Float32Array(this.buffer, s2, 12);
-              return void (t2 instanceof Ue ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2], e3[3] = t2.data[3], e3[4] = t2.data[4], e3[5] = t2.data[5], e3[6] = t2.data[6], e3[7] = t2.data[7], e3[8] = t2.data[8], e3[9] = t2.data[9], e3[10] = t2.data[10], e3[11] = t2.data[11]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2], e3[3] = t2[3], e3[4] = t2[4], e3[5] = t2[5], e3[6] = t2[6], e3[7] = t2[7], e3[8] = t2[8], e3[9] = t2[9], e3[10] = t2[10], e3[11] = t2[11]));
-            }
-            if ("mat4x2f" === a2 || "mat4x2h" === a2) {
-              const e3 = new Float32Array(this.buffer, s2, 8);
-              return void (t2 instanceof Ue ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2], e3[3] = t2.data[3], e3[4] = t2.data[4], e3[5] = t2.data[5], e3[6] = t2.data[6], e3[7] = t2.data[7]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2], e3[3] = t2[3], e3[4] = t2[4], e3[5] = t2[5], e3[6] = t2[6], e3[7] = t2[7]));
-            }
-            if ("mat4x3f" === a2 || "mat4x3h" === a2) {
-              const e3 = new Float32Array(this.buffer, s2, 12);
-              return void (t2 instanceof Ue ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2], e3[3] = t2.data[3], e3[4] = t2.data[4], e3[5] = t2.data[5], e3[6] = t2.data[6], e3[7] = t2.data[7], e3[8] = t2.data[8], e3[9] = t2.data[9], e3[10] = t2.data[10], e3[11] = t2.data[11]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2], e3[3] = t2[3], e3[4] = t2[4], e3[5] = t2[5], e3[6] = t2[6], e3[7] = t2[7], e3[8] = t2[8], e3[9] = t2[9], e3[10] = t2[10], e3[11] = t2[11]));
-            }
-            if ("mat4x4f" === a2 || "mat4x4h" === a2) {
-              const e3 = new Float32Array(this.buffer, s2, 16);
-              return void (t2 instanceof Ue ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2], e3[3] = t2.data[3], e3[4] = t2.data[4], e3[5] = t2.data[5], e3[6] = t2.data[6], e3[7] = t2.data[7], e3[8] = t2.data[8], e3[9] = t2.data[9], e3[10] = t2.data[10], e3[11] = t2.data[11], e3[12] = t2.data[12], e3[13] = t2.data[13], e3[14] = t2.data[14], e3[15] = t2.data[15]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2], e3[3] = t2[3], e3[4] = t2[4], e3[5] = t2[5], e3[6] = t2[6], e3[7] = t2[7], e3[8] = t2[8], e3[9] = t2[9], e3[10] = t2[10], e3[11] = t2[11], e3[12] = t2[12], e3[13] = t2[13], e3[14] = t2[14], e3[15] = t2[15]));
-            }
-            if (t2 instanceof _Pe) {
-              if (n2 === t2.typeInfo) {
-                return void new Uint8Array(this.buffer, s2, t2.buffer.byteLength).set(new Uint8Array(t2.buffer));
-              }
-              console.error("SetDataValue: Type mismatch", a2, t2.typeInfo.getTypeName());
-            } else
-              console.error(`SetData: Unknown type ${a2}`);
-          } else
-            t2 instanceof Be && (new Int32Array(this.buffer, s2, 1)[0] = t2.value);
-        else
-          t2 instanceof Be && (new Uint32Array(this.buffer, s2, 1)[0] = t2.value);
-      else
-        t2 instanceof Be && (new Int32Array(this.buffer, s2, 1)[0] = t2.value);
-    else
-      t2 instanceof Be && (new Float32Array(this.buffer, s2, 1)[0] = t2.value);
+    if ("f32" !== a2 && "f16" !== a2) if ("i32" !== a2 && "atomic<i32>" !== a2 && "x32" !== a2) if ("u32" !== a2 && "atomic<u32>" !== a2) if ("bool" !== a2) {
+      if ("vec2f" === a2 || "vec2h" === a2) {
+        const e3 = new Float32Array(this.buffer, s2, 2);
+        return void (t2 instanceof Me ? (e3[0] = t2.data[0], e3[1] = t2.data[1]) : (e3[0] = t2[0], e3[1] = t2[1]));
+      }
+      if ("vec3f" === a2 || "vec3h" === a2) {
+        const e3 = new Float32Array(this.buffer, s2, 3);
+        return void (t2 instanceof Me ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2]));
+      }
+      if ("vec4f" === a2 || "vec4h" === a2) {
+        const e3 = new Float32Array(this.buffer, s2, 4);
+        return void (t2 instanceof Me ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2], e3[3] = t2.data[3]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2], e3[3] = t2[3]));
+      }
+      if ("vec2i" === a2) {
+        const e3 = new Int32Array(this.buffer, s2, 2);
+        return void (t2 instanceof Me ? (e3[0] = t2.data[0], e3[1] = t2.data[1]) : (e3[0] = t2[0], e3[1] = t2[1]));
+      }
+      if ("vec3i" === a2) {
+        const e3 = new Int32Array(this.buffer, s2, 3);
+        return void (t2 instanceof Me ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2]));
+      }
+      if ("vec4i" === a2) {
+        const e3 = new Int32Array(this.buffer, s2, 4);
+        return void (t2 instanceof Me ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2], e3[3] = t2.data[3]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2], e3[3] = t2[3]));
+      }
+      if ("vec2u" === a2) {
+        const e3 = new Uint32Array(this.buffer, s2, 2);
+        return void (t2 instanceof Me ? (e3[0] = t2.data[0], e3[1] = t2.data[1]) : (e3[0] = t2[0], e3[1] = t2[1]));
+      }
+      if ("vec3u" === a2) {
+        const e3 = new Uint32Array(this.buffer, s2, 3);
+        return void (t2 instanceof Me ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2]));
+      }
+      if ("vec4u" === a2) {
+        const e3 = new Uint32Array(this.buffer, s2, 4);
+        return void (t2 instanceof Me ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2], e3[3] = t2.data[3]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2], e3[3] = t2[3]));
+      }
+      if ("vec2b" === a2) {
+        const e3 = new Uint32Array(this.buffer, s2, 2);
+        return void (t2 instanceof Me ? (e3[0] = t2.data[0], e3[1] = t2.data[1]) : (e3[0] = t2[0], e3[1] = t2[1]));
+      }
+      if ("vec3b" === a2) {
+        const e3 = new Uint32Array(this.buffer, s2, 3);
+        return void (t2 instanceof Me ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2]));
+      }
+      if ("vec4b" === a2) {
+        const e3 = new Uint32Array(this.buffer, s2, 4);
+        return void (t2 instanceof Me ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2], e3[3] = t2.data[3]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2], e3[3] = t2[3]));
+      }
+      if ("mat2x2f" === a2 || "mat2x2h" === a2) {
+        const e3 = new Float32Array(this.buffer, s2, 4);
+        return void (t2 instanceof Ue ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2], e3[3] = t2.data[3]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2], e3[3] = t2[3]));
+      }
+      if ("mat2x3f" === a2 || "mat2x3h" === a2) {
+        const e3 = new Float32Array(this.buffer, s2, 6);
+        return void (t2 instanceof Ue ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2], e3[3] = t2.data[3], e3[4] = t2.data[4], e3[5] = t2.data[5]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2], e3[3] = t2[3], e3[4] = t2[4], e3[5] = t2[5]));
+      }
+      if ("mat2x4f" === a2 || "mat2x4h" === a2) {
+        const e3 = new Float32Array(this.buffer, s2, 8);
+        return void (t2 instanceof Ue ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2], e3[3] = t2.data[3], e3[4] = t2.data[4], e3[5] = t2.data[5], e3[6] = t2.data[6], e3[7] = t2.data[7]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2], e3[3] = t2[3], e3[4] = t2[4], e3[5] = t2[5], e3[6] = t2[6], e3[7] = t2[7]));
+      }
+      if ("mat3x2f" === a2 || "mat3x2h" === a2) {
+        const e3 = new Float32Array(this.buffer, s2, 6);
+        return void (t2 instanceof Ue ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2], e3[3] = t2.data[3], e3[4] = t2.data[4], e3[5] = t2.data[5]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2], e3[3] = t2[3], e3[4] = t2[4], e3[5] = t2[5]));
+      }
+      if ("mat3x3f" === a2 || "mat3x3h" === a2) {
+        const e3 = new Float32Array(this.buffer, s2, 9);
+        return void (t2 instanceof Ue ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2], e3[3] = t2.data[3], e3[4] = t2.data[4], e3[5] = t2.data[5], e3[6] = t2.data[6], e3[7] = t2.data[7], e3[8] = t2.data[8]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2], e3[3] = t2[3], e3[4] = t2[4], e3[5] = t2[5], e3[6] = t2[6], e3[7] = t2[7], e3[8] = t2[8]));
+      }
+      if ("mat3x4f" === a2 || "mat3x4h" === a2) {
+        const e3 = new Float32Array(this.buffer, s2, 12);
+        return void (t2 instanceof Ue ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2], e3[3] = t2.data[3], e3[4] = t2.data[4], e3[5] = t2.data[5], e3[6] = t2.data[6], e3[7] = t2.data[7], e3[8] = t2.data[8], e3[9] = t2.data[9], e3[10] = t2.data[10], e3[11] = t2.data[11]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2], e3[3] = t2[3], e3[4] = t2[4], e3[5] = t2[5], e3[6] = t2[6], e3[7] = t2[7], e3[8] = t2[8], e3[9] = t2[9], e3[10] = t2[10], e3[11] = t2[11]));
+      }
+      if ("mat4x2f" === a2 || "mat4x2h" === a2) {
+        const e3 = new Float32Array(this.buffer, s2, 8);
+        return void (t2 instanceof Ue ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2], e3[3] = t2.data[3], e3[4] = t2.data[4], e3[5] = t2.data[5], e3[6] = t2.data[6], e3[7] = t2.data[7]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2], e3[3] = t2[3], e3[4] = t2[4], e3[5] = t2[5], e3[6] = t2[6], e3[7] = t2[7]));
+      }
+      if ("mat4x3f" === a2 || "mat4x3h" === a2) {
+        const e3 = new Float32Array(this.buffer, s2, 12);
+        return void (t2 instanceof Ue ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2], e3[3] = t2.data[3], e3[4] = t2.data[4], e3[5] = t2.data[5], e3[6] = t2.data[6], e3[7] = t2.data[7], e3[8] = t2.data[8], e3[9] = t2.data[9], e3[10] = t2.data[10], e3[11] = t2.data[11]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2], e3[3] = t2[3], e3[4] = t2[4], e3[5] = t2[5], e3[6] = t2[6], e3[7] = t2[7], e3[8] = t2[8], e3[9] = t2[9], e3[10] = t2[10], e3[11] = t2[11]));
+      }
+      if ("mat4x4f" === a2 || "mat4x4h" === a2) {
+        const e3 = new Float32Array(this.buffer, s2, 16);
+        return void (t2 instanceof Ue ? (e3[0] = t2.data[0], e3[1] = t2.data[1], e3[2] = t2.data[2], e3[3] = t2.data[3], e3[4] = t2.data[4], e3[5] = t2.data[5], e3[6] = t2.data[6], e3[7] = t2.data[7], e3[8] = t2.data[8], e3[9] = t2.data[9], e3[10] = t2.data[10], e3[11] = t2.data[11], e3[12] = t2.data[12], e3[13] = t2.data[13], e3[14] = t2.data[14], e3[15] = t2.data[15]) : (e3[0] = t2[0], e3[1] = t2[1], e3[2] = t2[2], e3[3] = t2[3], e3[4] = t2[4], e3[5] = t2[5], e3[6] = t2[6], e3[7] = t2[7], e3[8] = t2[8], e3[9] = t2[9], e3[10] = t2[10], e3[11] = t2[11], e3[12] = t2[12], e3[13] = t2[13], e3[14] = t2[14], e3[15] = t2[15]));
+      }
+      if (t2 instanceof _Pe) {
+        if (n2 === t2.typeInfo) {
+          return void new Uint8Array(this.buffer, s2, t2.buffer.byteLength).set(new Uint8Array(t2.buffer));
+        }
+        console.error("SetDataValue: Type mismatch", a2, t2.typeInfo.getTypeName());
+      } else console.error(`SetData: Unknown type ${a2}`);
+    } else t2 instanceof Be && (new Int32Array(this.buffer, s2, 1)[0] = t2.value);
+    else t2 instanceof Be && (new Uint32Array(this.buffer, s2, 1)[0] = t2.value);
+    else t2 instanceof Be && (new Int32Array(this.buffer, s2, 1)[0] = t2.value);
+    else t2 instanceof Be && (new Float32Array(this.buffer, s2, 1)[0] = t2.value);
   }
   getSubData(t2, r2, i3) {
     var o3, c2, l2;
-    if (null === r2)
-      return this;
+    if (null === r2) return this;
     let u2 = this.offset, h2 = this.typeInfo;
     for (; r2; ) {
       if (r2 instanceof ve) {
         const e2 = r2.index, n2 = e2 instanceof fe ? t2.evalExpression(e2, i3) : e2;
         let a2 = 0;
-        if (n2 instanceof Be ? a2 = n2.value : "number" == typeof n2 ? a2 = n2 : console.error("GetDataValue: Invalid index type", e2), h2 instanceof s)
-          u2 += a2 * h2.stride, h2 = h2.format;
+        if (n2 instanceof Be ? a2 = n2.value : "number" == typeof n2 ? a2 = n2 : console.error("GetDataValue: Invalid index type", e2), h2 instanceof s) u2 += a2 * h2.stride, h2 = h2.format;
         else {
           const e3 = h2.getTypeName();
           "mat4x4" === e3 || "mat4x4f" === e3 || "mat4x4h" === e3 ? (u2 += 16 * a2, h2 = t2.getTypeInfo("vec4f")) : console.error(`getDataValue: Type ${h2.getTypeName()} is not an array`);
         }
       } else {
-        if (!(r2 instanceof pe))
-          return console.error("GetDataValue: Unknown postfix type", r2), null;
+        if (!(r2 instanceof pe)) return console.error("GetDataValue: Unknown postfix type", r2), null;
         {
           const s2 = r2.value;
           if (h2 instanceof n) {
             let e2 = false;
-            for (const t3 of h2.members)
-              if (t3.name === s2) {
-                u2 += t3.offset, h2 = t3.type, e2 = true;
-                break;
-              }
-            if (!e2)
-              return console.error(`GetDataValue: Member ${s2} not found`), null;
+            for (const t3 of h2.members) if (t3.name === s2) {
+              u2 += t3.offset, h2 = t3.type, e2 = true;
+              break;
+            }
+            if (!e2) return console.error(`GetDataValue: Member ${s2} not found`), null;
           } else if (h2 instanceof e) {
             const e2 = h2.getTypeName();
             if ("vec2f" === e2 || "vec3f" === e2 || "vec4f" === e2 || "vec2i" === e2 || "vec3i" === e2 || "vec4i" === e2 || "vec2u" === e2 || "vec3u" === e2 || "vec4u" === e2 || "vec2b" === e2 || "vec3b" === e2 || "vec4b" === e2 || "vec2h" === e2 || "vec3h" === e2 || "vec4h" === e2 || "vec2" === e2 || "vec3" === e2 || "vec4" === e2) {
@@ -24817,50 +25030,34 @@ var Pe = class _Pe extends Ne {
                 for (let a2 = 0; a2 < s2.length; ++a2) {
                   const i4 = s2[a2].toLowerCase();
                   let o4 = 0;
-                  if ("x" === i4 || "r" === i4)
-                    o4 = 0;
-                  else if ("y" === i4 || "g" === i4)
-                    o4 = 1;
-                  else if ("z" === i4 || "b" === i4)
-                    o4 = 2;
+                  if ("x" === i4 || "r" === i4) o4 = 0;
+                  else if ("y" === i4 || "g" === i4) o4 = 1;
+                  else if ("z" === i4 || "b" === i4) o4 = 2;
                   else {
-                    if ("w" !== i4 && "a" !== i4)
-                      return console.error(`Unknown member ${s2}`), null;
+                    if ("w" !== i4 && "a" !== i4) return console.error(`Unknown member ${s2}`), null;
                     o4 = 3;
                   }
                   if (1 === s2.length) {
-                    if (e2.endsWith("f"))
-                      return this.buffer.byteLength < u2 + 4 * o4 + 4 ? (console.log("Insufficient buffer data"), null) : new Be(new Float32Array(this.buffer, u2 + 4 * o4, 1), t2.getTypeInfo("f32"), this);
-                    if (e2.endsWith("h"))
-                      return new Be(new Float32Array(this.buffer, u2 + 4 * o4, 1), t2.getTypeInfo("f16"), this);
-                    if (e2.endsWith("i"))
-                      return new Be(new Int32Array(this.buffer, u2 + 4 * o4, 1), t2.getTypeInfo("i32"), this);
-                    if (e2.endsWith("b"))
-                      return new Be(new Int32Array(this.buffer, u2 + 4 * o4, 1), t2.getTypeInfo("bool"), this);
-                    if (e2.endsWith("u"))
-                      return new Be(new Uint32Array(this.buffer, u2 + 4 * o4, 1), t2.getTypeInfo("i32"), this);
+                    if (e2.endsWith("f")) return this.buffer.byteLength < u2 + 4 * o4 + 4 ? (console.log("Insufficient buffer data"), null) : new Be(new Float32Array(this.buffer, u2 + 4 * o4, 1), t2.getTypeInfo("f32"), this);
+                    if (e2.endsWith("h")) return new Be(new Float32Array(this.buffer, u2 + 4 * o4, 1), t2.getTypeInfo("f16"), this);
+                    if (e2.endsWith("i")) return new Be(new Int32Array(this.buffer, u2 + 4 * o4, 1), t2.getTypeInfo("i32"), this);
+                    if (e2.endsWith("b")) return new Be(new Int32Array(this.buffer, u2 + 4 * o4, 1), t2.getTypeInfo("bool"), this);
+                    if (e2.endsWith("u")) return new Be(new Uint32Array(this.buffer, u2 + 4 * o4, 1), t2.getTypeInfo("i32"), this);
                   }
-                  if ("vec2f" === e2)
-                    r3.push(new Float32Array(this.buffer, u2, 2)[o4]);
+                  if ("vec2f" === e2) r3.push(new Float32Array(this.buffer, u2, 2)[o4]);
                   else if ("vec3f" === e2) {
-                    if (u2 + 12 >= this.buffer.byteLength)
-                      return console.log("Insufficient buffer data"), null;
+                    if (u2 + 12 >= this.buffer.byteLength) return console.log("Insufficient buffer data"), null;
                     const e3 = new Float32Array(this.buffer, u2, 3);
                     r3.push(e3[o4]);
-                  } else if ("vec4f" === e2)
-                    r3.push(new Float32Array(this.buffer, u2, 4)[o4]);
-                  else if ("vec2i" === e2)
-                    n2 = "i", r3.push(new Int32Array(this.buffer, u2, 2)[o4]);
-                  else if ("vec3i" === e2)
-                    n2 = "i", r3.push(new Int32Array(this.buffer, u2, 3)[o4]);
-                  else if ("vec4i" === e2)
-                    n2 = "i", r3.push(new Int32Array(this.buffer, u2, 4)[o4]);
+                  } else if ("vec4f" === e2) r3.push(new Float32Array(this.buffer, u2, 4)[o4]);
+                  else if ("vec2i" === e2) n2 = "i", r3.push(new Int32Array(this.buffer, u2, 2)[o4]);
+                  else if ("vec3i" === e2) n2 = "i", r3.push(new Int32Array(this.buffer, u2, 3)[o4]);
+                  else if ("vec4i" === e2) n2 = "i", r3.push(new Int32Array(this.buffer, u2, 4)[o4]);
                   else if ("vec2u" === e2) {
                     n2 = "u";
                     const e3 = new Uint32Array(this.buffer, u2, 2);
                     r3.push(e3[o4]);
-                  } else
-                    "vec3u" === e2 ? (n2 = "u", r3.push(new Uint32Array(this.buffer, u2, 3)[o4])) : "vec4u" === e2 && (n2 = "u", r3.push(new Uint32Array(this.buffer, u2, 4)[o4]));
+                  } else "vec3u" === e2 ? (n2 = "u", r3.push(new Uint32Array(this.buffer, u2, 3)[o4])) : "vec4u" === e2 && (n2 = "u", r3.push(new Uint32Array(this.buffer, u2, 4)[o4]));
                 }
                 return 2 === r3.length ? h2 = t2.getTypeInfo(`vec2${n2}`) : 3 === r3.length ? h2 = t2.getTypeInfo(`vec3${n2}`) : 4 === r3.length ? h2 = t2.getTypeInfo(`vec4${n2}`) : console.error(`GetDataValue: Invalid vector length ${r3.length}`), new Me(r3, h2, null);
               }
@@ -24877,41 +25074,32 @@ var Pe = class _Pe extends Ne {
   }
   toString() {
     let e2 = "";
-    if (this.typeInfo instanceof s)
-      if ("f32" === this.typeInfo.format.name) {
-        const t2 = new Float32Array(this.buffer, this.offset);
-        e2 = `[${t2[0]}`;
-        for (let n2 = 1; n2 < t2.length; ++n2)
-          e2 += `, ${t2[n2]}`;
-      } else if ("i32" === this.typeInfo.format.name) {
-        const t2 = new Int32Array(this.buffer, this.offset);
-        e2 = `[${t2[0]}`;
-        for (let n2 = 1; n2 < t2.length; ++n2)
-          e2 += `, ${t2[n2]}`;
-      } else if ("u32" === this.typeInfo.format.name) {
-        const t2 = new Uint32Array(this.buffer, this.offset);
-        e2 = `[${t2[0]}`;
-        for (let n2 = 1; n2 < t2.length; ++n2)
-          e2 += `, ${t2[n2]}`;
-      } else if ("vec2f" === this.typeInfo.format.name) {
-        const t2 = new Float32Array(this.buffer, this.offset);
-        e2 = `[${t2[0]}, ${t2[1]}]`;
-        for (let n2 = 1; n2 < t2.length / 2; ++n2)
-          e2 += `, [${t2[2 * n2]}, ${t2[2 * n2 + 1]}]`;
-      } else if ("vec3f" === this.typeInfo.format.name) {
-        const t2 = new Float32Array(this.buffer, this.offset);
-        e2 = `[${t2[0]}, ${t2[1]}, ${t2[2]}]`;
-        for (let n2 = 4; n2 < t2.length; n2 += 4)
-          e2 += `, [${t2[n2]}, ${t2[n2 + 1]}, ${t2[n2 + 2]}]`;
-      } else if ("vec4f" === this.typeInfo.format.name) {
-        const t2 = new Float32Array(this.buffer, this.offset);
-        e2 = `[${t2[0]}, ${t2[1]}, ${t2[2]}, ${t2[3]}]`;
-        for (let n2 = 4; n2 < t2.length; n2 += 4)
-          e2 += `, [${t2[n2]}, ${t2[n2 + 1]}, ${t2[n2 + 2]}, ${t2[n2 + 3]}]`;
-      } else
-        e2 = "[...]";
-    else
-      this.typeInfo instanceof n ? e2 += "{...}" : e2 = "[...]";
+    if (this.typeInfo instanceof s) if ("f32" === this.typeInfo.format.name) {
+      const t2 = new Float32Array(this.buffer, this.offset);
+      e2 = `[${t2[0]}`;
+      for (let n2 = 1; n2 < t2.length; ++n2) e2 += `, ${t2[n2]}`;
+    } else if ("i32" === this.typeInfo.format.name) {
+      const t2 = new Int32Array(this.buffer, this.offset);
+      e2 = `[${t2[0]}`;
+      for (let n2 = 1; n2 < t2.length; ++n2) e2 += `, ${t2[n2]}`;
+    } else if ("u32" === this.typeInfo.format.name) {
+      const t2 = new Uint32Array(this.buffer, this.offset);
+      e2 = `[${t2[0]}`;
+      for (let n2 = 1; n2 < t2.length; ++n2) e2 += `, ${t2[n2]}`;
+    } else if ("vec2f" === this.typeInfo.format.name) {
+      const t2 = new Float32Array(this.buffer, this.offset);
+      e2 = `[${t2[0]}, ${t2[1]}]`;
+      for (let n2 = 1; n2 < t2.length / 2; ++n2) e2 += `, [${t2[2 * n2]}, ${t2[2 * n2 + 1]}]`;
+    } else if ("vec3f" === this.typeInfo.format.name) {
+      const t2 = new Float32Array(this.buffer, this.offset);
+      e2 = `[${t2[0]}, ${t2[1]}, ${t2[2]}]`;
+      for (let n2 = 4; n2 < t2.length; n2 += 4) e2 += `, [${t2[n2]}, ${t2[n2 + 1]}, ${t2[n2 + 2]}]`;
+    } else if ("vec4f" === this.typeInfo.format.name) {
+      const t2 = new Float32Array(this.buffer, this.offset);
+      e2 = `[${t2[0]}, ${t2[1]}, ${t2[2]}, ${t2[3]}]`;
+      for (let n2 = 4; n2 < t2.length; n2 += 4) e2 += `, [${t2[n2]}, ${t2[n2 + 1]}, ${t2[n2 + 2]}, ${t2[n2 + 3]}]`;
+    } else e2 = "[...]";
+    else this.typeInfo instanceof n ? e2 += "{...}" : e2 = "[...]";
     return e2;
   }
 };
@@ -24954,11 +25142,9 @@ var We = class _We extends Ne {
     return this.descriptor && null !== (e2 = this.descriptor.dimension) && void 0 !== e2 ? e2 : "2d";
   }
   getMipLevelSize(e2) {
-    if (e2 >= this.mipLevelCount)
-      return [0, 0, 0];
+    if (e2 >= this.mipLevelCount) return [0, 0, 0];
     const t2 = [this.width, this.height, this.depthOrArrayLayers];
-    for (let n2 = 0; n2 < t2.length; ++n2)
-      t2[n2] = Math.max(1, t2[n2] >> e2);
+    for (let n2 = 0; n2 < t2.length; ++n2) t2[n2] = Math.max(1, t2[n2] >> e2);
     return t2;
   }
   get texelByteSize() {
@@ -24974,8 +25160,7 @@ var We = class _We extends Ne {
   }
   getGpuSize() {
     const e2 = this.format, t2 = S[e2], n2 = this.width;
-    if (!e2 || n2 <= 0 || !t2)
-      return -1;
+    if (!e2 || n2 <= 0 || !t2) return -1;
     const s2 = this.height, r2 = this.depthOrArrayLayers, a2 = this.dimension;
     return n2 / t2.blockWidth * ("1d" === a2 ? 1 : s2 / t2.blockHeight) * t2.bytesPerBlock * r2;
   }
@@ -24985,7 +25170,7 @@ var We = class _We extends Ne {
   }
   setPixel(e2, t2, n2, s2, r2) {
     const a2 = this.texelByteSize, i3 = this.bytesPerRow, o3 = this.height, c2 = this.data[s2];
-    !function(e3, t3, n3, s3, r3, a3, i4, o4, c3, l2) {
+    !(function(e3, t3, n3, s3, r3, a3, i4, o4, c3, l2) {
       const u2 = s3 * (i4 >>= r3) * (a3 >>= r3) + n3 * i4 + t3 * o4;
       switch (c3) {
         case "r8unorm":
@@ -25059,7 +25244,7 @@ var We = class _We extends Ne {
         case "rg11b10ufloat":
           console.error("TODO: rg11b10ufloat not supported for writing");
       }
-    }(new Uint8Array(c2), e2, t2, n2, s2, o3, i3, a2, this.format, r2);
+    })(new Uint8Array(c2), e2, t2, n2, s2, o3, i3, a2, this.format, r2);
   }
 };
 ((e2) => {
@@ -25098,22 +25283,17 @@ var Re = class {
     this._tokens = [], this._start = 0, this._current = 0, this._line = 1, this._source = null != e2 ? e2 : "";
   }
   scanTokens() {
-    for (; !this._isAtEnd(); )
-      if (this._start = this._current, !this.scanToken())
-        throw `Invalid syntax at line ${this._line}`;
+    for (; !this._isAtEnd(); ) if (this._start = this._current, !this.scanToken()) throw `Invalid syntax at line ${this._line}`;
     return this._tokens.push(new ze(He.eof, "", this._line, this._current, this._current)), this._tokens;
   }
   scanToken() {
     let e2 = this._advance();
-    if ("\n" == e2)
-      return this._line++, true;
-    if (this._isWhitespace(e2))
-      return true;
+    if ("\n" == e2) return this._line++, true;
+    if (this._isWhitespace(e2)) return true;
     if ("/" == e2) {
       if ("/" == this._peekAhead()) {
         for (; "\n" != e2; ) {
-          if (this._isAtEnd())
-            return true;
+          if (this._isAtEnd()) return true;
           e2 = this._advance();
         }
         return this._line++, true;
@@ -25122,72 +25302,56 @@ var Re = class {
         this._advance();
         let t3 = 1;
         for (; t3 > 0; ) {
-          if (this._isAtEnd())
-            return true;
-          if (e2 = this._advance(), "\n" == e2)
-            this._line++;
+          if (this._isAtEnd()) return true;
+          if (e2 = this._advance(), "\n" == e2) this._line++;
           else if ("*" == e2) {
-            if ("/" == this._peekAhead() && (this._advance(), t3--, 0 == t3))
-              return true;
-          } else
-            "/" == e2 && "*" == this._peekAhead() && (this._advance(), t3++);
+            if ("/" == this._peekAhead() && (this._advance(), t3--, 0 == t3)) return true;
+          } else "/" == e2 && "*" == this._peekAhead() && (this._advance(), t3++);
         }
         return true;
       }
     }
     const t2 = He.simpleTokens[e2];
-    if (t2)
-      return this._addToken(t2), true;
+    if (t2) return this._addToken(t2), true;
     let n2 = He.none;
     const s2 = this._isAlpha(e2), r2 = "_" === e2;
     if (this._isAlphaNumeric(e2)) {
       let t3 = this._peekAhead();
-      for (; this._isAlphaNumeric(t3); )
-        e2 += this._advance(), t3 = this._peekAhead();
+      for (; this._isAlphaNumeric(t3); ) e2 += this._advance(), t3 = this._peekAhead();
     }
     if (s2) {
       const t3 = He.keywords[e2];
-      if (t3)
-        return this._addToken(t3), true;
+      if (t3) return this._addToken(t3), true;
     }
-    if (s2 || r2)
-      return this._addToken(He.tokens.ident), true;
+    if (s2 || r2) return this._addToken(He.tokens.ident), true;
     for (; ; ) {
       let t3 = this._findType(e2);
       const s3 = this._peekAhead();
       if ("-" == e2 && this._tokens.length > 0) {
-        if ("=" == s3)
-          return this._current++, e2 += s3, this._addToken(He.tokens.minus_equal), true;
-        if ("-" == s3)
-          return this._current++, e2 += s3, this._addToken(He.tokens.minus_minus), true;
+        if ("=" == s3) return this._current++, e2 += s3, this._addToken(He.tokens.minus_equal), true;
+        if ("-" == s3) return this._current++, e2 += s3, this._addToken(He.tokens.minus_minus), true;
         const n3 = this._tokens.length - 1;
-        if ((-1 != He.literal_or_ident.indexOf(this._tokens[n3].type) || this._tokens[n3].type == He.tokens.paren_right) && ">" != s3)
-          return this._addToken(t3), true;
+        if ((-1 != He.literal_or_ident.indexOf(this._tokens[n3].type) || this._tokens[n3].type == He.tokens.paren_right) && ">" != s3) return this._addToken(t3), true;
       }
       if (">" == e2 && (">" == s3 || "=" == s3)) {
         let e3 = false, n3 = this._tokens.length - 1;
-        for (let t4 = 0; t4 < 5 && n3 >= 0 && -1 === He.assignment_operators.indexOf(this._tokens[n3].type); ++t4, --n3)
-          if (this._tokens[n3].type === He.tokens.less_than) {
-            n3 > 0 && this._tokens[n3 - 1].isArrayOrTemplateType() && (e3 = true);
-            break;
-          }
-        if (e3)
-          return this._addToken(t3), true;
+        for (let t4 = 0; t4 < 5 && n3 >= 0 && -1 === He.assignment_operators.indexOf(this._tokens[n3].type); ++t4, --n3) if (this._tokens[n3].type === He.tokens.less_than) {
+          n3 > 0 && this._tokens[n3 - 1].isArrayOrTemplateType() && (e3 = true);
+          break;
+        }
+        if (e3) return this._addToken(t3), true;
       }
       if (t3 === He.none) {
         let s4 = e2, r3 = 0;
         const a2 = 2;
-        for (let e3 = 0; e3 < a2; ++e3)
-          if (s4 += this._peekAhead(e3), t3 = this._findType(s4), t3 !== He.none) {
-            r3 = e3;
-            break;
-          }
-        if (t3 === He.none)
-          return n2 !== He.none && (this._current--, this._addToken(n2), true);
+        for (let e3 = 0; e3 < a2; ++e3) if (s4 += this._peekAhead(e3), t3 = this._findType(s4), t3 !== He.none) {
+          r3 = e3;
+          break;
+        }
+        if (t3 === He.none) return n2 !== He.none && (this._current--, this._addToken(n2), true);
         e2 = s4, this._current += r3 + 1;
       }
-      if (n2 = t3, this._isAtEnd())
-        break;
+      if (n2 = t3, this._isAtEnd()) break;
       e2 += this._advance();
     }
     return n2 !== He.none && (this._addToken(n2), true);
@@ -25195,8 +25359,7 @@ var Re = class {
   _findType(e2) {
     for (const t3 in He.regexTokens) {
       const n2 = He.regexTokens[t3];
-      if (this._match(e2, n2.rule))
-        return n2;
+      if (this._match(e2, n2.rule)) return n2;
     }
     const t2 = He.literalTokens[e2];
     return t2 || He.none;
@@ -25245,23 +25408,16 @@ var Je = new Uint32Array(1);
 var et = new Float32Array(Je.buffer);
 var tt = new Int32Array(Je.buffer);
 function nt(e2, t2, n2) {
-  if (t2 === n2)
-    return e2;
+  if (t2 === n2) return e2;
   if ("f32" === t2) {
-    if ("i32" === n2 || "x32" === n2)
-      return Xe[0] = e2, je[0];
-    if ("u32" === n2)
-      return Xe[0] = e2, Ze[0];
+    if ("i32" === n2 || "x32" === n2) return Xe[0] = e2, je[0];
+    if ("u32" === n2) return Xe[0] = e2, Ze[0];
   } else if ("i32" === t2 || "x32" === t2) {
-    if ("f32" === n2)
-      return Qe[0] = e2, Ye[0];
-    if ("u32" === n2)
-      return Qe[0] = e2, Ke[0];
+    if ("f32" === n2) return Qe[0] = e2, Ye[0];
+    if ("u32" === n2) return Qe[0] = e2, Ke[0];
   } else if ("u32" === t2) {
-    if ("f32" === n2)
-      return Je[0] = e2, et[0];
-    if ("i32" === n2 || "x32" === n2)
-      return Je[0] = e2, tt[0];
+    if ("f32" === n2) return Je[0] = e2, et[0];
+    if ("i32" === n2 || "x32" === n2) return Je[0] = e2, tt[0];
   }
   return console.error(`Unsupported cast from ${t2} to ${n2}`), e2;
 }
@@ -25283,104 +25439,76 @@ var at = class _at {
     return "texture_storage_1d" == e2.name || "texture_storage_2d" == e2.name || "texture_storage_2d_array" == e2.name || "texture_storage_3d" == e2.name;
   }
   updateAST(e2) {
-    for (const t2 of e2)
-      t2 instanceof D2 && this._functions.set(t2.name, new st(t2));
-    for (const t2 of e2)
-      if (t2 instanceof oe) {
-        const e3 = this.getTypeInfo(t2, null);
-        e3 instanceof n && this.structs.push(e3);
-      }
-    for (const t2 of e2)
-      if (t2 instanceof te)
-        this.aliases.push(this._getAliasInfo(t2));
-      else {
-        if (t2 instanceof M) {
-          const e3 = t2, n2 = this._getAttributeNum(e3.attributes, "id", 0), s2 = null != e3.type ? this.getTypeInfo(e3.type, e3.attributes) : null;
-          this.overrides.push(new h(e3.name, s2, e3.attributes, n2));
-          continue;
-        }
-        if (this._isUniformVar(t2)) {
-          const e3 = t2, n2 = this._getAttributeNum(e3.attributes, "group", 0), s2 = this._getAttributeNum(e3.attributes, "binding", 0), r2 = this.getTypeInfo(e3.type, e3.attributes), a2 = new o2(e3.name, r2, n2, s2, e3.attributes, i2.Uniform, e3.access);
-          a2.access || (a2.access = "read"), this.uniforms.push(a2);
-          continue;
-        }
-        if (this._isStorageVar(t2)) {
-          const e3 = t2, n2 = this._getAttributeNum(e3.attributes, "group", 0), s2 = this._getAttributeNum(e3.attributes, "binding", 0), r2 = this.getTypeInfo(e3.type, e3.attributes), a2 = this._isStorageTexture(r2), c2 = new o2(e3.name, r2, n2, s2, e3.attributes, a2 ? i2.StorageTexture : i2.Storage, e3.access);
-          c2.access || (c2.access = "read"), this.storage.push(c2);
-          continue;
-        }
-        if (this._isTextureVar(t2)) {
-          const e3 = t2, n2 = this._getAttributeNum(e3.attributes, "group", 0), s2 = this._getAttributeNum(e3.attributes, "binding", 0), r2 = this.getTypeInfo(e3.type, e3.attributes), a2 = this._isStorageTexture(r2), c2 = new o2(e3.name, r2, n2, s2, e3.attributes, a2 ? i2.StorageTexture : i2.Texture, e3.access);
-          c2.access || (c2.access = "read"), a2 ? this.storage.push(c2) : this.textures.push(c2);
-          continue;
-        }
-        if (this._isSamplerVar(t2)) {
-          const e3 = t2, n2 = this._getAttributeNum(e3.attributes, "group", 0), s2 = this._getAttributeNum(e3.attributes, "binding", 0), r2 = this.getTypeInfo(e3.type, e3.attributes), a2 = new o2(e3.name, r2, n2, s2, e3.attributes, i2.Sampler, e3.access);
-          this.samplers.push(a2);
-          continue;
-        }
-      }
-    for (const t2 of e2)
-      if (t2 instanceof D2) {
-        const e3 = this._getAttribute(t2, "vertex"), n2 = this._getAttribute(t2, "fragment"), s2 = this._getAttribute(t2, "compute"), r2 = e3 || n2 || s2, a2 = new p(t2.name, null == r2 ? void 0 : r2.name, t2.attributes);
-        a2.attributes = t2.attributes, a2.startLine = t2.startLine, a2.endLine = t2.endLine, this.functions.push(a2), this._functions.get(t2.name).info = a2, r2 && (this._functions.get(t2.name).inUse = true, a2.inUse = true, a2.resources = this._findResources(t2, !!r2), a2.inputs = this._getInputs(t2.args), a2.outputs = this._getOutputs(t2.returnType), this.entry[r2.name].push(a2)), a2.arguments = t2.args.map((e4) => new f(e4.name, this.getTypeInfo(e4.type, e4.attributes), e4.attributes)), a2.returnType = t2.returnType ? this.getTypeInfo(t2.returnType, t2.attributes) : null;
+    for (const t2 of e2) t2 instanceof D2 && this._functions.set(t2.name, new st(t2));
+    for (const t2 of e2) if (t2 instanceof oe) {
+      const e3 = this.getTypeInfo(t2, null);
+      e3 instanceof n && this.structs.push(e3);
+    }
+    for (const t2 of e2) if (t2 instanceof te) this.aliases.push(this._getAliasInfo(t2));
+    else {
+      if (t2 instanceof M) {
+        const e3 = t2, n2 = this._getAttributeNum(e3.attributes, "id", 0), s2 = null != e3.type ? this.getTypeInfo(e3.type, e3.attributes) : null;
+        this.overrides.push(new h(e3.name, s2, e3.attributes, n2));
         continue;
       }
-    for (const e3 of this._functions.values())
-      e3.info && (e3.info.inUse = e3.inUse, this._addCalls(e3.node, e3.info.calls));
-    for (const e3 of this._functions.values())
-      e3.node.search((t2) => {
-        var n2, s2, r2;
-        if (t2 instanceof De) {
-          if (t2.value)
-            if (Ge(t2.value))
-              for (const s3 of t2.value)
-                for (const t3 of this.overrides)
-                  s3 === t3.name && (null === (n2 = e3.info) || void 0 === n2 || n2.overrides.push(t3));
-            else
-              for (const n3 of this.overrides)
-                t2.value === n3.name && (null === (s2 = e3.info) || void 0 === s2 || s2.overrides.push(n3));
-        } else if (t2 instanceof ge)
-          for (const n3 of this.overrides)
-            t2.name === n3.name && (null === (r2 = e3.info) || void 0 === r2 || r2.overrides.push(n3));
-      });
-    for (const e3 of this.uniforms)
-      this._markStructsInUse(e3.type);
-    for (const e3 of this.storage)
-      this._markStructsInUse(e3.type);
+      if (this._isUniformVar(t2)) {
+        const e3 = t2, n2 = this._getAttributeNum(e3.attributes, "group", 0), s2 = this._getAttributeNum(e3.attributes, "binding", 0), r2 = this.getTypeInfo(e3.type, e3.attributes), a2 = new o2(e3.name, r2, n2, s2, e3.attributes, i2.Uniform, e3.access);
+        a2.access || (a2.access = "read"), this.uniforms.push(a2);
+        continue;
+      }
+      if (this._isStorageVar(t2)) {
+        const e3 = t2, n2 = this._getAttributeNum(e3.attributes, "group", 0), s2 = this._getAttributeNum(e3.attributes, "binding", 0), r2 = this.getTypeInfo(e3.type, e3.attributes), a2 = this._isStorageTexture(r2), c2 = new o2(e3.name, r2, n2, s2, e3.attributes, a2 ? i2.StorageTexture : i2.Storage, e3.access);
+        c2.access || (c2.access = "read"), this.storage.push(c2);
+        continue;
+      }
+      if (this._isTextureVar(t2)) {
+        const e3 = t2, n2 = this._getAttributeNum(e3.attributes, "group", 0), s2 = this._getAttributeNum(e3.attributes, "binding", 0), r2 = this.getTypeInfo(e3.type, e3.attributes), a2 = this._isStorageTexture(r2), c2 = new o2(e3.name, r2, n2, s2, e3.attributes, a2 ? i2.StorageTexture : i2.Texture, e3.access);
+        c2.access || (c2.access = "read"), a2 ? this.storage.push(c2) : this.textures.push(c2);
+        continue;
+      }
+      if (this._isSamplerVar(t2)) {
+        const e3 = t2, n2 = this._getAttributeNum(e3.attributes, "group", 0), s2 = this._getAttributeNum(e3.attributes, "binding", 0), r2 = this.getTypeInfo(e3.type, e3.attributes), a2 = new o2(e3.name, r2, n2, s2, e3.attributes, i2.Sampler, e3.access);
+        this.samplers.push(a2);
+        continue;
+      }
+    }
+    for (const t2 of e2) if (t2 instanceof D2) {
+      const e3 = this._getAttribute(t2, "vertex"), n2 = this._getAttribute(t2, "fragment"), s2 = this._getAttribute(t2, "compute"), r2 = e3 || n2 || s2, a2 = new p(t2.name, null == r2 ? void 0 : r2.name, t2.attributes);
+      a2.attributes = t2.attributes, a2.startLine = t2.startLine, a2.endLine = t2.endLine, this.functions.push(a2), this._functions.get(t2.name).info = a2, r2 && (this._functions.get(t2.name).inUse = true, a2.inUse = true, a2.resources = this._findResources(t2, !!r2), a2.inputs = this._getInputs(t2.args), a2.outputs = this._getOutputs(t2.returnType), this.entry[r2.name].push(a2)), a2.arguments = t2.args.map((e4) => new f(e4.name, this.getTypeInfo(e4.type, e4.attributes), e4.attributes)), a2.returnType = t2.returnType ? this.getTypeInfo(t2.returnType, t2.attributes) : null;
+      continue;
+    }
+    for (const e3 of this._functions.values()) e3.info && (e3.info.inUse = e3.inUse, this._addCalls(e3.node, e3.info.calls));
+    for (const e3 of this._functions.values()) e3.node.search((t2) => {
+      var n2, s2, r2;
+      if (t2 instanceof De) {
+        if (t2.value) if (Ge(t2.value)) for (const s3 of t2.value) for (const t3 of this.overrides) s3 === t3.name && (null === (n2 = e3.info) || void 0 === n2 || n2.overrides.push(t3));
+        else for (const n3 of this.overrides) t2.value === n3.name && (null === (s2 = e3.info) || void 0 === s2 || s2.overrides.push(n3));
+      } else if (t2 instanceof ge) for (const n3 of this.overrides) t2.name === n3.name && (null === (r2 = e3.info) || void 0 === r2 || r2.overrides.push(n3));
+    });
+    for (const e3 of this.uniforms) this._markStructsInUse(e3.type);
+    for (const e3 of this.storage) this._markStructsInUse(e3.type);
   }
   getFunctionInfo(e2) {
-    for (const t2 of this.functions)
-      if (t2.name == e2)
-        return t2;
+    for (const t2 of this.functions) if (t2.name == e2) return t2;
     return null;
   }
   getStructInfo(e2) {
-    for (const t2 of this.structs)
-      if (t2.name == e2)
-        return t2;
+    for (const t2 of this.structs) if (t2.name == e2) return t2;
     return null;
   }
   getOverrideInfo(e2) {
-    for (const t2 of this.overrides)
-      if (t2.name == e2)
-        return t2;
+    for (const t2 of this.overrides) if (t2.name == e2) return t2;
     return null;
   }
   _markStructsInUse(e2) {
-    if (e2)
-      if (e2.isStruct) {
-        if (e2.inUse = true, e2.members)
-          for (const t2 of e2.members)
-            this._markStructsInUse(t2.type);
-      } else if (e2.isArray)
-        this._markStructsInUse(e2.format);
-      else if (e2.isTemplate)
-        e2.format && this._markStructsInUse(e2.format);
-      else {
-        const t2 = this._getAlias(e2.name);
-        t2 && this._markStructsInUse(t2);
-      }
+    if (e2) if (e2.isStruct) {
+      if (e2.inUse = true, e2.members) for (const t2 of e2.members) this._markStructsInUse(t2.type);
+    } else if (e2.isArray) this._markStructsInUse(e2.format);
+    else if (e2.isTemplate) e2.format && this._markStructsInUse(e2.format);
+    else {
+      const t2 = this._getAlias(e2.name);
+      t2 && this._markStructsInUse(t2);
+    }
   }
   _addCalls(e2, t2) {
     var n2;
@@ -25391,52 +25519,27 @@ var at = class _at {
   }
   findResource(e2, t2, n2) {
     if (n2) {
-      for (const s2 of this.entry.compute)
-        if (s2.name === n2) {
-          for (const n3 of s2.resources)
-            if (n3.group == e2 && n3.binding == t2)
-              return n3;
-        }
-      for (const s2 of this.entry.vertex)
-        if (s2.name === n2) {
-          for (const n3 of s2.resources)
-            if (n3.group == e2 && n3.binding == t2)
-              return n3;
-        }
-      for (const s2 of this.entry.fragment)
-        if (s2.name === n2) {
-          for (const n3 of s2.resources)
-            if (n3.group == e2 && n3.binding == t2)
-              return n3;
-        }
+      for (const s2 of this.entry.compute) if (s2.name === n2) {
+        for (const n3 of s2.resources) if (n3.group == e2 && n3.binding == t2) return n3;
+      }
+      for (const s2 of this.entry.vertex) if (s2.name === n2) {
+        for (const n3 of s2.resources) if (n3.group == e2 && n3.binding == t2) return n3;
+      }
+      for (const s2 of this.entry.fragment) if (s2.name === n2) {
+        for (const n3 of s2.resources) if (n3.group == e2 && n3.binding == t2) return n3;
+      }
     }
-    for (const n3 of this.uniforms)
-      if (n3.group == e2 && n3.binding == t2)
-        return n3;
-    for (const n3 of this.storage)
-      if (n3.group == e2 && n3.binding == t2)
-        return n3;
-    for (const n3 of this.textures)
-      if (n3.group == e2 && n3.binding == t2)
-        return n3;
-    for (const n3 of this.samplers)
-      if (n3.group == e2 && n3.binding == t2)
-        return n3;
+    for (const n3 of this.uniforms) if (n3.group == e2 && n3.binding == t2) return n3;
+    for (const n3 of this.storage) if (n3.group == e2 && n3.binding == t2) return n3;
+    for (const n3 of this.textures) if (n3.group == e2 && n3.binding == t2) return n3;
+    for (const n3 of this.samplers) if (n3.group == e2 && n3.binding == t2) return n3;
     return null;
   }
   _findResource(e2) {
-    for (const t2 of this.uniforms)
-      if (t2.name == e2)
-        return t2;
-    for (const t2 of this.storage)
-      if (t2.name == e2)
-        return t2;
-    for (const t2 of this.textures)
-      if (t2.name == e2)
-        return t2;
-    for (const t2 of this.samplers)
-      if (t2.name == e2)
-        return t2;
+    for (const t2 of this.uniforms) if (t2.name == e2) return t2;
+    for (const t2 of this.storage) if (t2.name == e2) return t2;
+    for (const t2 of this.textures) if (t2.name == e2) return t2;
+    for (const t2 of this.samplers) if (t2.name == e2) return t2;
     return null;
   }
   _markStructsFromAST(e2) {
@@ -25446,10 +25549,8 @@ var at = class _at {
   _findResources(e2, t2) {
     const n2 = [], s2 = this, r2 = [];
     return e2.search((a2) => {
-      if (a2 instanceof E2)
-        r2.push({});
-      else if (a2 instanceof $)
-        r2.pop();
+      if (a2 instanceof E2) r2.push({});
+      else if (a2 instanceof $) r2.pop();
       else if (a2 instanceof F) {
         const e3 = a2;
         t2 && null !== e3.type && this._markStructsFromAST(e3.type), r2.length > 0 && (r2[r2.length - 1][e3.name] = e3);
@@ -25462,8 +25563,7 @@ var at = class _at {
       } else if (a2 instanceof ge) {
         const e3 = a2;
         if (r2.length > 0) {
-          if (r2[r2.length - 1][e3.name])
-            return;
+          if (r2[r2.length - 1][e3.name]) return;
         }
         const t3 = s2._findResource(e3.name);
         t3 && n2.push(t3);
@@ -25500,8 +25600,7 @@ var at = class _at {
     return e2;
   }
   _getOutputs(e2, t2 = void 0) {
-    if (void 0 === t2 && (t2 = []), e2 instanceof oe)
-      this._getStructOutputs(e2, t2);
+    if (void 0 === t2 && (t2 = []), e2 instanceof oe) this._getStructOutputs(e2, t2);
     else {
       const n2 = this._getOutputInfo(e2);
       null !== n2 && t2.push(n2);
@@ -25509,16 +25608,14 @@ var at = class _at {
     return t2;
   }
   _getStructOutputs(e2, t2) {
-    for (const n2 of e2.members)
-      if (n2.type instanceof oe)
-        this._getStructOutputs(n2.type, t2);
-      else {
-        const e3 = this._getAttribute(n2, "location") || this._getAttribute(n2, "builtin");
-        if (null !== e3) {
-          const s2 = this.getTypeInfo(n2.type, n2.type.attributes), r2 = this._parseInt(e3.value), a2 = new u(n2.name, s2, e3.name, r2);
-          t2.push(a2);
-        }
+    for (const n2 of e2.members) if (n2.type instanceof oe) this._getStructOutputs(n2.type, t2);
+    else {
+      const e3 = this._getAttribute(n2, "location") || this._getAttribute(n2, "builtin");
+      if (null !== e3) {
+        const s2 = this.getTypeInfo(n2.type, n2.type.attributes), r2 = this._parseInt(e3.value), a2 = new u(n2.name, s2, e3.name, r2);
+        t2.push(a2);
       }
+    }
   }
   _getOutputInfo(e2) {
     const t2 = this._getAttribute(e2, "location") || this._getAttribute(e2, "builtin");
@@ -25530,23 +25627,19 @@ var at = class _at {
   }
   _getInputs(e2, t2 = void 0) {
     void 0 === t2 && (t2 = []);
-    for (const n2 of e2)
-      if (n2.type instanceof oe)
-        this._getStructInputs(n2.type, t2);
-      else {
-        const e3 = this._getInputInfo(n2);
-        null !== e3 && t2.push(e3);
-      }
+    for (const n2 of e2) if (n2.type instanceof oe) this._getStructInputs(n2.type, t2);
+    else {
+      const e3 = this._getInputInfo(n2);
+      null !== e3 && t2.push(e3);
+    }
     return t2;
   }
   _getStructInputs(e2, t2) {
-    for (const n2 of e2.members)
-      if (n2.type instanceof oe)
-        this._getStructInputs(n2.type, t2);
-      else {
-        const e3 = this._getInputInfo(n2);
-        null !== e3 && t2.push(e3);
-      }
+    for (const n2 of e2.members) if (n2.type instanceof oe) this._getStructInputs(n2.type, t2);
+    else {
+      const e3 = this._getInputInfo(n2);
+      null !== e3 && t2.push(e3);
+    }
   }
   _getInputInfo(e2) {
     const t2 = this._getAttribute(e2, "location") || this._getAttribute(e2, "builtin");
@@ -25565,26 +25658,19 @@ var at = class _at {
     return isNaN(t2) ? e2 : t2;
   }
   _getAlias(e2) {
-    for (const t2 of this.aliases)
-      if (t2.name == e2)
-        return t2.type;
+    for (const t2 of this.aliases) if (t2.name == e2) return t2.type;
     return null;
   }
   _getAliasInfo(e2) {
     return new c(e2.name, this.getTypeInfo(e2.type, null));
   }
   getTypeInfoByName(e2) {
-    for (const t2 of this.structs)
-      if (t2.name == e2)
-        return t2;
-    for (const t2 of this.aliases)
-      if (t2.name == e2)
-        return t2.type;
+    for (const t2 of this.structs) if (t2.name == e2) return t2;
+    for (const t2 of this.aliases) if (t2.name == e2) return t2.type;
     return null;
   }
   getTypeInfo(i3, o3 = null) {
-    if (this._types.has(i3))
-      return this._types.get(i3);
+    if (this._types.has(i3)) return this._types.get(i3);
     if (i3 instanceof le) {
       const e2 = i3.type ? this.getTypeInfo(i3.type, i3.attributes) : null, t2 = new r(i3.name, e2, o3);
       return this._types.set(i3, t2), this._updateTypeInfo(t2), t2;
@@ -25627,8 +25713,7 @@ var at = class _at {
     let n2 = 0, s2 = 0, r2 = 0, a2 = 0;
     for (let i3 = 0, o3 = e2.members.length; i3 < o3; ++i3) {
       const o4 = e2.members[i3], c2 = this._getTypeSize(o4);
-      if (!c2)
-        continue;
+      if (!c2) continue;
       null !== (t2 = this._getAlias(o4.type.name)) && void 0 !== t2 || o4.type;
       const l2 = c2.align, u2 = c2.size;
       n2 = this._roundUp(l2, n2 + s2), s2 = u2, r2 = n2, a2 = Math.max(a2, l2), o4.offset = n2, o4.size = u2, this._updateTypeInfo(o4.type);
@@ -25637,8 +25722,7 @@ var at = class _at {
   }
   _getTypeSize(r2) {
     var a2, i3;
-    if (null == r2)
-      return null;
+    if (null == r2) return null;
     const o3 = this._getAttributeNum(r2.attributes, "size", 0), c2 = this._getAttributeNum(r2.attributes, "align", 0);
     if (r2 instanceof t && (r2 = r2.type), r2 instanceof e) {
       const e2 = this._getAlias(r2.name);
@@ -25688,22 +25772,17 @@ var at = class _at {
   }
   _getAttribute(e2, t2) {
     const n2 = e2;
-    if (!n2 || !n2.attributes)
-      return null;
+    if (!n2 || !n2.attributes) return null;
     const s2 = n2.attributes;
-    for (let e3 of s2)
-      if (e3.name == t2)
-        return e3;
+    for (let e3 of s2) if (e3.name == t2) return e3;
     return null;
   }
   _getAttributeNum(e2, t2, n2) {
-    if (null === e2)
-      return n2;
-    for (let s2 of e2)
-      if (s2.name == t2) {
-        let e3 = null !== s2 && null !== s2.value ? s2.value : n2;
-        return e3 instanceof Array && (e3 = e3[0]), "number" == typeof e3 ? e3 : "string" == typeof e3 ? parseInt(e3) : n2;
-      }
+    if (null === e2) return n2;
+    for (let s2 of e2) if (s2.name == t2) {
+      let e3 = null !== s2 && null !== s2.value ? s2.value : n2;
+      return e3 instanceof Array && (e3 = e3[0]), "number" == typeof e3 ? e3 : "string" == typeof e3 ? parseInt(e3) : n2;
+    }
     return n2;
   }
   _roundUp(e2, t2) {
@@ -25777,10 +25856,9 @@ var ht = class {
   All(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
     let s2 = true;
-    if (n2 instanceof Me)
-      return n2.data.forEach((e3) => {
-        e3 || (s2 = false);
-      }), new Be(s2 ? 1 : 0, this.getTypeInfo("bool"));
+    if (n2 instanceof Me) return n2.data.forEach((e3) => {
+      e3 || (s2 = false);
+    }), new Be(s2 ? 1 : 0, this.getTypeInfo("bool"));
     throw new Error(`All() expects a vector argument. Line ${e2.line}`);
   }
   Any(e2, t2) {
@@ -25793,8 +25871,7 @@ var ht = class {
   }
   Select(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[2], t2);
-    if (!(n2 instanceof Be))
-      throw new Error(`Select() expects a bool condition. Line ${e2.line}`);
+    if (!(n2 instanceof Be)) throw new Error(`Select() expects a bool condition. Line ${e2.line}`);
     return n2.value ? this.exec.evalExpression(e2.args[1], t2) : this.exec.evalExpression(e2.args[0], t2);
   }
   ArrayLength(e2, t2) {
@@ -25809,64 +25886,55 @@ var ht = class {
   }
   Abs(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => Math.abs(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => Math.abs(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(Math.abs(s2.value), s2.typeInfo);
   }
   Acos(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => Math.acos(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => Math.acos(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(Math.acos(s2.value), n2.typeInfo);
   }
   Acosh(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => Math.acosh(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => Math.acosh(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(Math.acosh(s2.value), n2.typeInfo);
   }
   Asin(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => Math.asin(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => Math.asin(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(Math.asin(s2.value), n2.typeInfo);
   }
   Asinh(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => Math.asinh(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => Math.asinh(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(Math.asinh(s2.value), n2.typeInfo);
   }
   Atan(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => Math.atan(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => Math.atan(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(Math.atan(s2.value), n2.typeInfo);
   }
   Atanh(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => Math.atanh(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => Math.atanh(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(Math.atanh(s2.value), n2.typeInfo);
   }
   Atan2(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2), s2 = this.exec.evalExpression(e2.args[1], t2);
-    if (n2 instanceof Me && s2 instanceof Me)
-      return new Me(n2.data.map((e3, t3) => Math.atan2(e3, s2.data[t3])), n2.typeInfo);
+    if (n2 instanceof Me && s2 instanceof Me) return new Me(n2.data.map((e3, t3) => Math.atan2(e3, s2.data[t3])), n2.typeInfo);
     const r2 = n2, a2 = s2;
     return new Be(Math.atan2(r2.value, a2.value), n2.typeInfo);
   }
   Ceil(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => Math.ceil(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => Math.ceil(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(Math.ceil(s2.value), n2.typeInfo);
   }
@@ -25875,65 +25943,55 @@ var ht = class {
   }
   Clamp(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2), s2 = this.exec.evalExpression(e2.args[1], t2), r2 = this.exec.evalExpression(e2.args[2], t2);
-    if (n2 instanceof Me && s2 instanceof Me && r2 instanceof Me)
-      return new Me(n2.data.map((e3, t3) => this._clamp(e3, s2.data[t3], r2.data[t3])), n2.typeInfo);
+    if (n2 instanceof Me && s2 instanceof Me && r2 instanceof Me) return new Me(n2.data.map((e3, t3) => this._clamp(e3, s2.data[t3], r2.data[t3])), n2.typeInfo);
     const a2 = n2, i3 = s2, o3 = r2;
     return new Be(this._clamp(a2.value, i3.value, o3.value), n2.typeInfo);
   }
   Cos(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => Math.cos(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => Math.cos(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(Math.cos(s2.value), n2.typeInfo);
   }
   Cosh(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => Math.cosh(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => Math.cosh(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(Math.cos(s2.value), n2.typeInfo);
   }
   CountLeadingZeros(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => Math.clz32(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => Math.clz32(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(Math.clz32(s2.value), n2.typeInfo);
   }
   _countOneBits(e2) {
     let t2 = 0;
-    for (; 0 !== e2; )
-      1 & e2 && t2++, e2 >>= 1;
+    for (; 0 !== e2; ) 1 & e2 && t2++, e2 >>= 1;
     return t2;
   }
   CountOneBits(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => this._countOneBits(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => this._countOneBits(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(this._countOneBits(s2.value), n2.typeInfo);
   }
   _countTrailingZeros(e2) {
-    if (0 === e2)
-      return 32;
+    if (0 === e2) return 32;
     let t2 = 0;
-    for (; !(1 & e2); )
-      e2 >>= 1, t2++;
+    for (; !(1 & e2); ) e2 >>= 1, t2++;
     return t2;
   }
   CountTrailingZeros(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => this._countTrailingZeros(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => this._countTrailingZeros(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(this._countTrailingZeros(s2.value), n2.typeInfo);
   }
   Cross(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2), s2 = this.exec.evalExpression(e2.args[1], t2);
     if (n2 instanceof Me && s2 instanceof Me) {
-      if (3 !== n2.data.length || 3 !== s2.data.length)
-        return console.error(`Cross() expects 3D vectors. Line ${e2.line}`), null;
+      if (3 !== n2.data.length || 3 !== s2.data.length) return console.error(`Cross() expects 3D vectors. Line ${e2.line}`), null;
       const t3 = n2.data, r2 = s2.data;
       return new Me([t3[1] * r2[2] - r2[1] * t3[2], t3[2] * r2[0] - r2[2] * t3[0], t3[0] * r2[1] - r2[0] * t3[1]], n2.typeInfo);
     }
@@ -25941,25 +25999,19 @@ var ht = class {
   }
   Degrees(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2), s2 = 180 / Math.PI;
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => e3 * s2), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => e3 * s2), n2.typeInfo);
     return new Be(n2.value * s2, this.getTypeInfo("f32"));
   }
   Determinant(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
     if (n2 instanceof Ue) {
       const e3 = n2.data, t3 = n2.typeInfo.getTypeName(), s2 = t3.endsWith("h") ? this.getTypeInfo("f16") : this.getTypeInfo("f32");
-      if ("mat2x2" === t3 || "mat2x2f" === t3 || "mat2x2h" === t3)
-        return new Be(e3[0] * e3[3] - e3[1] * e3[2], s2);
-      if ("mat2x3" === t3 || "mat2x3f" === t3 || "mat2x3h" === t3)
-        return new Be(e3[0] * (e3[4] * e3[8] - e3[5] * e3[7]) - e3[1] * (e3[3] * e3[8] - e3[5] * e3[6]) + e3[2] * (e3[3] * e3[7] - e3[4] * e3[6]), s2);
-      if ("mat2x4" === t3 || "mat2x4f" === t3 || "mat2x4h" === t3)
-        console.error(`TODO: Determinant for ${t3}`);
-      else if ("mat3x2" === t3 || "mat3x2f" === t3 || "mat3x2h" === t3)
-        console.error(`TODO: Determinant for ${t3}`);
+      if ("mat2x2" === t3 || "mat2x2f" === t3 || "mat2x2h" === t3) return new Be(e3[0] * e3[3] - e3[1] * e3[2], s2);
+      if ("mat2x3" === t3 || "mat2x3f" === t3 || "mat2x3h" === t3) return new Be(e3[0] * (e3[4] * e3[8] - e3[5] * e3[7]) - e3[1] * (e3[3] * e3[8] - e3[5] * e3[6]) + e3[2] * (e3[3] * e3[7] - e3[4] * e3[6]), s2);
+      if ("mat2x4" === t3 || "mat2x4f" === t3 || "mat2x4h" === t3) console.error(`TODO: Determinant for ${t3}`);
+      else if ("mat3x2" === t3 || "mat3x2f" === t3 || "mat3x2h" === t3) console.error(`TODO: Determinant for ${t3}`);
       else {
-        if ("mat3x3" === t3 || "mat3x3f" === t3 || "mat3x3h" === t3)
-          return new Be(e3[0] * (e3[4] * e3[8] - e3[5] * e3[7]) - e3[1] * (e3[3] * e3[8] - e3[5] * e3[6]) + e3[2] * (e3[3] * e3[7] - e3[4] * e3[6]), s2);
+        if ("mat3x3" === t3 || "mat3x3f" === t3 || "mat3x3h" === t3) return new Be(e3[0] * (e3[4] * e3[8] - e3[5] * e3[7]) - e3[1] * (e3[3] * e3[8] - e3[5] * e3[6]) + e3[2] * (e3[3] * e3[7] - e3[4] * e3[6]), s2);
         "mat3x4" === t3 || "mat3x4f" === t3 || "mat3x4h" === t3 || "mat4x2" === t3 || "mat4x2f" === t3 || "mat4x2h" === t3 || "mat4x3" === t3 || "mat4x3f" === t3 || "mat4x3h" === t3 ? console.error(`TODO: Determinant for ${t3}`) : "mat4x4" !== t3 && "mat4x4f" !== t3 && "mat4x4h" !== t3 || console.error(`TODO: Determinant for ${t3}`);
       }
     }
@@ -25969,8 +26021,7 @@ var ht = class {
     const n2 = this.exec.evalExpression(e2.args[0], t2), s2 = this.exec.evalExpression(e2.args[1], t2);
     if (n2 instanceof Me && s2 instanceof Me) {
       let e3 = 0;
-      for (let t3 = 0; t3 < n2.data.length; ++t3)
-        e3 += (n2.data[t3] - s2.data[t3]) * (n2.data[t3] - s2.data[t3]);
+      for (let t3 = 0; t3 < n2.data.length; ++t3) e3 += (n2.data[t3] - s2.data[t3]) * (n2.data[t3] - s2.data[t3]);
       return new Be(Math.sqrt(e3), this.getTypeInfo("f32"));
     }
     const r2 = n2, a2 = s2;
@@ -25978,8 +26029,7 @@ var ht = class {
   }
   _dot(e2, t2) {
     let n2 = 0;
-    for (let s2 = 0; s2 < e2.length; ++s2)
-      n2 += t2[s2] * e2[s2];
+    for (let s2 = 0; s2 < e2.length; ++s2) n2 += t2[s2] * e2[s2];
     return n2;
   }
   Dot(e2, t2) {
@@ -25994,29 +26044,23 @@ var ht = class {
   }
   Exp(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => Math.exp(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => Math.exp(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(Math.exp(s2.value), n2.typeInfo);
   }
   Exp2(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => Math.pow(2, e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => Math.pow(2, e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(Math.pow(2, s2.value), n2.typeInfo);
   }
   ExtractBits(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2), s2 = this.exec.evalExpression(e2.args[1], t2), r2 = this.exec.evalExpression(e2.args[2], t2);
-    if ("u32" !== s2.typeInfo.name && "x32" !== s2.typeInfo.name)
-      return console.error(`ExtractBits() expects an i32 offset argument. Line ${e2.line}`), null;
-    if ("u32" !== r2.typeInfo.name && "x32" !== r2.typeInfo.name)
-      return console.error(`ExtractBits() expects an i32 count argument. Line ${e2.line}`), null;
+    if ("u32" !== s2.typeInfo.name && "x32" !== s2.typeInfo.name) return console.error(`ExtractBits() expects an i32 offset argument. Line ${e2.line}`), null;
+    if ("u32" !== r2.typeInfo.name && "x32" !== r2.typeInfo.name) return console.error(`ExtractBits() expects an i32 count argument. Line ${e2.line}`), null;
     const a2 = s2.value, i3 = r2.value;
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => e3 >> a2 & (1 << i3) - 1), n2.typeInfo);
-    if ("i32" !== n2.typeInfo.name && "x32" !== n2.typeInfo.name)
-      return console.error(`ExtractBits() expects an i32 argument. Line ${e2.line}`), null;
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => e3 >> a2 & (1 << i3) - 1), n2.typeInfo);
+    if ("i32" !== n2.typeInfo.name && "x32" !== n2.typeInfo.name) return console.error(`ExtractBits() expects an i32 argument. Line ${e2.line}`), null;
     const o3 = n2.value;
     return new Be(o3 >> a2 & (1 << i3) - 1, this.getTypeInfo("i32"));
   }
@@ -26033,8 +26077,7 @@ var ht = class {
   }
   FirstLeadingBit(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => this._firstLeadingBit(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => this._firstLeadingBit(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(this._firstLeadingBit(s2.value), n2.typeInfo);
   }
@@ -26043,29 +26086,25 @@ var ht = class {
   }
   FirstTrailingBit(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => this._firstTrailingBit(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => this._firstTrailingBit(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(this._firstTrailingBit(s2.value), n2.typeInfo);
   }
   Floor(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => Math.floor(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => Math.floor(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(Math.floor(s2.value), n2.typeInfo);
   }
   Fma(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2), s2 = this.exec.evalExpression(e2.args[1], t2), r2 = this.exec.evalExpression(e2.args[2], t2);
-    if (n2 instanceof Me && s2 instanceof Me && r2 instanceof Me)
-      return n2.data.length !== s2.data.length || n2.data.length !== r2.data.length ? (console.error(`Fma() expects vectors of the same length. Line ${e2.line}`), null) : new Me(n2.data.map((e3, t3) => e3 * s2.data[t3] + r2.data[t3]), n2.typeInfo);
+    if (n2 instanceof Me && s2 instanceof Me && r2 instanceof Me) return n2.data.length !== s2.data.length || n2.data.length !== r2.data.length ? (console.error(`Fma() expects vectors of the same length. Line ${e2.line}`), null) : new Me(n2.data.map((e3, t3) => e3 * s2.data[t3] + r2.data[t3]), n2.typeInfo);
     const a2 = n2, i3 = s2, o3 = r2;
     return new Be(a2.value * i3.value + o3.value, a2.typeInfo);
   }
   Fract(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => e3 - Math.floor(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => e3 - Math.floor(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(s2.value - Math.floor(s2.value), n2.typeInfo);
   }
@@ -26074,18 +26113,15 @@ var ht = class {
   }
   InsertBits(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2), s2 = this.exec.evalExpression(e2.args[1], t2), r2 = this.exec.evalExpression(e2.args[2], t2), a2 = this.exec.evalExpression(e2.args[3], t2);
-    if ("u32" !== r2.typeInfo.name && "x32" !== r2.typeInfo.name)
-      return console.error(`InsertBits() expects an i32 offset argument. Line ${e2.line}`), null;
+    if ("u32" !== r2.typeInfo.name && "x32" !== r2.typeInfo.name) return console.error(`InsertBits() expects an i32 offset argument. Line ${e2.line}`), null;
     const i3 = r2.value, o3 = (1 << a2.value) - 1 << i3, c2 = ~o3;
-    if (n2 instanceof Me && s2 instanceof Me)
-      return new Me(n2.data.map((e3, t3) => e3 & c2 | s2.data[t3] << i3 & o3), n2.typeInfo);
+    if (n2 instanceof Me && s2 instanceof Me) return new Me(n2.data.map((e3, t3) => e3 & c2 | s2.data[t3] << i3 & o3), n2.typeInfo);
     const l2 = n2.value, u2 = s2.value;
     return new Be(l2 & c2 | u2 << i3 & o3, n2.typeInfo);
   }
   InverseSqrt(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => 1 / Math.sqrt(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => 1 / Math.sqrt(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(1 / Math.sqrt(s2.value), n2.typeInfo);
   }
@@ -26105,43 +26141,37 @@ var ht = class {
   }
   Log(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => Math.log(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => Math.log(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(Math.log(s2.value), n2.typeInfo);
   }
   Log2(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => Math.log2(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => Math.log2(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(Math.log2(s2.value), n2.typeInfo);
   }
   Max(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2), s2 = this.exec.evalExpression(e2.args[1], t2);
-    if (n2 instanceof Me && s2 instanceof Me)
-      return new Me(n2.data.map((e3, t3) => Math.max(e3, s2.data[t3])), n2.typeInfo);
+    if (n2 instanceof Me && s2 instanceof Me) return new Me(n2.data.map((e3, t3) => Math.max(e3, s2.data[t3])), n2.typeInfo);
     const r2 = n2, a2 = s2;
     return new Be(Math.max(r2.value, a2.value), n2.typeInfo);
   }
   Min(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2), s2 = this.exec.evalExpression(e2.args[1], t2);
-    if (n2 instanceof Me && s2 instanceof Me)
-      return new Me(n2.data.map((e3, t3) => Math.min(e3, s2.data[t3])), n2.typeInfo);
+    if (n2 instanceof Me && s2 instanceof Me) return new Me(n2.data.map((e3, t3) => Math.min(e3, s2.data[t3])), n2.typeInfo);
     const r2 = n2, a2 = s2;
     return new Be(Math.min(r2.value, a2.value), n2.typeInfo);
   }
   Mix(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2), s2 = this.exec.evalExpression(e2.args[1], t2), r2 = this.exec.evalExpression(e2.args[2], t2);
-    if (n2 instanceof Me && s2 instanceof Me && r2 instanceof Me)
-      return new Me(n2.data.map((e3, t3) => n2.data[t3] * (1 - r2.data[t3]) + s2.data[t3] * r2.data[t3]), n2.typeInfo);
+    if (n2 instanceof Me && s2 instanceof Me && r2 instanceof Me) return new Me(n2.data.map((e3, t3) => n2.data[t3] * (1 - r2.data[t3]) + s2.data[t3] * r2.data[t3]), n2.typeInfo);
     const a2 = s2, i3 = r2;
     return new Be(n2.value * (1 - i3.value) + a2.value * i3.value, n2.typeInfo);
   }
   Modf(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2), s2 = this.exec.evalExpression(e2.args[1], t2);
-    if (n2 instanceof Me && s2 instanceof Me)
-      return new Me(n2.data.map((e3, t3) => e3 % s2.data[t3]), n2.typeInfo);
+    if (n2 instanceof Me && s2 instanceof Me) return new Me(n2.data.map((e3, t3) => e3 % s2.data[t3]), n2.typeInfo);
     const r2 = s2;
     return new Be(n2.value % r2.value, n2.typeInfo);
   }
@@ -26155,21 +26185,18 @@ var ht = class {
   }
   Pow(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2), s2 = this.exec.evalExpression(e2.args[1], t2);
-    if (n2 instanceof Me && s2 instanceof Me)
-      return new Me(n2.data.map((e3, t3) => Math.pow(e3, s2.data[t3])), n2.typeInfo);
+    if (n2 instanceof Me && s2 instanceof Me) return new Me(n2.data.map((e3, t3) => Math.pow(e3, s2.data[t3])), n2.typeInfo);
     const r2 = n2, a2 = s2;
     return new Be(Math.pow(r2.value, a2.value), n2.typeInfo);
   }
   QuantizeToF16(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => e3), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => e3), n2.typeInfo);
     return new Be(n2.value, n2.typeInfo);
   }
   Radians(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => e3 * Math.PI / 180), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => e3 * Math.PI / 180), n2.typeInfo);
     return new Be(n2.value * Math.PI / 180, this.getTypeInfo("f32"));
   }
   Reflect(e2, t2) {
@@ -26186,8 +26213,7 @@ var ht = class {
       const e3 = this._dot(s2.data, n2.data);
       return new Me(n2.data.map((t3, n3) => {
         const a2 = 1 - r2.value * r2.value * (1 - e3 * e3);
-        if (a2 < 0)
-          return 0;
+        if (a2 < 0) return 0;
         const i3 = Math.sqrt(a2);
         return r2.value * t3 - (r2.value * e3 + i3) * s2.data[n3];
       }), n2.typeInfo);
@@ -26199,36 +26225,31 @@ var ht = class {
   }
   Round(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => Math.round(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => Math.round(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(Math.round(s2.value), n2.typeInfo);
   }
   Saturate(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => Math.min(Math.max(e3, 0), 1)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => Math.min(Math.max(e3, 0), 1)), n2.typeInfo);
     const s2 = n2;
     return new Be(Math.min(Math.max(s2.value, 0), 1), n2.typeInfo);
   }
   Sign(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => Math.sign(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => Math.sign(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(Math.sign(s2.value), n2.typeInfo);
   }
   Sin(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => Math.sin(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => Math.sin(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(Math.sin(s2.value), n2.typeInfo);
   }
   Sinh(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => Math.sinh(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => Math.sinh(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(Math.sinh(s2.value), n2.typeInfo);
   }
@@ -26238,36 +26259,31 @@ var ht = class {
   }
   SmoothStep(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2), s2 = this.exec.evalExpression(e2.args[1], t2), r2 = this.exec.evalExpression(e2.args[2], t2);
-    if (r2 instanceof Me && n2 instanceof Me && s2 instanceof Me)
-      return new Me(r2.data.map((e3, t3) => this._smoothstep(n2.data[t3], s2.data[t3], e3)), r2.typeInfo);
+    if (r2 instanceof Me && n2 instanceof Me && s2 instanceof Me) return new Me(r2.data.map((e3, t3) => this._smoothstep(n2.data[t3], s2.data[t3], e3)), r2.typeInfo);
     const a2 = n2, i3 = s2, o3 = r2;
     return new Be(this._smoothstep(a2.value, i3.value, o3.value), r2.typeInfo);
   }
   Sqrt(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => Math.sqrt(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => Math.sqrt(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(Math.sqrt(s2.value), n2.typeInfo);
   }
   Step(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2), s2 = this.exec.evalExpression(e2.args[1], t2);
-    if (s2 instanceof Me && n2 instanceof Me)
-      return new Me(s2.data.map((e3, t3) => e3 < n2.data[t3] ? 0 : 1), s2.typeInfo);
+    if (s2 instanceof Me && n2 instanceof Me) return new Me(s2.data.map((e3, t3) => e3 < n2.data[t3] ? 0 : 1), s2.typeInfo);
     const r2 = n2;
     return new Be(s2.value < r2.value ? 0 : 1, r2.typeInfo);
   }
   Tan(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => Math.tan(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => Math.tan(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(Math.tan(s2.value), n2.typeInfo);
   }
   Tanh(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => Math.tanh(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => Math.tanh(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(Math.tanh(s2.value), n2.typeInfo);
   }
@@ -26277,8 +26293,7 @@ var ht = class {
   }
   Transpose(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (!(n2 instanceof Ue))
-      return console.error(`Transpose() expects a matrix argument. Line ${e2.line}`), null;
+    if (!(n2 instanceof Ue)) return console.error(`Transpose() expects a matrix argument. Line ${e2.line}`), null;
     const s2 = this._getTransposeType(n2.typeInfo);
     if ("mat2x2" === n2.typeInfo.name || "mat2x2f" === n2.typeInfo.name || "mat2x2h" === n2.typeInfo.name) {
       const e3 = n2.data;
@@ -26320,8 +26335,7 @@ var ht = class {
   }
   Trunc(e2, t2) {
     const n2 = this.exec.evalExpression(e2.args[0], t2);
-    if (n2 instanceof Me)
-      return new Me(n2.data.map((e3) => Math.trunc(e3)), n2.typeInfo);
+    if (n2 instanceof Me) return new Me(n2.data.map((e3) => Math.trunc(e3)), n2.typeInfo);
     const s2 = n2;
     return new Be(Math.trunc(s2.value), n2.typeInfo);
   }
@@ -26357,8 +26371,7 @@ var ht = class {
     if (n2 instanceof ge) {
       const r2 = n2.name, a2 = t2.getVariableValue(r2);
       if (a2 instanceof We) {
-        if (s2 < 0 || s2 >= a2.mipLevelCount)
-          return console.error(`Invalid mip level for textureDimensions. Line ${e2.line}`), null;
+        if (s2 < 0 || s2 >= a2.mipLevelCount) return console.error(`Invalid mip level for textureDimensions. Line ${e2.line}`), null;
         const t3 = a2.getMipLevelSize(s2), n3 = a2.dimension;
         return "1d" === n3 ? new Be(t3[0], this.getTypeInfo("u32")) : "3d" === n3 ? new Me(t3, this.getTypeInfo("vec3u")) : "2d" === n3 ? new Me(t3.slice(0, 2), this.getTypeInfo("vec2u")) : (console.error(`Invalid texture dimension ${n3} not found. Line ${e2.line}`), null);
       }
@@ -26374,14 +26387,12 @@ var ht = class {
   }
   TextureLoad(e2, t2) {
     const n2 = e2.args[0], s2 = this.exec.evalExpression(e2.args[1], t2), r2 = e2.args.length > 2 ? this.exec.evalExpression(e2.args[2], t2).value : 0;
-    if (!(s2 instanceof Me) || 2 !== s2.data.length)
-      return console.error(`Invalid UV argument for textureLoad. Line ${e2.line}`), null;
+    if (!(s2 instanceof Me) || 2 !== s2.data.length) return console.error(`Invalid UV argument for textureLoad. Line ${e2.line}`), null;
     if (n2 instanceof ge) {
       const a2 = n2.name, i3 = t2.getVariableValue(a2);
       if (i3 instanceof We) {
         const t3 = Math.floor(s2.data[0]), n3 = Math.floor(s2.data[1]);
-        if (t3 < 0 || t3 >= i3.width || n3 < 0 || n3 >= i3.height)
-          return console.error(`Texture ${a2} out of bounds. Line ${e2.line}`), null;
+        if (t3 < 0 || t3 >= i3.width || n3 < 0 || n3 >= i3.height) return console.error(`Texture ${a2} out of bounds. Line ${e2.line}`), null;
         const o3 = i3.getPixel(t3, n3, 0, r2);
         return null === o3 ? (console.error(`Invalid texture format for textureLoad. Line ${e2.line}`), null) : new Me(o3, this.getTypeInfo("vec4f"));
       }
@@ -26436,10 +26447,8 @@ var ht = class {
   }
   TextureStore(e2, t2) {
     const n2 = e2.args[0], s2 = this.exec.evalExpression(e2.args[1], t2), r2 = 4 === e2.args.length ? this.exec.evalExpression(e2.args[2], t2).value : 0, a2 = 4 === e2.args.length ? this.exec.evalExpression(e2.args[3], t2).data : this.exec.evalExpression(e2.args[2], t2).data;
-    if (4 !== a2.length)
-      return console.error(`Invalid value argument for textureStore. Line ${e2.line}`), null;
-    if (!(s2 instanceof Me) || 2 !== s2.data.length)
-      return console.error(`Invalid UV argument for textureStore. Line ${e2.line}`), null;
+    if (4 !== a2.length) return console.error(`Invalid value argument for textureStore. Line ${e2.line}`), null;
+    if (!(s2 instanceof Me) || 2 !== s2.data.length) return console.error(`Invalid UV argument for textureStore. Line ${e2.line}`), null;
     if (n2 instanceof ge) {
       const i3 = n2.name, o3 = t2.getVariableValue(i3);
       if (o3 instanceof We) {
@@ -26677,21 +26686,14 @@ var dt = class _dt extends ut {
   getVariableValue(e2) {
     var t2, n2;
     const r2 = null !== (n2 = null === (t2 = this.context.getVariable(e2)) || void 0 === t2 ? void 0 : t2.value) && void 0 !== n2 ? n2 : null;
-    if (null === r2)
-      return null;
-    if (r2 instanceof Be)
-      return r2.value;
-    if (r2 instanceof Me)
-      return Array.from(r2.data);
-    if (r2 instanceof Ue)
-      return Array.from(r2.data);
+    if (null === r2) return null;
+    if (r2 instanceof Be) return r2.value;
+    if (r2 instanceof Me) return Array.from(r2.data);
+    if (r2 instanceof Ue) return Array.from(r2.data);
     if (r2 instanceof Pe && r2.typeInfo instanceof s) {
-      if ("u32" === r2.typeInfo.format.name)
-        return Array.from(new Uint32Array(r2.buffer, r2.offset, r2.typeInfo.count));
-      if ("i32" === r2.typeInfo.format.name)
-        return Array.from(new Int32Array(r2.buffer, r2.offset, r2.typeInfo.count));
-      if ("f32" === r2.typeInfo.format.name)
-        return Array.from(new Float32Array(r2.buffer, r2.offset, r2.typeInfo.count));
+      if ("u32" === r2.typeInfo.format.name) return Array.from(new Uint32Array(r2.buffer, r2.offset, r2.typeInfo.count));
+      if ("i32" === r2.typeInfo.format.name) return Array.from(new Int32Array(r2.buffer, r2.offset, r2.typeInfo.count));
+      if ("f32" === r2.typeInfo.format.name) return Array.from(new Float32Array(r2.buffer, r2.offset, r2.typeInfo.count));
     }
     return console.error(`Unsupported return variable type ${r2.typeInfo.name}`), null;
   }
@@ -26702,106 +26704,76 @@ var dt = class _dt extends ut {
     const r2 = this.context.clone();
     (s2 = null != s2 ? s2 : {}).constants && this._setOverrides(s2.constants, r2), this._execStatements(this.ast, r2);
     const a2 = r2.getFunction(e2);
-    if (!a2)
-      return void console.error(`Function ${e2} not found`);
-    if ("number" == typeof t2)
-      t2 = [t2, 1, 1];
+    if (!a2) return void console.error(`Function ${e2} not found`);
+    if ("number" == typeof t2) t2 = [t2, 1, 1];
     else {
-      if (0 === t2.length)
-        return void console.error("Invalid dispatch count");
+      if (0 === t2.length) return void console.error("Invalid dispatch count");
       1 === t2.length ? t2 = [t2[0], 1, 1] : 2 === t2.length ? t2 = [t2[0], t2[1], 1] : t2.length > 3 && (t2 = [t2[0], t2[1], t2[2]]);
     }
     const i3 = t2[0], o3 = t2[1], c2 = t2[2], l2 = this.getTypeInfo("vec3u");
     r2.setVariable("@num_workgroups", new Me(t2, l2));
     const u2 = this.reflection.getFunctionInfo(e2);
     null === u2 && console.error(`Function ${e2} not found in reflection data`);
-    for (const e3 in n2)
-      for (const t3 in n2[e3]) {
-        const s3 = n2[e3][t3];
-        r2.variables.forEach((n3) => {
-          var r3;
-          const a3 = n3.node;
-          if (null == a3 ? void 0 : a3.attributes) {
-            let i4 = null, o4 = null;
-            for (const e4 of a3.attributes)
-              "binding" === e4.name ? i4 = e4.value : "group" === e4.name && (o4 = e4.value);
-            if (t3 == i4 && e3 == o4) {
-              let i5 = false;
-              for (const s4 of u2.resources)
-                if (s4.name === n3.name && s4.group === parseInt(e3) && s4.binding === parseInt(t3)) {
-                  i5 = true;
-                  break;
-                }
-              if (i5)
-                if (void 0 !== s3.texture && void 0 !== s3.descriptor) {
-                  const e4 = new We(s3.texture, this.getTypeInfo(a3.type), s3.descriptor, null !== (r3 = s3.texture.view) && void 0 !== r3 ? r3 : null);
-                  n3.value = e4;
-                } else
-                  void 0 !== s3.uniform ? n3.value = new Pe(s3.uniform, this.getTypeInfo(a3.type)) : n3.value = new Pe(s3, this.getTypeInfo(a3.type));
+    for (const e3 in n2) for (const t3 in n2[e3]) {
+      const s3 = n2[e3][t3];
+      r2.variables.forEach((n3) => {
+        var r3;
+        const a3 = n3.node;
+        if (null == a3 ? void 0 : a3.attributes) {
+          let i4 = null, o4 = null;
+          for (const e4 of a3.attributes) "binding" === e4.name ? i4 = e4.value : "group" === e4.name && (o4 = e4.value);
+          if (t3 == i4 && e3 == o4) {
+            let i5 = false;
+            for (const s4 of u2.resources) if (s4.name === n3.name && s4.group === parseInt(e3) && s4.binding === parseInt(t3)) {
+              i5 = true;
+              break;
             }
+            if (i5) if (void 0 !== s3.texture && void 0 !== s3.descriptor) {
+              const e4 = new We(s3.texture, this.getTypeInfo(a3.type), s3.descriptor, null !== (r3 = s3.texture.view) && void 0 !== r3 ? r3 : null);
+              n3.value = e4;
+            } else void 0 !== s3.uniform ? n3.value = new Pe(s3.uniform, this.getTypeInfo(a3.type)) : n3.value = new Pe(s3, this.getTypeInfo(a3.type));
           }
-        });
-      }
-    for (let e3 = 0; e3 < c2; ++e3)
-      for (let t3 = 0; t3 < o3; ++t3)
-        for (let n3 = 0; n3 < i3; ++n3)
-          r2.setVariable("@workgroup_id", new Me([n3, t3, e3], this.getTypeInfo("vec3u"))), this._dispatchWorkgroup(a2, [n3, t3, e3], r2);
+        }
+      });
+    }
+    for (let e3 = 0; e3 < c2; ++e3) for (let t3 = 0; t3 < o3; ++t3) for (let n3 = 0; n3 < i3; ++n3) r2.setVariable("@workgroup_id", new Me([n3, t3, e3], this.getTypeInfo("vec3u"))), this._dispatchWorkgroup(a2, [n3, t3, e3], r2);
   }
   execStatement(e2, t2) {
-    if (e2 instanceof Y)
-      return this.evalExpression(e2.value, t2);
+    if (e2 instanceof Y) return this.evalExpression(e2.value, t2);
     if (e2 instanceof se) {
       if (e2.condition) {
         const n2 = this.evalExpression(e2.condition, t2);
-        if (!(n2 instanceof Be))
-          throw new Error("Invalid break-if condition");
-        if (!n2.value)
-          return null;
+        if (!(n2 instanceof Be)) throw new Error("Invalid break-if condition");
+        if (!n2.value) return null;
       }
       return _dt._breakObj;
     }
-    if (e2 instanceof re)
-      return _dt._continueObj;
-    if (e2 instanceof U)
-      this._let(e2, t2);
-    else if (e2 instanceof F)
-      this._var(e2, t2);
-    else if (e2 instanceof P)
-      this._const(e2, t2);
-    else if (e2 instanceof D2)
-      this._function(e2, t2);
+    if (e2 instanceof re) return _dt._continueObj;
+    if (e2 instanceof U) this._let(e2, t2);
+    else if (e2 instanceof F) this._var(e2, t2);
+    else if (e2 instanceof P) this._const(e2, t2);
+    else if (e2 instanceof D2) this._function(e2, t2);
     else {
-      if (e2 instanceof Q2)
-        return this._if(e2, t2);
-      if (e2 instanceof Z)
-        return this._switch(e2, t2);
-      if (e2 instanceof B2)
-        return this._for(e2, t2);
-      if (e2 instanceof V)
-        return this._while(e2, t2);
-      if (e2 instanceof j)
-        return this._loop(e2, t2);
+      if (e2 instanceof Q2) return this._if(e2, t2);
+      if (e2 instanceof Z) return this._switch(e2, t2);
+      if (e2 instanceof B2) return this._for(e2, t2);
+      if (e2 instanceof V) return this._while(e2, t2);
+      if (e2 instanceof j) return this._loop(e2, t2);
       if (e2 instanceof O) {
         const n2 = t2.clone();
         return n2.currentFunctionName = t2.currentFunctionName, this._execStatements(e2.body, n2);
       }
-      if (e2 instanceof G2)
-        this._assign(e2, t2);
-      else if (e2 instanceof R)
-        this._increment(e2, t2);
+      if (e2 instanceof G2) this._assign(e2, t2);
+      else if (e2 instanceof R) this._increment(e2, t2);
       else {
-        if (e2 instanceof oe)
-          return null;
+        if (e2 instanceof oe) return null;
         if (e2 instanceof M) {
           const n2 = e2.name;
           null === t2.getVariable(n2) && t2.setVariable(n2, new Be(0, this.getTypeInfo("u32")));
-        } else if (e2 instanceof X)
-          this._call(e2, t2);
+        } else if (e2 instanceof X) this._call(e2, t2);
         else {
-          if (e2 instanceof ee)
-            return null;
-          if (e2 instanceof te)
-            return null;
+          if (e2 instanceof ee) return null;
+          if (e2 instanceof te) return null;
           console.error("Invalid statement type.", e2, `Line ${e2.line}`);
         }
       }
@@ -26815,8 +26787,7 @@ var dt = class _dt extends ut {
     var t2;
     if (e2 instanceof ae) {
       const t3 = this.reflection.getTypeInfo(e2);
-      if (null !== t3)
-        return t3;
+      if (null !== t3) return t3;
     }
     let n2 = null !== (t2 = this.typeInfo[e2]) && void 0 !== t2 ? t2 : null;
     return null !== n2 || (n2 = this.reflection.getTypeInfoByName(e2)), n2;
@@ -26829,56 +26800,48 @@ var dt = class _dt extends ut {
   }
   _dispatchWorkgroup(e2, t2, n2) {
     const s2 = [1, 1, 1];
-    for (const t3 of e2.node.attributes)
-      if ("workgroup_size" === t3.name) {
-        if (t3.value.length > 0) {
-          const e3 = n2.getVariableValue(t3.value[0]);
-          s2[0] = e3 instanceof Be ? e3.value : parseInt(t3.value[0]);
-        }
-        if (t3.value.length > 1) {
-          const e3 = n2.getVariableValue(t3.value[1]);
-          s2[1] = e3 instanceof Be ? e3.value : parseInt(t3.value[1]);
-        }
-        if (t3.value.length > 2) {
-          const e3 = n2.getVariableValue(t3.value[2]);
-          s2[2] = e3 instanceof Be ? e3.value : parseInt(t3.value[2]);
-        }
+    for (const t3 of e2.node.attributes) if ("workgroup_size" === t3.name) {
+      if (t3.value.length > 0) {
+        const e3 = n2.getVariableValue(t3.value[0]);
+        s2[0] = e3 instanceof Be ? e3.value : parseInt(t3.value[0]);
       }
+      if (t3.value.length > 1) {
+        const e3 = n2.getVariableValue(t3.value[1]);
+        s2[1] = e3 instanceof Be ? e3.value : parseInt(t3.value[1]);
+      }
+      if (t3.value.length > 2) {
+        const e3 = n2.getVariableValue(t3.value[2]);
+        s2[2] = e3 instanceof Be ? e3.value : parseInt(t3.value[2]);
+      }
+    }
     const r2 = this.getTypeInfo("vec3u"), a2 = this.getTypeInfo("u32");
     n2.setVariable("@workgroup_size", new Me(s2, r2));
     const i3 = s2[0], o3 = s2[1], c2 = s2[2];
-    for (let l2 = 0, u2 = 0; l2 < c2; ++l2)
-      for (let c3 = 0; c3 < o3; ++c3)
-        for (let o4 = 0; o4 < i3; ++o4, ++u2) {
-          const i4 = [o4, c3, l2], h2 = [o4 + t2[0] * s2[0], c3 + t2[1] * s2[1], l2 + t2[2] * s2[2]];
-          n2.setVariable("@local_invocation_id", new Me(i4, r2)), n2.setVariable("@global_invocation_id", new Me(h2, r2)), n2.setVariable("@local_invocation_index", new Be(u2, a2)), this._dispatchExec(e2, n2);
-        }
+    for (let l2 = 0, u2 = 0; l2 < c2; ++l2) for (let c3 = 0; c3 < o3; ++c3) for (let o4 = 0; o4 < i3; ++o4, ++u2) {
+      const i4 = [o4, c3, l2], h2 = [o4 + t2[0] * s2[0], c3 + t2[1] * s2[1], l2 + t2[2] * s2[2]];
+      n2.setVariable("@local_invocation_id", new Me(i4, r2)), n2.setVariable("@global_invocation_id", new Me(h2, r2)), n2.setVariable("@local_invocation_index", new Be(u2, a2)), this._dispatchExec(e2, n2);
+    }
   }
   _dispatchExec(e2, t2) {
-    for (const n2 of e2.node.args)
-      for (const e3 of n2.attributes)
-        if ("builtin" === e3.name) {
-          const s2 = `@${e3.value}`, r2 = t2.getVariable(s2);
-          void 0 !== r2 && t2.variables.set(n2.name, r2);
-        }
+    for (const n2 of e2.node.args) for (const e3 of n2.attributes) if ("builtin" === e3.name) {
+      const s2 = `@${e3.value}`, r2 = t2.getVariable(s2);
+      void 0 !== r2 && t2.variables.set(n2.name, r2);
+    }
     this._execStatements(e2.node.body, t2);
   }
   getVariableName(e2, t2) {
-    for (; e2 instanceof ke; )
-      e2 = e2.right;
+    for (; e2 instanceof ke; ) e2 = e2.right;
     return e2 instanceof ge ? e2.name : (console.error("Unknown variable type", e2, "Line", e2.line), null);
   }
   _execStatements(e2, t2) {
     for (const n2 of e2) {
       if (n2 instanceof Array) {
         const e4 = t2.clone(), s2 = this._execStatements(n2, e4);
-        if (s2)
-          return s2;
+        if (s2) return s2;
         continue;
       }
       const e3 = this.execStatement(n2, t2);
-      if (e3)
-        return e3;
+      if (e3) return e3;
     }
     return null;
   }
@@ -26892,8 +26855,7 @@ var dt = class _dt extends ut {
         n2.setVariable(r2.name, a2, r2);
       }
       this._execStatements(s2.node.body, n2);
-    } else if (e2.isBuiltin)
-      this._callBuiltinFunction(e2, n2);
+    } else if (e2.isBuiltin) this._callBuiltinFunction(e2, n2);
     else {
       this.getTypeInfo(e2.name) && this._evalCreate(e2, t2);
     }
@@ -26925,24 +26887,19 @@ var dt = class _dt extends ut {
       const n3 = this._getVariableData(e2.variable, t2), s3 = this.evalExpression(e2.value, t2), r3 = e2.operator;
       if ("=" === r3) {
         if (n3 instanceof Be || n3 instanceof Me || n3 instanceof Ue) {
-          if (s3 instanceof Be || s3 instanceof Me || s3 instanceof Ue && n3.data.length === s3.data.length)
-            return void n3.data.set(s3.data);
+          if (s3 instanceof Be || s3 instanceof Me || s3 instanceof Ue && n3.data.length === s3.data.length) return void n3.data.set(s3.data);
           console.error(`Invalid assignment. Line ${e2.line}`);
-        } else if (n3 instanceof Pe && s3 instanceof Pe && n3.buffer.byteLength - n3.offset >= s3.buffer.byteLength - s3.offset)
-          return void (n3.buffer.byteLength % 4 == 0 ? new Uint32Array(n3.buffer, n3.offset, n3.typeInfo.size / 4).set(new Uint32Array(s3.buffer, s3.offset, s3.typeInfo.size / 4)) : new Uint8Array(n3.buffer, n3.offset, n3.typeInfo.size).set(new Uint8Array(s3.buffer, s3.offset, s3.typeInfo.size)));
+        } else if (n3 instanceof Pe && s3 instanceof Pe && n3.buffer.byteLength - n3.offset >= s3.buffer.byteLength - s3.offset) return void (n3.buffer.byteLength % 4 == 0 ? new Uint32Array(n3.buffer, n3.offset, n3.typeInfo.size / 4).set(new Uint32Array(s3.buffer, s3.offset, s3.typeInfo.size / 4)) : new Uint8Array(n3.buffer, n3.offset, n3.typeInfo.size).set(new Uint8Array(s3.buffer, s3.offset, s3.typeInfo.size)));
         return console.error(`Invalid assignment. Line ${e2.line}`), null;
       }
-      if ("+=" === r3)
-        return n3 instanceof Be || n3 instanceof Me || n3 instanceof Ue ? s3 instanceof Be || s3 instanceof Me || s3 instanceof Ue ? void n3.data.set(s3.data.map((e3, t3) => n3.data[t3] + e3)) : void console.error(`Invalid assignment . Line ${e2.line}`) : void console.error(`Invalid assignment. Line ${e2.line}`);
-      if ("-=" === r3)
-        return (n3 instanceof Be || n3 instanceof Me || n3 instanceof Ue) && (s3 instanceof Be || s3 instanceof Me || s3 instanceof Ue) ? void n3.data.set(s3.data.map((e3, t3) => n3.data[t3] - e3)) : void console.error(`Invalid assignment. Line ${e2.line}`);
+      if ("+=" === r3) return n3 instanceof Be || n3 instanceof Me || n3 instanceof Ue ? s3 instanceof Be || s3 instanceof Me || s3 instanceof Ue ? void n3.data.set(s3.data.map((e3, t3) => n3.data[t3] + e3)) : void console.error(`Invalid assignment . Line ${e2.line}`) : void console.error(`Invalid assignment. Line ${e2.line}`);
+      if ("-=" === r3) return (n3 instanceof Be || n3 instanceof Me || n3 instanceof Ue) && (s3 instanceof Be || s3 instanceof Me || s3 instanceof Ue) ? void n3.data.set(s3.data.map((e3, t3) => n3.data[t3] - e3)) : void console.error(`Invalid assignment. Line ${e2.line}`);
     }
     if (e2.variable instanceof ke) {
       if ("*" === e2.variable.operator) {
         s2 = this.getVariableName(e2.variable.right, t2);
         const r3 = t2.getVariable(s2);
-        if (!(r3 && r3.value instanceof Oe))
-          return void console.error(`Variable ${s2} is not a pointer. Line ${e2.line}`);
+        if (!(r3 && r3.value instanceof Oe)) return void console.error(`Variable ${s2} is not a pointer. Line ${e2.line}`);
         n2 = r3.value.reference;
         let a3 = e2.variable.postfix;
         if (!a3) {
@@ -26960,151 +26917,89 @@ var dt = class _dt extends ut {
     } else {
       r2 = e2.variable.postfix, s2 = this.getVariableName(e2.variable, t2);
       const a3 = t2.getVariable(s2);
-      if (null === a3)
-        return void console.error(`Variable ${s2} not found. Line ${e2.line}`);
+      if (null === a3) return void console.error(`Variable ${s2} not found. Line ${e2.line}`);
       n2 = a3.value;
     }
-    if (n2 instanceof Oe && (n2 = n2.reference), null === n2)
-      return void console.error(`Variable ${s2} not found. Line ${e2.line}`);
+    if (n2 instanceof Oe && (n2 = n2.reference), null === n2) return void console.error(`Variable ${s2} not found. Line ${e2.line}`);
     const a2 = this.evalExpression(e2.value, t2), i3 = e2.operator;
     if ("=" !== i3) {
       const s3 = n2.getSubData(this, r2, t2);
       if (s3 instanceof Me && a2 instanceof Be) {
         const t3 = s3.data, n3 = a2.value;
-        if ("+=" === i3)
-          for (let e3 = 0; e3 < t3.length; ++e3)
-            t3[e3] += n3;
-        else if ("-=" === i3)
-          for (let e3 = 0; e3 < t3.length; ++e3)
-            t3[e3] -= n3;
-        else if ("*=" === i3)
-          for (let e3 = 0; e3 < t3.length; ++e3)
-            t3[e3] *= n3;
-        else if ("/=" === i3)
-          for (let e3 = 0; e3 < t3.length; ++e3)
-            t3[e3] /= n3;
-        else if ("%=" === i3)
-          for (let e3 = 0; e3 < t3.length; ++e3)
-            t3[e3] %= n3;
-        else if ("&=" === i3)
-          for (let e3 = 0; e3 < t3.length; ++e3)
-            t3[e3] &= n3;
-        else if ("|=" === i3)
-          for (let e3 = 0; e3 < t3.length; ++e3)
-            t3[e3] |= n3;
-        else if ("^=" === i3)
-          for (let e3 = 0; e3 < t3.length; ++e3)
-            t3[e3] ^= n3;
-        else if ("<<=" === i3)
-          for (let e3 = 0; e3 < t3.length; ++e3)
-            t3[e3] <<= n3;
-        else if (">>=" === i3)
-          for (let e3 = 0; e3 < t3.length; ++e3)
-            t3[e3] >>= n3;
-        else
-          console.error(`Invalid operator ${i3}. Line ${e2.line}`);
+        if ("+=" === i3) for (let e3 = 0; e3 < t3.length; ++e3) t3[e3] += n3;
+        else if ("-=" === i3) for (let e3 = 0; e3 < t3.length; ++e3) t3[e3] -= n3;
+        else if ("*=" === i3) for (let e3 = 0; e3 < t3.length; ++e3) t3[e3] *= n3;
+        else if ("/=" === i3) for (let e3 = 0; e3 < t3.length; ++e3) t3[e3] /= n3;
+        else if ("%=" === i3) for (let e3 = 0; e3 < t3.length; ++e3) t3[e3] %= n3;
+        else if ("&=" === i3) for (let e3 = 0; e3 < t3.length; ++e3) t3[e3] &= n3;
+        else if ("|=" === i3) for (let e3 = 0; e3 < t3.length; ++e3) t3[e3] |= n3;
+        else if ("^=" === i3) for (let e3 = 0; e3 < t3.length; ++e3) t3[e3] ^= n3;
+        else if ("<<=" === i3) for (let e3 = 0; e3 < t3.length; ++e3) t3[e3] <<= n3;
+        else if (">>=" === i3) for (let e3 = 0; e3 < t3.length; ++e3) t3[e3] >>= n3;
+        else console.error(`Invalid operator ${i3}. Line ${e2.line}`);
       } else if (s3 instanceof Me && a2 instanceof Me) {
         const t3 = s3.data, n3 = a2.data;
-        if (t3.length !== n3.length)
-          return void console.error(`Vector length mismatch. Line ${e2.line}`);
-        if ("+=" === i3)
-          for (let e3 = 0; e3 < t3.length; ++e3)
-            t3[e3] += n3[e3];
-        else if ("-=" === i3)
-          for (let e3 = 0; e3 < t3.length; ++e3)
-            t3[e3] -= n3[e3];
-        else if ("*=" === i3)
-          for (let e3 = 0; e3 < t3.length; ++e3)
-            t3[e3] *= n3[e3];
-        else if ("/=" === i3)
-          for (let e3 = 0; e3 < t3.length; ++e3)
-            t3[e3] /= n3[e3];
-        else if ("%=" === i3)
-          for (let e3 = 0; e3 < t3.length; ++e3)
-            t3[e3] %= n3[e3];
-        else if ("&=" === i3)
-          for (let e3 = 0; e3 < t3.length; ++e3)
-            t3[e3] &= n3[e3];
-        else if ("|=" === i3)
-          for (let e3 = 0; e3 < t3.length; ++e3)
-            t3[e3] |= n3[e3];
-        else if ("^=" === i3)
-          for (let e3 = 0; e3 < t3.length; ++e3)
-            t3[e3] ^= n3[e3];
-        else if ("<<=" === i3)
-          for (let e3 = 0; e3 < t3.length; ++e3)
-            t3[e3] <<= n3[e3];
-        else if (">>=" === i3)
-          for (let e3 = 0; e3 < t3.length; ++e3)
-            t3[e3] >>= n3[e3];
-        else
-          console.error(`Invalid operator ${i3}. Line ${e2.line}`);
+        if (t3.length !== n3.length) return void console.error(`Vector length mismatch. Line ${e2.line}`);
+        if ("+=" === i3) for (let e3 = 0; e3 < t3.length; ++e3) t3[e3] += n3[e3];
+        else if ("-=" === i3) for (let e3 = 0; e3 < t3.length; ++e3) t3[e3] -= n3[e3];
+        else if ("*=" === i3) for (let e3 = 0; e3 < t3.length; ++e3) t3[e3] *= n3[e3];
+        else if ("/=" === i3) for (let e3 = 0; e3 < t3.length; ++e3) t3[e3] /= n3[e3];
+        else if ("%=" === i3) for (let e3 = 0; e3 < t3.length; ++e3) t3[e3] %= n3[e3];
+        else if ("&=" === i3) for (let e3 = 0; e3 < t3.length; ++e3) t3[e3] &= n3[e3];
+        else if ("|=" === i3) for (let e3 = 0; e3 < t3.length; ++e3) t3[e3] |= n3[e3];
+        else if ("^=" === i3) for (let e3 = 0; e3 < t3.length; ++e3) t3[e3] ^= n3[e3];
+        else if ("<<=" === i3) for (let e3 = 0; e3 < t3.length; ++e3) t3[e3] <<= n3[e3];
+        else if (">>=" === i3) for (let e3 = 0; e3 < t3.length; ++e3) t3[e3] >>= n3[e3];
+        else console.error(`Invalid operator ${i3}. Line ${e2.line}`);
       } else {
-        if (!(s3 instanceof Be && a2 instanceof Be))
-          return void console.error(`Invalid type for ${e2.operator} operator. Line ${e2.line}`);
+        if (!(s3 instanceof Be && a2 instanceof Be)) return void console.error(`Invalid type for ${e2.operator} operator. Line ${e2.line}`);
         "+=" === i3 ? s3.value += a2.value : "-=" === i3 ? s3.value -= a2.value : "*=" === i3 ? s3.value *= a2.value : "/=" === i3 ? s3.value /= a2.value : "%=" === i3 ? s3.value %= a2.value : "&=" === i3 ? s3.value &= a2.value : "|=" === i3 ? s3.value |= a2.value : "^=" === i3 ? s3.value ^= a2.value : "<<=" === i3 ? s3.value <<= a2.value : ">>=" === i3 ? s3.value >>= a2.value : console.error(`Invalid operator ${i3}. Line ${e2.line}`);
       }
       return void (n2 instanceof Pe && n2.setDataValue(this, s3, r2, t2));
     }
-    if (n2 instanceof Pe)
-      n2.setDataValue(this, a2, r2, t2);
+    if (n2 instanceof Pe) n2.setDataValue(this, a2, r2, t2);
     else if (r2) {
-      if (!(n2 instanceof Me || n2 instanceof Ue))
-        return void console.error(`Variable ${s2} is not a vector or matrix. Line ${e2.line}`);
+      if (!(n2 instanceof Me || n2 instanceof Ue)) return void console.error(`Variable ${s2} is not a vector or matrix. Line ${e2.line}`);
       if (r2 instanceof ve) {
         const i4 = this.evalExpression(r2.index, t2).value;
         if (n2 instanceof Me) {
-          if (!(a2 instanceof Be))
-            return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
+          if (!(a2 instanceof Be)) return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
           n2.data[i4] = a2.value;
         } else {
-          if (!(n2 instanceof Ue))
-            return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
+          if (!(n2 instanceof Ue)) return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
           {
             const i5 = this.evalExpression(r2.index, t2).value;
-            if (i5 < 0)
-              return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
-            if (!(a2 instanceof Me))
-              return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
+            if (i5 < 0) return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
+            if (!(a2 instanceof Me)) return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
             {
               const t3 = n2.typeInfo.getTypeName();
               if ("mat2x2" === t3 || "mat2x2f" === t3 || "mat2x2h" === t3) {
-                if (!(i5 < 2 && 2 === a2.data.length))
-                  return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
+                if (!(i5 < 2 && 2 === a2.data.length)) return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
                 n2.data[2 * i5] = a2.data[0], n2.data[2 * i5 + 1] = a2.data[1];
               } else if ("mat2x3" === t3 || "mat2x3f" === t3 || "mat2x3h" === t3) {
-                if (!(i5 < 2 && 3 === a2.data.length))
-                  return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
+                if (!(i5 < 2 && 3 === a2.data.length)) return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
                 n2.data[3 * i5] = a2.data[0], n2.data[3 * i5 + 1] = a2.data[1], n2.data[3 * i5 + 2] = a2.data[2];
               } else if ("mat2x4" === t3 || "mat2x4f" === t3 || "mat2x4h" === t3) {
-                if (!(i5 < 2 && 4 === a2.data.length))
-                  return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
+                if (!(i5 < 2 && 4 === a2.data.length)) return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
                 n2.data[4 * i5] = a2.data[0], n2.data[4 * i5 + 1] = a2.data[1], n2.data[4 * i5 + 2] = a2.data[2], n2.data[4 * i5 + 3] = a2.data[3];
               } else if ("mat3x2" === t3 || "mat3x2f" === t3 || "mat3x2h" === t3) {
-                if (!(i5 < 3 && 2 === a2.data.length))
-                  return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
+                if (!(i5 < 3 && 2 === a2.data.length)) return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
                 n2.data[2 * i5] = a2.data[0], n2.data[2 * i5 + 1] = a2.data[1];
               } else if ("mat3x3" === t3 || "mat3x3f" === t3 || "mat3x3h" === t3) {
-                if (!(i5 < 3 && 3 === a2.data.length))
-                  return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
+                if (!(i5 < 3 && 3 === a2.data.length)) return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
                 n2.data[3 * i5] = a2.data[0], n2.data[3 * i5 + 1] = a2.data[1], n2.data[3 * i5 + 2] = a2.data[2];
               } else if ("mat3x4" === t3 || "mat3x4f" === t3 || "mat3x4h" === t3) {
-                if (!(i5 < 3 && 4 === a2.data.length))
-                  return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
+                if (!(i5 < 3 && 4 === a2.data.length)) return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
                 n2.data[4 * i5] = a2.data[0], n2.data[4 * i5 + 1] = a2.data[1], n2.data[4 * i5 + 2] = a2.data[2], n2.data[4 * i5 + 3] = a2.data[3];
               } else if ("mat4x2" === t3 || "mat4x2f" === t3 || "mat4x2h" === t3) {
-                if (!(i5 < 4 && 2 === a2.data.length))
-                  return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
+                if (!(i5 < 4 && 2 === a2.data.length)) return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
                 n2.data[2 * i5] = a2.data[0], n2.data[2 * i5 + 1] = a2.data[1];
               } else if ("mat4x3" === t3 || "mat4x3f" === t3 || "mat4x3h" === t3) {
-                if (!(i5 < 4 && 3 === a2.data.length))
-                  return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
+                if (!(i5 < 4 && 3 === a2.data.length)) return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
                 n2.data[3 * i5] = a2.data[0], n2.data[3 * i5 + 1] = a2.data[1], n2.data[3 * i5 + 2] = a2.data[2];
               } else {
-                if ("mat4x4" !== t3 && "mat4x4f" !== t3 && "mat4x4h" !== t3)
-                  return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
-                if (!(i5 < 4 && 4 === a2.data.length))
-                  return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
+                if ("mat4x4" !== t3 && "mat4x4f" !== t3 && "mat4x4h" !== t3) return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
+                if (!(i5 < 4 && 4 === a2.data.length)) return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
                 n2.data[4 * i5] = a2.data[0], n2.data[4 * i5 + 1] = a2.data[1], n2.data[4 * i5 + 2] = a2.data[2], n2.data[4 * i5 + 3] = a2.data[3];
               }
             }
@@ -27112,55 +27007,41 @@ var dt = class _dt extends ut {
         }
       } else if (r2 instanceof pe) {
         const t3 = r2.value;
-        if (!(n2 instanceof Me))
-          return void console.error(`Invalid assignment to ${t3}. Variable ${s2} is not a vector. Line ${e2.line}`);
+        if (!(n2 instanceof Me)) return void console.error(`Invalid assignment to ${t3}. Variable ${s2} is not a vector. Line ${e2.line}`);
         if (a2 instanceof Be) {
-          if (t3.length > 1)
-            return void console.error(`Invalid assignment to ${t3} for variable ${s2}. Line ${e2.line}`);
-          if ("x" === t3)
-            n2.data[0] = a2.value;
+          if (t3.length > 1) return void console.error(`Invalid assignment to ${t3} for variable ${s2}. Line ${e2.line}`);
+          if ("x" === t3) n2.data[0] = a2.value;
           else if ("y" === t3) {
-            if (n2.data.length < 2)
-              return void console.error(`Invalid assignment to ${t3} for variable ${s2}. Line ${e2.line}`);
+            if (n2.data.length < 2) return void console.error(`Invalid assignment to ${t3} for variable ${s2}. Line ${e2.line}`);
             n2.data[1] = a2.value;
           } else if ("z" === t3) {
-            if (n2.data.length < 3)
-              return void console.error(`Invalid assignment to ${t3} for variable ${s2}. Line ${e2.line}`);
+            if (n2.data.length < 3) return void console.error(`Invalid assignment to ${t3} for variable ${s2}. Line ${e2.line}`);
             n2.data[2] = a2.value;
           } else if ("w" === t3) {
-            if (n2.data.length < 4)
-              return void console.error(`Invalid assignment to ${t3} for variable ${s2}. Line ${e2.line}`);
+            if (n2.data.length < 4) return void console.error(`Invalid assignment to ${t3} for variable ${s2}. Line ${e2.line}`);
             n2.data[3] = a2.value;
           }
         } else {
-          if (!(a2 instanceof Me))
-            return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
-          if (t3.length !== a2.data.length)
-            return void console.error(`Invalid assignment to ${t3} for variable ${s2}. Line ${e2.line}`);
+          if (!(a2 instanceof Me)) return void console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
+          if (t3.length !== a2.data.length) return void console.error(`Invalid assignment to ${t3} for variable ${s2}. Line ${e2.line}`);
           for (let r3 = 0; r3 < t3.length; ++r3) {
             const i4 = t3[r3];
-            if ("x" === i4 || "r" === i4)
-              n2.data[0] = a2.data[r3];
+            if ("x" === i4 || "r" === i4) n2.data[0] = a2.data[r3];
             else if ("y" === i4 || "g" === i4) {
-              if (a2.data.length < 2)
-                return void console.error(`Invalid assignment to ${i4} for variable ${s2}. Line ${e2.line}`);
+              if (a2.data.length < 2) return void console.error(`Invalid assignment to ${i4} for variable ${s2}. Line ${e2.line}`);
               n2.data[1] = a2.data[r3];
             } else if ("z" === i4 || "b" === i4) {
-              if (a2.data.length < 3)
-                return void console.error(`Invalid assignment to ${i4} for variable ${s2}. Line ${e2.line}`);
+              if (a2.data.length < 3) return void console.error(`Invalid assignment to ${i4} for variable ${s2}. Line ${e2.line}`);
               n2.data[2] = a2.data[r3];
             } else {
-              if ("w" !== i4 && "a" !== i4)
-                return void console.error(`Invalid assignment to ${i4} for variable ${s2}. Line ${e2.line}`);
-              if (a2.data.length < 4)
-                return void console.error(`Invalid assignment to ${i4} for variable ${s2}. Line ${e2.line}`);
+              if ("w" !== i4 && "a" !== i4) return void console.error(`Invalid assignment to ${i4} for variable ${s2}. Line ${e2.line}`);
+              if (a2.data.length < 4) return void console.error(`Invalid assignment to ${i4} for variable ${s2}. Line ${e2.line}`);
               n2.data[3] = a2.data[r3];
             }
           }
         }
       }
-    } else
-      n2 instanceof Be && a2 instanceof Be ? n2.value = a2.value : n2 instanceof Me && a2 instanceof Me || n2 instanceof Ue && a2 instanceof Ue ? n2.data.set(a2.data) : console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
+    } else n2 instanceof Be && a2 instanceof Be ? n2.value = a2.value : n2 instanceof Me && a2 instanceof Me || n2 instanceof Ue && a2 instanceof Ue ? n2.data.set(a2.data) : console.error(`Invalid assignment to ${s2}. Line ${e2.line}`);
   }
   _function(e2, t2) {
     const n2 = new ct(e2);
@@ -27173,8 +27054,7 @@ var dt = class _dt extends ut {
   _let(e2, t2) {
     let n2 = null;
     if (null !== e2.value) {
-      if (n2 = this.evalExpression(e2.value, t2), null === n2)
-        return void console.error(`Invalid value for variable ${e2.name}. Line ${e2.line}`);
+      if (n2 = this.evalExpression(e2.value, t2), null === n2) return void console.error(`Invalid value for variable ${e2.name}. Line ${e2.line}`);
       e2.value instanceof ke || (n2 = n2.clone());
     } else {
       const s2 = e2.type.name;
@@ -27188,12 +27068,10 @@ var dt = class _dt extends ut {
   _var(e2, t2) {
     let n2 = null;
     if (null !== e2.value) {
-      if (n2 = this.evalExpression(e2.value, t2), null === n2)
-        return void console.error(`Invalid value for variable ${e2.name}. Line ${e2.line}`);
+      if (n2 = this.evalExpression(e2.value, t2), null === n2) return void console.error(`Invalid value for variable ${e2.name}. Line ${e2.line}`);
       e2.value instanceof ke || (n2 = n2.clone());
     } else {
-      if (null === e2.type)
-        return void console.error(`Variable ${e2.name} has no type. Line ${e2.line}`);
+      if (null === e2.type) return void console.error(`Variable ${e2.name} has no type. Line ${e2.line}`);
       const s2 = e2.type.name;
       if ("f32" === s2 || "i32" === s2 || "u32" === s2 || "bool" === s2 || "f16" === s2 || "vec2" === s2 || "vec3" === s2 || "vec4" === s2 || "vec2f" === s2 || "vec3f" === s2 || "vec4f" === s2 || "vec2i" === s2 || "vec3i" === s2 || "vec4i" === s2 || "vec2u" === s2 || "vec3u" === s2 || "vec4u" === s2 || "vec2h" === s2 || "vec3h" === s2 || "vec4h" === s2 || "vec2b" === s2 || "vec3b" === s2 || "vec4b" === s2 || "mat2x2" === s2 || "mat2x3" === s2 || "mat2x4" === s2 || "mat3x2" === s2 || "mat3x3" === s2 || "mat3x4" === s2 || "mat4x2" === s2 || "mat4x3" === s2 || "mat4x4" === s2 || "mat2x2f" === s2 || "mat2x3f" === s2 || "mat2x4f" === s2 || "mat3x2f" === s2 || "mat3x3f" === s2 || "mat3x4f" === s2 || "mat4x2f" === s2 || "mat4x3f" === s2 || "mat4x4f" === s2 || "mat2x2h" === s2 || "mat2x3h" === s2 || "mat2x4h" === s2 || "mat3x2h" === s2 || "mat3x3h" === s2 || "mat3x4h" === s2 || "mat4x2h" === s2 || "mat4x3h" === s2 || "mat4x4h" === s2 || e2.type instanceof ue || e2.type instanceof oe || e2.type instanceof ce) {
         const s3 = new de(e2.type, []);
@@ -27205,39 +27083,29 @@ var dt = class _dt extends ut {
   _switch(e2, t2) {
     t2 = t2.clone();
     const n2 = this.evalExpression(e2.condition, t2);
-    if (!(n2 instanceof Be))
-      return console.error(`Invalid if condition. Line ${e2.line}`), null;
+    if (!(n2 instanceof Be)) return console.error(`Invalid if condition. Line ${e2.line}`), null;
     let s2 = null;
-    for (const r2 of e2.cases)
-      if (r2 instanceof Ae)
-        for (const a2 of r2.selectors) {
-          if (a2 instanceof Se) {
-            s2 = r2;
-            continue;
-          }
-          const i3 = this.evalExpression(a2, t2);
-          if (!(i3 instanceof Be))
-            return console.error(`Invalid case selector. Line ${e2.line}`), null;
-          if (i3.value === n2.value)
-            return this._execStatements(r2.body, t2);
-        }
-      else
-        r2 instanceof Ee && (s2 = r2);
+    for (const r2 of e2.cases) if (r2 instanceof Ae) for (const a2 of r2.selectors) {
+      if (a2 instanceof Se) {
+        s2 = r2;
+        continue;
+      }
+      const i3 = this.evalExpression(a2, t2);
+      if (!(i3 instanceof Be)) return console.error(`Invalid case selector. Line ${e2.line}`), null;
+      if (i3.value === n2.value) return this._execStatements(r2.body, t2);
+    }
+    else r2 instanceof Ee && (s2 = r2);
     return s2 ? this._execStatements(s2.body, t2) : null;
   }
   _if(e2, t2) {
     t2 = t2.clone();
     const n2 = this.evalExpression(e2.condition, t2);
-    if (!(n2 instanceof Be))
-      return console.error(`Invalid if condition. Line ${e2.line}`), null;
-    if (n2.value)
-      return this._execStatements(e2.body, t2);
+    if (!(n2 instanceof Be)) return console.error(`Invalid if condition. Line ${e2.line}`), null;
+    if (n2.value) return this._execStatements(e2.body, t2);
     for (const n3 of e2.elseif) {
       const s2 = this.evalExpression(n3.condition, t2);
-      if (!(s2 instanceof Be))
-        return console.error(`Invalid if condition. Line ${e2.line}`), null;
-      if (s2.value)
-        return this._execStatements(n3.body, t2);
+      if (!(s2 instanceof Be)) return console.error(`Invalid if condition. Line ${e2.line}`), null;
+      if (s2.value) return this._execStatements(n3.body, t2);
     }
     return e2.else ? this._execStatements(e2.else, t2) : null;
   }
@@ -27247,10 +27115,8 @@ var dt = class _dt extends ut {
   _for(e2, t2) {
     for (t2 = t2.clone(), this.execStatement(e2.init, t2); this._getScalarValue(this.evalExpression(e2.condition, t2)); ) {
       const n2 = this._execStatements(e2.body, t2);
-      if (n2 === _dt._breakObj)
-        break;
-      if (null !== n2 && n2 !== _dt._continueObj)
-        return n2;
+      if (n2 === _dt._breakObj) break;
+      if (null !== n2 && n2 !== _dt._continueObj) return n2;
       this.execStatement(e2.increment, t2);
     }
     return null;
@@ -27258,25 +27124,20 @@ var dt = class _dt extends ut {
   _loop(e2, t2) {
     for (t2 = t2.clone(); ; ) {
       const n2 = this._execStatements(e2.body, t2);
-      if (n2 === _dt._breakObj)
-        break;
+      if (n2 === _dt._breakObj) break;
       if (n2 === _dt._continueObj) {
         if (e2.continuing) {
-          if (this._execStatements(e2.continuing.body, t2) === _dt._breakObj)
-            break;
+          if (this._execStatements(e2.continuing.body, t2) === _dt._breakObj) break;
         }
-      } else if (null !== n2)
-        return n2;
+      } else if (null !== n2) return n2;
     }
     return null;
   }
   _while(e2, t2) {
     for (t2 = t2.clone(); this._getScalarValue(this.evalExpression(e2.condition, t2)); ) {
       const n2 = this._execStatements(e2.body, t2);
-      if (n2 === _dt._breakObj)
-        break;
-      if (n2 !== _dt._continueObj && null !== n2)
-        return n2;
+      if (n2 === _dt._breakObj) break;
+      if (n2 !== _dt._continueObj && null !== n2) return n2;
     }
     return null;
   }
@@ -27289,42 +27150,30 @@ var dt = class _dt extends ut {
     if (n2 instanceof Me) {
       const t3 = n2.typeInfo.getTypeName();
       let r2 = "";
-      if (t3.endsWith("f"))
-        r2 = "f32";
-      else if (t3.endsWith("i"))
-        r2 = "i32";
-      else if (t3.endsWith("u"))
-        r2 = "u32";
-      else if (t3.endsWith("b"))
-        r2 = "bool";
+      if (t3.endsWith("f")) r2 = "f32";
+      else if (t3.endsWith("i")) r2 = "i32";
+      else if (t3.endsWith("u")) r2 = "u32";
+      else if (t3.endsWith("b")) r2 = "bool";
       else {
-        if (!t3.endsWith("h"))
-          return console.error(`Unknown vector type ${t3}. Line ${e2.line}`), null;
+        if (!t3.endsWith("h")) return console.error(`Unknown vector type ${t3}. Line ${e2.line}`), null;
         r2 = "f16";
       }
       const a2 = s2.getTypeName();
       let i3 = "";
-      if (a2.endsWith("f"))
-        i3 = "f32";
-      else if (a2.endsWith("i"))
-        i3 = "i32";
-      else if (a2.endsWith("u"))
-        i3 = "u32";
-      else if (a2.endsWith("b"))
-        i3 = "bool";
+      if (a2.endsWith("f")) i3 = "f32";
+      else if (a2.endsWith("i")) i3 = "i32";
+      else if (a2.endsWith("u")) i3 = "u32";
+      else if (a2.endsWith("b")) i3 = "bool";
       else {
-        if (!a2.endsWith("h"))
-          return console.error(`Unknown vector type ${i3}. Line ${e2.line}`), null;
+        if (!a2.endsWith("h")) return console.error(`Unknown vector type ${i3}. Line ${e2.line}`), null;
         i3 = "f16";
       }
-      const o3 = function(e3, t4, n3) {
-        if (t4 === n3)
-          return e3;
+      const o3 = (function(e3, t4, n3) {
+        if (t4 === n3) return e3;
         const s3 = new Array(e3.length);
-        for (let r3 = 0; r3 < e3.length; r3++)
-          s3[r3] = nt(e3[r3], t4, n3);
+        for (let r3 = 0; r3 < e3.length; r3++) s3[r3] = nt(e3[r3], t4, n3);
         return s3;
-      }(Array.from(n2.data), r2, i3);
+      })(Array.from(n2.data), r2, i3);
       return new Me(o3, this.getTypeInfo(s2));
     }
     return console.error(`TODO: bitcast for ${n2.typeInfo.name}. Line ${e2.line}`), null;
@@ -27335,8 +27184,7 @@ var dt = class _dt extends ut {
   _evalCreate(e2, t2) {
     var r2;
     if (e2 instanceof de) {
-      if (null === e2.type)
-        return Ve.void;
+      if (null === e2.type) return Ve.void;
       switch (e2.type.getTypeName()) {
         case "bool":
         case "i32":
@@ -27394,26 +27242,21 @@ var dt = class _dt extends ut {
       }
     }
     const a2 = e2 instanceof de ? e2.type.name : e2.name, i3 = e2 instanceof de ? this.getTypeInfo(e2.type) : this.getTypeInfo(e2.name);
-    if (null === i3)
-      return console.error(`Unknown type ${a2}. Line ${e2.line}`), null;
-    if (0 === i3.size)
-      return null;
+    if (null === i3) return console.error(`Unknown type ${a2}. Line ${e2.line}`), null;
+    if (0 === i3.size) return null;
     const o3 = new Pe(new ArrayBuffer(i3.size), i3, 0);
     if (i3 instanceof n) {
-      if (e2.args)
-        for (let n2 = 0; n2 < e2.args.length; ++n2) {
-          const s2 = i3.members[n2], r3 = e2.args[n2], a3 = this.evalExpression(r3, t2);
-          o3.setData(this, a3, s2.type, s2.offset, t2);
-        }
+      if (e2.args) for (let n2 = 0; n2 < e2.args.length; ++n2) {
+        const s2 = i3.members[n2], r3 = e2.args[n2], a3 = this.evalExpression(r3, t2);
+        o3.setData(this, a3, s2.type, s2.offset, t2);
+      }
     } else if (i3 instanceof s) {
       let n2 = 0;
-      if (e2.args)
-        for (let s2 = 0; s2 < e2.args.length; ++s2) {
-          const a3 = e2.args[s2], c2 = this.evalExpression(a3, t2);
-          null === i3.format && ("x32" === (null === (r2 = c2.typeInfo) || void 0 === r2 ? void 0 : r2.name) ? i3.format = this.getTypeInfo("i32") : i3.format = c2.typeInfo), o3.setData(this, c2, i3.format, n2, t2), n2 += i3.stride;
-        }
-    } else
-      console.error(`Unknown type "${a2}". Line ${e2.line}`);
+      if (e2.args) for (let s2 = 0; s2 < e2.args.length; ++s2) {
+        const a3 = e2.args[s2], c2 = this.evalExpression(a3, t2);
+        null === i3.format && ("x32" === (null === (r2 = c2.typeInfo) || void 0 === r2 ? void 0 : r2.name) ? i3.format = this.getTypeInfo("i32") : i3.format = c2.typeInfo), o3.setData(this, c2, i3.format, n2, t2), n2 += i3.stride;
+      }
+    } else console.error(`Unknown type "${a2}". Line ${e2.line}`);
     return e2 instanceof de ? o3.getSubData(this, e2.postfix, t2) : o3;
   }
   _evalLiteral(e2, t2) {
@@ -27429,8 +27272,7 @@ var dt = class _dt extends ut {
   }
   _maxFormatTypeInfo(e2) {
     let t2 = e2[0];
-    if ("f32" === t2.name)
-      return t2;
+    if ("f32" === t2.name) return t2;
     for (let n2 = 1; n2 < e2.length; ++n2) {
       const s2 = _dt._priority.get(t2.name);
       _dt._priority.get(e2[n2].name) < s2 && (t2 = e2[n2]);
@@ -27439,10 +27281,8 @@ var dt = class _dt extends ut {
   }
   _evalUnaryOp(e2, t2) {
     const n2 = this.evalExpression(e2.right, t2);
-    if ("&" === e2.operator)
-      return new Oe(n2);
-    if ("*" === e2.operator)
-      return n2 instanceof Oe ? n2.reference.getSubData(this, e2.postfix, t2) : (console.error(`Invalid dereference. Line ${e2.line}`), null);
+    if ("&" === e2.operator) return new Oe(n2);
+    if ("*" === e2.operator) return n2 instanceof Oe ? n2.reference.getSubData(this, e2.postfix, t2) : (console.error(`Invalid dereference. Line ${e2.line}`), null);
     const s2 = n2 instanceof Be ? n2.value : n2 instanceof Me ? Array.from(n2.data) : null;
     switch (e2.operator) {
       case "+": {
@@ -27486,8 +27326,7 @@ var dt = class _dt extends ut {
       case "+": {
         if (Ge(r2) && Ge(a2)) {
           const t4 = r2, s3 = a2;
-          if (t4.length !== s3.length)
-            return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
+          if (t4.length !== s3.length) return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
           const i4 = t4.map((e3, t5) => e3 + s3[t5]);
           return new Me(i4, n2.typeInfo);
         }
@@ -27505,8 +27344,7 @@ var dt = class _dt extends ut {
       case "-": {
         if (Ge(r2) && Ge(a2)) {
           const t4 = r2, s3 = a2;
-          if (t4.length !== s3.length)
-            return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
+          if (t4.length !== s3.length) return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
           const i4 = t4.map((e3, t5) => e3 - s3[t5]);
           return new Me(i4, n2.typeInfo);
         }
@@ -27525,66 +27363,54 @@ var dt = class _dt extends ut {
         if (Ge(r2) && Ge(a2)) {
           const t4 = r2, i4 = a2;
           if (n2 instanceof Ue && s2 instanceof Ue) {
-            const r3 = function(e3, t5, n3, s3) {
-              if (void 0 === pt[t5.name] || void 0 === pt[s3.name])
-                return null;
+            const r3 = (function(e3, t5, n3, s3) {
+              if (void 0 === pt[t5.name] || void 0 === pt[s3.name]) return null;
               const r4 = pt[t5.name][0], a4 = pt[t5.name][1], i5 = pt[s3.name][0];
-              if (r4 !== pt[s3.name][1])
-                return null;
+              if (r4 !== pt[s3.name][1]) return null;
               const o5 = new Array(i5 * a4);
-              for (let t6 = 0; t6 < a4; t6++)
-                for (let s4 = 0; s4 < i5; s4++) {
-                  let c3 = 0;
-                  for (let i6 = 0; i6 < r4; i6++)
-                    c3 += e3[i6 * a4 + t6] * n3[s4 * r4 + i6];
-                  o5[t6 * i5 + s4] = c3;
-                }
+              for (let t6 = 0; t6 < a4; t6++) for (let s4 = 0; s4 < i5; s4++) {
+                let c3 = 0;
+                for (let i6 = 0; i6 < r4; i6++) c3 += e3[i6 * a4 + t6] * n3[s4 * r4 + i6];
+                o5[t6 * i5 + s4] = c3;
+              }
               return o5;
-            }(t4, n2.typeInfo, i4, s2.typeInfo);
-            if (null === r3)
-              return console.error(`Matrix multiplication failed. Line ${e2.line}.`), null;
+            })(t4, n2.typeInfo, i4, s2.typeInfo);
+            if (null === r3) return console.error(`Matrix multiplication failed. Line ${e2.line}.`), null;
             const a3 = pt[s2.typeInfo.name][0], o4 = pt[n2.typeInfo.name][1], c2 = this.getTypeInfo(`mat${a3}x${o4}f`);
             return new Ue(r3, c2);
           }
           if (n2 instanceof Ue && s2 instanceof Me) {
-            const r3 = function(e3, t5, n3, s3) {
-              if (void 0 === pt[t5.name] || void 0 === ft[s3.name])
-                return null;
+            const r3 = (function(e3, t5, n3, s3) {
+              if (void 0 === pt[t5.name] || void 0 === ft[s3.name]) return null;
               const r4 = pt[t5.name][0], a3 = pt[t5.name][1];
-              if (r4 !== n3.length)
-                return null;
+              if (r4 !== n3.length) return null;
               const i5 = new Array(a3);
               for (let t6 = 0; t6 < a3; t6++) {
                 let s4 = 0;
-                for (let i6 = 0; i6 < r4; i6++)
-                  s4 += e3[i6 * a3 + t6] * n3[i6];
+                for (let i6 = 0; i6 < r4; i6++) s4 += e3[i6 * a3 + t6] * n3[i6];
                 i5[t6] = s4;
               }
               return i5;
-            }(t4, n2.typeInfo, i4, s2.typeInfo);
+            })(t4, n2.typeInfo, i4, s2.typeInfo);
             return null === r3 ? (console.error(`Matrix vector multiplication failed. Line ${e2.line}.`), null) : new Me(r3, s2.typeInfo);
           }
           if (n2 instanceof Me && s2 instanceof Ue) {
-            const r3 = function(e3, t5, n3, s3) {
-              if (void 0 === ft[t5.name] || void 0 === pt[s3.name])
-                return null;
+            const r3 = (function(e3, t5, n3, s3) {
+              if (void 0 === ft[t5.name] || void 0 === pt[s3.name]) return null;
               const r4 = pt[s3.name][0], a3 = pt[s3.name][1];
-              if (a3 !== e3.length)
-                return null;
+              if (a3 !== e3.length) return null;
               const i5 = [];
               for (let t6 = 0; t6 < r4; t6++) {
                 let s4 = 0;
-                for (let i6 = 0; i6 < a3; i6++)
-                  s4 += e3[i6] * n3[i6 * r4 + t6];
+                for (let i6 = 0; i6 < a3; i6++) s4 += e3[i6] * n3[i6 * r4 + t6];
                 i5[t6] = s4;
               }
               return i5;
-            }(t4, n2.typeInfo, i4, s2.typeInfo);
+            })(t4, n2.typeInfo, i4, s2.typeInfo);
             return null === r3 ? (console.error(`Matrix vector multiplication failed. Line ${e2.line}.`), null) : new Me(r3, n2.typeInfo);
           }
           {
-            if (t4.length !== i4.length)
-              return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
+            if (t4.length !== i4.length) return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
             const s3 = t4.map((e3, t5) => e3 * i4[t5]);
             return new Me(s3, n2.typeInfo);
           }
@@ -27603,8 +27429,7 @@ var dt = class _dt extends ut {
       case "%": {
         if (Ge(r2) && Ge(a2)) {
           const t4 = r2, s3 = a2;
-          if (t4.length !== s3.length)
-            return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
+          if (t4.length !== s3.length) return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
           const i4 = t4.map((e3, t5) => e3 % s3[t5]);
           return new Me(i4, n2.typeInfo);
         }
@@ -27622,8 +27447,7 @@ var dt = class _dt extends ut {
       case "/": {
         if (Ge(r2) && Ge(a2)) {
           const t4 = r2, s3 = a2;
-          if (t4.length !== s3.length)
-            return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
+          if (t4.length !== s3.length) return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
           const i4 = t4.map((e3, t5) => e3 / s3[t5]);
           return new Me(i4, n2.typeInfo);
         }
@@ -27641,8 +27465,7 @@ var dt = class _dt extends ut {
       case "&": {
         if (Ge(r2) && Ge(a2)) {
           const t4 = r2, s3 = a2;
-          if (t4.length !== s3.length)
-            return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
+          if (t4.length !== s3.length) return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
           const i4 = t4.map((e3, t5) => e3 & s3[t5]);
           return new Me(i4, n2.typeInfo);
         }
@@ -27660,8 +27483,7 @@ var dt = class _dt extends ut {
       case "|": {
         if (Ge(r2) && Ge(a2)) {
           const t4 = r2, s3 = a2;
-          if (t4.length !== s3.length)
-            return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
+          if (t4.length !== s3.length) return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
           const i4 = t4.map((e3, t5) => e3 | s3[t5]);
           return new Me(i4, n2.typeInfo);
         }
@@ -27679,8 +27501,7 @@ var dt = class _dt extends ut {
       case "^": {
         if (Ge(r2) && Ge(a2)) {
           const t4 = r2, s3 = a2;
-          if (t4.length !== s3.length)
-            return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
+          if (t4.length !== s3.length) return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
           const i4 = t4.map((e3, t5) => e3 ^ s3[t5]);
           return new Me(i4, n2.typeInfo);
         }
@@ -27698,8 +27519,7 @@ var dt = class _dt extends ut {
       case "<<": {
         if (Ge(r2) && Ge(a2)) {
           const t4 = r2, s3 = a2;
-          if (t4.length !== s3.length)
-            return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
+          if (t4.length !== s3.length) return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
           const i4 = t4.map((e3, t5) => e3 << s3[t5]);
           return new Me(i4, n2.typeInfo);
         }
@@ -27717,8 +27537,7 @@ var dt = class _dt extends ut {
       case ">>": {
         if (Ge(r2) && Ge(a2)) {
           const t4 = r2, s3 = a2;
-          if (t4.length !== s3.length)
-            return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
+          if (t4.length !== s3.length) return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
           const i4 = t4.map((e3, t5) => e3 >> s3[t5]);
           return new Me(i4, n2.typeInfo);
         }
@@ -27736,8 +27555,7 @@ var dt = class _dt extends ut {
       case ">":
         if (Ge(r2) && Ge(a2)) {
           const t3 = r2, s3 = a2;
-          if (t3.length !== s3.length)
-            return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
+          if (t3.length !== s3.length) return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
           const i3 = t3.map((e3, t4) => e3 > s3[t4] ? 1 : 0);
           return new Me(i3, n2.typeInfo);
         }
@@ -27753,8 +27571,7 @@ var dt = class _dt extends ut {
       case "<":
         if (Ge(r2) && Ge(a2)) {
           const t3 = r2, s3 = a2;
-          if (t3.length !== s3.length)
-            return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
+          if (t3.length !== s3.length) return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
           const i3 = t3.map((e3, t4) => e3 < s3[t4] ? 1 : 0);
           return new Me(i3, n2.typeInfo);
         }
@@ -27770,8 +27587,7 @@ var dt = class _dt extends ut {
       case "==":
         if (Ge(r2) && Ge(a2)) {
           const t3 = r2, s3 = a2;
-          if (t3.length !== s3.length)
-            return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
+          if (t3.length !== s3.length) return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
           const i3 = t3.map((e3, t4) => e3 === s3[t4] ? 1 : 0);
           return new Me(i3, n2.typeInfo);
         }
@@ -27787,8 +27603,7 @@ var dt = class _dt extends ut {
       case "!=":
         if (Ge(r2) && Ge(a2)) {
           const t3 = r2, s3 = a2;
-          if (t3.length !== s3.length)
-            return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
+          if (t3.length !== s3.length) return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
           const i3 = t3.map((e3, t4) => e3 !== s3[t4] ? 1 : 0);
           return new Me(i3, n2.typeInfo);
         }
@@ -27804,8 +27619,7 @@ var dt = class _dt extends ut {
       case ">=":
         if (Ge(r2) && Ge(a2)) {
           const t3 = r2, s3 = a2;
-          if (t3.length !== s3.length)
-            return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
+          if (t3.length !== s3.length) return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
           const i3 = t3.map((e3, t4) => e3 >= s3[t4] ? 1 : 0);
           return new Me(i3, n2.typeInfo);
         }
@@ -27821,8 +27635,7 @@ var dt = class _dt extends ut {
       case "<=":
         if (Ge(r2) && Ge(a2)) {
           const t3 = r2, s3 = a2;
-          if (t3.length !== s3.length)
-            return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
+          if (t3.length !== s3.length) return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
           const i3 = t3.map((e3, t4) => e3 <= s3[t4] ? 1 : 0);
           return new Me(i3, n2.typeInfo);
         }
@@ -27838,8 +27651,7 @@ var dt = class _dt extends ut {
       case "&&":
         if (Ge(r2) && Ge(a2)) {
           const t3 = r2, s3 = a2;
-          if (t3.length !== s3.length)
-            return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
+          if (t3.length !== s3.length) return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
           const i3 = t3.map((e3, t4) => e3 && s3[t4] ? 1 : 0);
           return new Me(i3, n2.typeInfo);
         }
@@ -27855,8 +27667,7 @@ var dt = class _dt extends ut {
       case "||":
         if (Ge(r2) && Ge(a2)) {
           const t3 = r2, s3 = a2;
-          if (t3.length !== s3.length)
-            return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
+          if (t3.length !== s3.length) return console.error(`Vector length mismatch. Line ${e2.line}.`), null;
           const i3 = t3.map((e3, t4) => e3 || s3[t4] ? 1 : 0);
           return new Me(i3, n2.typeInfo);
         }
@@ -27873,14 +27684,12 @@ var dt = class _dt extends ut {
     return console.error(`Unknown operator ${e2.operator}. Line ${e2.line}`), null;
   }
   _evalCall(e2, t2) {
-    if (null !== e2.cachedReturnValue)
-      return e2.cachedReturnValue;
+    if (null !== e2.cachedReturnValue) return e2.cachedReturnValue;
     const n2 = t2.clone();
     n2.currentFunctionName = e2.name;
     const s2 = t2.getFunction(e2.name);
     if (!s2) {
-      if (e2.isBuiltin)
-        return this._callBuiltinFunction(e2, n2);
+      if (e2.isBuiltin) return this._callBuiltinFunction(e2, n2);
       return this.getTypeInfo(e2.name) ? this._evalCreate(e2, t2) : (console.error(`Unknown function "${e2.name}". Line ${e2.line}`), null);
     }
     for (let t3 = 0; t3 < s2.node.args.length; ++t3) {
@@ -28194,65 +28003,51 @@ var dt = class _dt extends ut {
     return null;
   }
   _callConstructorValue(e2, t2) {
-    if (!e2.args || 0 === e2.args.length)
-      return new Be(0, this.getTypeInfo(e2.type));
+    if (!e2.args || 0 === e2.args.length) return new Be(0, this.getTypeInfo(e2.type));
     const n2 = this.evalExpression(e2.args[0], t2);
     return n2.typeInfo = this.getTypeInfo(e2.type), n2.getSubData(this, e2.postfix, t2).clone();
   }
   _callConstructorVec(e2, t2) {
     const n2 = this.getTypeInfo(e2.type), s2 = e2.type.getTypeName(), r2 = ft[s2];
-    if (void 0 === r2)
-      return console.error(`Invalid vec constructor ${s2}. Line ${e2.line}`), null;
+    if (void 0 === r2) return console.error(`Invalid vec constructor ${s2}. Line ${e2.line}`), null;
     const a2 = [];
-    if (e2 instanceof xe)
-      if (e2.isVector) {
-        const t3 = e2.vectorValue;
-        for (const e3 of t3)
-          a2.push(e3);
-      } else
-        a2.push(e2.scalarValue);
-    else if (e2.args)
-      for (const n3 of e2.args) {
-        const e3 = this.evalExpression(n3, t2);
-        if (e3 instanceof Me) {
-          const t3 = e3.data;
-          for (let e4 = 0; e4 < t3.length; ++e4) {
-            let n4 = t3[e4];
-            a2.push(n4);
-          }
-        } else if (e3 instanceof Be) {
-          let t3 = e3.value;
-          a2.push(t3);
+    if (e2 instanceof xe) if (e2.isVector) {
+      const t3 = e2.vectorValue;
+      for (const e3 of t3) a2.push(e3);
+    } else a2.push(e2.scalarValue);
+    else if (e2.args) for (const n3 of e2.args) {
+      const e3 = this.evalExpression(n3, t2);
+      if (e3 instanceof Me) {
+        const t3 = e3.data;
+        for (let e4 = 0; e4 < t3.length; ++e4) {
+          let n4 = t3[e4];
+          a2.push(n4);
         }
+      } else if (e3 instanceof Be) {
+        let t3 = e3.value;
+        a2.push(t3);
       }
+    }
     if (e2.type instanceof ce && null === e2.type.format && (e2.type.format = ce.f32), 0 === a2.length) {
       const s3 = new Array(r2).fill(0);
       return new Me(s3, n2).getSubData(this, e2.postfix, t2);
     }
-    if (1 === a2.length)
-      for (; a2.length < r2; )
-        a2.push(a2[0]);
-    if (a2.length < r2)
-      return console.error(`Invalid vec constructor. Line ${e2.line}`), null;
+    if (1 === a2.length) for (; a2.length < r2; ) a2.push(a2[0]);
+    if (a2.length < r2) return console.error(`Invalid vec constructor. Line ${e2.line}`), null;
     return new Me(a2.length > r2 ? a2.slice(0, r2) : a2, n2).getSubData(this, e2.postfix, t2);
   }
   _callConstructorMatrix(e2, t2) {
     const n2 = this.getTypeInfo(e2.type), s2 = e2.type.getTypeName(), r2 = pt[s2];
-    if (void 0 === r2)
-      return console.error(`Invalid matrix constructor ${s2}. Line ${e2.line}`), null;
+    if (void 0 === r2) return console.error(`Invalid matrix constructor ${s2}. Line ${e2.line}`), null;
     const i3 = [];
-    if (e2 instanceof xe)
-      if (e2.isVector) {
-        const t3 = e2.vectorValue;
-        for (const e3 of t3)
-          i3.push(e3);
-      } else
-        i3.push(e2.scalarValue);
-    else if (e2.args)
-      for (const n3 of e2.args) {
-        const e3 = this.evalExpression(n3, t2);
-        e3 instanceof Me ? i3.push(...e3.data) : e3 instanceof Be ? i3.push(e3.value) : e3 instanceof Ue && i3.push(...e3.data);
-      }
+    if (e2 instanceof xe) if (e2.isVector) {
+      const t3 = e2.vectorValue;
+      for (const e3 of t3) i3.push(e3);
+    } else i3.push(e2.scalarValue);
+    else if (e2.args) for (const n3 of e2.args) {
+      const e3 = this.evalExpression(n3, t2);
+      e3 instanceof Me ? i3.push(...e3.data) : e3 instanceof Be ? i3.push(e3.value) : e3 instanceof Ue && i3.push(...e3.data);
+    }
     if (n2 instanceof a && null === n2.format && (n2.format = this.getTypeInfo("f32")), 0 === i3.length) {
       const s3 = new Array(r2[2]).fill(0);
       return new Ue(s3, n2).getSubData(this, e2.postfix, t2);
@@ -28275,8 +28070,7 @@ var gt = class {
     const t2 = [];
     for (; !this._isAtEnd(); ) {
       const e3 = this._global_decl_or_directive();
-      if (!e3)
-        break;
+      if (!e3) break;
       t2.push(e3);
     }
     if (this._deferArrayCountEval.length > 0) {
@@ -28284,41 +28078,33 @@ var gt = class {
         const t3 = e3.arrayType, n2 = e3.countNode;
         if (n2 instanceof ge) {
           const e4 = n2.name, s2 = this._context.constants.get(e4);
-          if (s2)
-            try {
-              const e5 = s2.constEvaluate(this._exec);
-              t3.count = e5;
-            } catch (e5) {
-            }
+          if (s2) try {
+            const e5 = s2.constEvaluate(this._exec);
+            t3.count = e5;
+          } catch (e5) {
+          }
         }
       }
       this._deferArrayCountEval.length = 0;
     }
-    if (this._forwardTypeCount > 0)
-      for (const e3 of t2)
-        e3.search((e4) => {
-          e4 instanceof Ce || e4 instanceof le ? e4.type = this._forwardType(e4.type) : e4 instanceof ue ? e4.format = this._forwardType(e4.format) : e4 instanceof F || e4 instanceof U || e4 instanceof P ? e4.type = this._forwardType(e4.type) : e4 instanceof D2 ? e4.returnType = this._forwardType(e4.returnType) : e4 instanceof $e && (e4.type = this._forwardType(e4.type));
-        });
+    if (this._forwardTypeCount > 0) for (const e3 of t2) e3.search((e4) => {
+      e4 instanceof Ce || e4 instanceof le ? e4.type = this._forwardType(e4.type) : e4 instanceof ue ? e4.format = this._forwardType(e4.format) : e4 instanceof F || e4 instanceof U || e4 instanceof P ? e4.type = this._forwardType(e4.type) : e4 instanceof D2 ? e4.returnType = this._forwardType(e4.returnType) : e4 instanceof $e && (e4.type = this._forwardType(e4.type));
+    });
     return t2;
   }
   _forwardType(e2) {
     if (e2 instanceof ie) {
       const t2 = this._getType(e2.name);
-      if (t2)
-        return t2;
-    } else
-      e2 instanceof le ? e2.type = this._forwardType(e2.type) : e2 instanceof ue && (e2.format = this._forwardType(e2.format));
+      if (t2) return t2;
+    } else e2 instanceof le ? e2.type = this._forwardType(e2.type) : e2 instanceof ue && (e2.format = this._forwardType(e2.format));
     return e2;
   }
   _initialize(e2) {
-    if (e2)
-      if ("string" == typeof e2) {
-        const t2 = new Re(e2);
-        this._tokens = t2.scanTokens();
-      } else
-        this._tokens = e2;
-    else
-      this._tokens = [];
+    if (e2) if ("string" == typeof e2) {
+      const t2 = new Re(e2);
+      this._tokens = t2.scanTokens();
+    } else this._tokens = e2;
+    else this._tokens = [];
     this._current = 0;
   }
   _updateNode(e2, t2) {
@@ -28331,41 +28117,34 @@ var gt = class {
     return this._current >= this._tokens.length || this._peek().type == He.eof;
   }
   _match(e2) {
-    if (e2 instanceof qe)
-      return !!this._check(e2) && (this._advance(), true);
+    if (e2 instanceof qe) return !!this._check(e2) && (this._advance(), true);
     for (let t2 = 0, n2 = e2.length; t2 < n2; ++t2) {
       const n3 = e2[t2];
-      if (this._check(n3))
-        return this._advance(), true;
+      if (this._check(n3)) return this._advance(), true;
     }
     return false;
   }
   _consume(e2, t2) {
-    if (this._check(e2))
-      return this._advance();
+    if (this._check(e2)) return this._advance();
     throw this._error(this._peek(), `${t2}. Line:${this._currentLine}`);
   }
   _check(e2) {
-    if (this._isAtEnd())
-      return false;
+    if (this._isAtEnd()) return false;
     const t2 = this._peek();
     if (e2 instanceof Array) {
       const n2 = t2.type;
       let s2 = false;
       for (const t3 of e2) {
-        if (n2 === t3)
-          return true;
+        if (n2 === t3) return true;
         t3 === He.tokens.name && (s2 = true);
       }
       if (s2) {
         const e3 = He.tokens.name.rule.exec(t2.lexeme);
-        if (e3 && 0 == e3.index && e3[0] == t2.lexeme)
-          return true;
+        if (e3 && 0 == e3.index && e3[0] == t2.lexeme) return true;
       }
       return false;
     }
-    if (t2.type === e2)
-      return true;
+    if (t2.type === e2) return true;
     if (e2 === He.tokens.name) {
       const e3 = He.tokens.name.rule.exec(t2.lexeme);
       return e3 && 0 == e3.index && e3[0] == t2.lexeme;
@@ -28383,8 +28162,7 @@ var gt = class {
     return this._tokens[this._current - 1];
   }
   _global_decl_or_directive() {
-    for (; this._match(He.tokens.semicolon) && !this._isAtEnd(); )
-      ;
+    for (; this._match(He.tokens.semicolon) && !this._isAtEnd(); ) ;
     if (this._match(He.keywords.alias)) {
       const e3 = this._type_alias();
       return this._consume(He.tokens.semicolon, "Expected ';'"), this._exec.reflection.updateAST([e3]), e3;
@@ -28429,20 +28207,17 @@ var gt = class {
     return null;
   }
   _function_decl() {
-    if (!this._match(He.keywords.fn))
-      return null;
+    if (!this._match(He.keywords.fn)) return null;
     const e2 = this._currentLine, t2 = this._consume(He.tokens.ident, "Expected function name.").toString();
     this._consume(He.tokens.paren_left, "Expected '(' for function arguments.");
     const n2 = [];
-    if (!this._check(He.tokens.paren_right))
-      do {
-        if (this._check(He.tokens.paren_right))
-          break;
-        const e3 = this._attribute(), t3 = this._consume(He.tokens.name, "Expected argument name.").toString();
-        this._consume(He.tokens.colon, "Expected ':' for argument type.");
-        const s3 = this._attribute(), r3 = this._type_decl();
-        null != r3 && (r3.attributes = s3, n2.push(this._updateNode(new $e(t3, r3, e3))));
-      } while (this._match(He.tokens.comma));
+    if (!this._check(He.tokens.paren_right)) do {
+      if (this._check(He.tokens.paren_right)) break;
+      const e3 = this._attribute(), t3 = this._consume(He.tokens.name, "Expected argument name.").toString();
+      this._consume(He.tokens.colon, "Expected ':' for argument type.");
+      const s3 = this._attribute(), r3 = this._type_decl();
+      null != r3 && (r3.attributes = s3, n2.push(this._updateNode(new $e(t3, r3, e3))));
+    } while (this._match(He.tokens.comma));
     this._consume(He.tokens.paren_right, "Expected ')' after function arguments.");
     let s2 = null;
     if (this._match(He.tokens.arrow)) {
@@ -28461,31 +28236,19 @@ var gt = class {
     return this._consume(He.tokens.brace_right, "Expected '}' for block."), e2;
   }
   _statement() {
-    for (; this._match(He.tokens.semicolon) && !this._isAtEnd(); )
-      ;
-    if (this._check(He.tokens.attr) && this._attribute(), this._check(He.keywords.if))
-      return this._if_statement();
-    if (this._check(He.keywords.switch))
-      return this._switch_statement();
-    if (this._check(He.keywords.loop))
-      return this._loop_statement();
-    if (this._check(He.keywords.for))
-      return this._for_statement();
-    if (this._check(He.keywords.while))
-      return this._while_statement();
-    if (this._check(He.keywords.continuing))
-      return this._continuing_statement();
-    if (this._check(He.keywords.static_assert))
-      return this._static_assert_statement();
-    if (this._check(He.tokens.brace_left))
-      return this._compound_statement();
+    for (; this._match(He.tokens.semicolon) && !this._isAtEnd(); ) ;
+    if (this._check(He.tokens.attr) && this._attribute(), this._check(He.keywords.if)) return this._if_statement();
+    if (this._check(He.keywords.switch)) return this._switch_statement();
+    if (this._check(He.keywords.loop)) return this._loop_statement();
+    if (this._check(He.keywords.for)) return this._for_statement();
+    if (this._check(He.keywords.while)) return this._while_statement();
+    if (this._check(He.keywords.continuing)) return this._continuing_statement();
+    if (this._check(He.keywords.static_assert)) return this._static_assert_statement();
+    if (this._check(He.tokens.brace_left)) return this._compound_statement();
     let e2 = null;
-    if (this._check(He.keywords.return))
-      e2 = this._return_statement();
-    else if (this._check([He.keywords.var, He.keywords.let, He.keywords.const]))
-      e2 = this._variable_statement();
-    else if (this._match(He.keywords.discard))
-      e2 = this._updateNode(new ne());
+    if (this._check(He.keywords.return)) e2 = this._return_statement();
+    else if (this._check([He.keywords.var, He.keywords.let, He.keywords.const])) e2 = this._variable_statement();
+    else if (this._match(He.keywords.discard)) e2 = this._updateNode(new ne());
     else if (this._match(He.keywords.break)) {
       const t2 = this._updateNode(new se());
       if (this._currentLoop.length > 0) {
@@ -28495,39 +28258,33 @@ var gt = class {
       e2 = t2, this._check(He.keywords.if) && (this._advance(), t2.condition = this._optional_paren_expression());
     } else if (this._match(He.keywords.continue)) {
       const t2 = this._updateNode(new re());
-      if (!(this._currentLoop.length > 0))
-        throw this._error(this._peek(), `Continue statement must be inside a loop. Line: ${t2.line}`);
+      if (!(this._currentLoop.length > 0)) throw this._error(this._peek(), `Continue statement must be inside a loop. Line: ${t2.line}`);
       {
         const e3 = this._currentLoop[this._currentLoop.length - 1];
         t2.loopId = e3.id;
       }
       e2 = t2;
-    } else
-      e2 = this._increment_decrement_statement() || this._func_call_statement() || this._assignment_statement();
+    } else e2 = this._increment_decrement_statement() || this._func_call_statement() || this._assignment_statement();
     return null != e2 && this._consume(He.tokens.semicolon, "Expected ';' after statement."), e2;
   }
   _static_assert_statement() {
-    if (!this._match(He.keywords.static_assert))
-      return null;
+    if (!this._match(He.keywords.static_assert)) return null;
     const e2 = this._currentLine, t2 = this._optional_paren_expression();
     return this._updateNode(new N2(t2), e2);
   }
   _while_statement() {
-    if (!this._match(He.keywords.while))
-      return null;
+    if (!this._match(He.keywords.while)) return null;
     const e2 = this._updateNode(new V(null, null));
     return this._currentLoop.push(e2), e2.condition = this._optional_paren_expression(), this._check(He.tokens.attr) && this._attribute(), e2.body = this._compound_statement(), this._currentLoop.pop(), e2;
   }
   _continuing_statement() {
     const e2 = this._currentLoop.length > 0 ? this._currentLoop[this._currentLoop.length - 1].id : -1;
-    if (!this._match(He.keywords.continuing))
-      return null;
+    if (!this._match(He.keywords.continuing)) return null;
     const t2 = this._currentLine, n2 = this._compound_statement();
     return this._updateNode(new O(n2, e2), t2);
   }
   _for_statement() {
-    if (!this._match(He.keywords.for))
-      return null;
+    if (!this._match(He.keywords.for)) return null;
     this._consume(He.tokens.paren_left, "Expected '('.");
     const e2 = this._updateNode(new B2(null, null, null, null));
     return this._currentLoop.push(e2), e2.init = this._check(He.tokens.semicolon) ? null : this._for_init(), this._consume(He.tokens.semicolon, "Expected ';'."), e2.condition = this._check(He.tokens.semicolon) ? null : this._short_circuit_or_expression(), this._consume(He.tokens.semicolon, "Expected ';'."), e2.increment = this._check(He.tokens.paren_right) ? null : this._for_increment(), this._consume(He.tokens.paren_right, "Expected ')'."), this._check(He.tokens.attr) && this._attribute(), e2.body = this._compound_statement(), this._currentLoop.pop(), e2;
@@ -28541,8 +28298,7 @@ var gt = class {
   _variable_statement() {
     if (this._check(He.keywords.var)) {
       const e2 = this._variable_decl();
-      if (null === e2)
-        throw this._error(this._peek(), "Variable declaration expected.");
+      if (null === e2) throw this._error(this._peek(), "Variable declaration expected.");
       let t2 = null;
       return this._match(He.tokens.equal) && (t2 = this._short_circuit_or_expression()), this._updateNode(new F(e2.name, e2.type, e2.storage, e2.access, t2), e2.line);
     }
@@ -28572,43 +28328,34 @@ var gt = class {
   }
   _increment_decrement_statement() {
     const e2 = this._current, t2 = this._unary_expression();
-    if (null == t2)
-      return null;
-    if (!this._check(He.increment_operators))
-      return this._current = e2, null;
+    if (null == t2) return null;
+    if (!this._check(He.increment_operators)) return this._current = e2, null;
     const n2 = this._consume(He.increment_operators, "Expected increment operator");
     return this._updateNode(new R(n2.type === He.tokens.plus_plus ? W.increment : W.decrement, t2));
   }
   _assignment_statement() {
     let e2 = null;
     const t2 = this._currentLine;
-    if (this._check(He.tokens.brace_right))
-      return null;
+    if (this._check(He.tokens.brace_right)) return null;
     let n2 = this._match(He.tokens.underscore);
-    if (n2 || (e2 = this._unary_expression()), !n2 && null == e2)
-      return null;
+    if (n2 || (e2 = this._unary_expression()), !n2 && null == e2) return null;
     const s2 = this._consume(He.assignment_operators, "Expected assignment operator."), r2 = this._short_circuit_or_expression();
     return this._updateNode(new G2(q.parse(s2.lexeme), e2, r2), t2);
   }
   _func_call_statement() {
-    if (!this._check(He.tokens.ident))
-      return null;
+    if (!this._check(He.tokens.ident)) return null;
     const e2 = this._currentLine, t2 = this._current, n2 = this._consume(He.tokens.ident, "Expected function name."), s2 = this._argument_expression_list();
     return null === s2 ? (this._current = t2, null) : this._updateNode(new X(n2.lexeme, s2), e2);
   }
   _loop_statement() {
-    if (!this._match(He.keywords.loop))
-      return null;
+    if (!this._match(He.keywords.loop)) return null;
     this._check(He.tokens.attr) && this._attribute(), this._consume(He.tokens.brace_left, "Expected '{' for loop.");
     const e2 = this._updateNode(new j([], null));
     this._currentLoop.push(e2);
     let t2 = this._statement();
     for (; null !== t2; ) {
-      if (Array.isArray(t2))
-        for (let n2 of t2)
-          e2.body.push(n2);
-      else
-        e2.body.push(t2);
+      if (Array.isArray(t2)) for (let n2 of t2) e2.body.push(n2);
+      else e2.body.push(t2);
       if (t2 instanceof O) {
         e2.continuing = t2;
         break;
@@ -28618,11 +28365,9 @@ var gt = class {
     return this._currentLoop.pop(), this._consume(He.tokens.brace_right, "Expected '}' for loop."), e2;
   }
   _switch_statement() {
-    if (!this._match(He.keywords.switch))
-      return null;
+    if (!this._match(He.keywords.switch)) return null;
     const e2 = this._updateNode(new Z(null, []));
-    if (this._currentLoop.push(e2), e2.condition = this._optional_paren_expression(), this._check(He.tokens.attr) && this._attribute(), this._consume(He.tokens.brace_left, "Expected '{' for switch."), e2.cases = this._switch_body(), null == e2.cases || 0 == e2.cases.length)
-      throw this._error(this._previous(), "Expected 'case' or 'default'.");
+    if (this._currentLoop.push(e2), e2.condition = this._optional_paren_expression(), this._check(He.tokens.attr) && this._attribute(), this._consume(He.tokens.brace_left, "Expected '{' for switch."), e2.cases = this._switch_body(), null == e2.cases || 0 == e2.cases.length) throw this._error(this._previous(), "Expected 'case' or 'default'.");
     return this._consume(He.tokens.brace_right, "Expected '}' for switch."), this._currentLoop.pop(), e2;
   }
   _switch_body() {
@@ -28631,20 +28376,17 @@ var gt = class {
     for (; this._check([He.keywords.default, He.keywords.case]); ) {
       if (this._match(He.keywords.case)) {
         const n2 = this._case_selectors();
-        for (const e3 of n2)
-          if (e3 instanceof Se) {
-            if (t2)
-              throw this._error(this._previous(), "Multiple default cases in switch statement.");
-            t2 = true;
-            break;
-          }
+        for (const e3 of n2) if (e3 instanceof Se) {
+          if (t2) throw this._error(this._previous(), "Multiple default cases in switch statement.");
+          t2 = true;
+          break;
+        }
         this._match(He.tokens.colon), this._check(He.tokens.attr) && this._attribute(), this._consume(He.tokens.brace_left, "Exected '{' for switch case.");
         const s2 = this._case_body();
         this._consume(He.tokens.brace_right, "Exected '}' for switch case."), e2.push(this._updateNode(new Ae(n2, s2)));
       }
       if (this._match(He.keywords.default)) {
-        if (t2)
-          throw this._error(this._previous(), "Multiple default cases in switch statement.");
+        if (t2) throw this._error(this._previous(), "Multiple default cases in switch statement.");
         this._match(He.tokens.colon), this._check(He.tokens.attr) && this._attribute(), this._consume(He.tokens.brace_left, "Exected '{' for switch default.");
         const n2 = this._case_body();
         this._consume(He.tokens.brace_right, "Exected '}' for switch default."), e2.push(this._updateNode(new Ee(n2)));
@@ -28654,23 +28396,19 @@ var gt = class {
   }
   _case_selectors() {
     const e2 = [];
-    for (this._match(He.keywords.default) ? e2.push(this._updateNode(new Se())) : e2.push(this._shift_expression()); this._match(He.tokens.comma); )
-      this._match(He.keywords.default) ? e2.push(this._updateNode(new Se())) : e2.push(this._shift_expression());
+    for (this._match(He.keywords.default) ? e2.push(this._updateNode(new Se())) : e2.push(this._shift_expression()); this._match(He.tokens.comma); ) this._match(He.keywords.default) ? e2.push(this._updateNode(new Se())) : e2.push(this._shift_expression());
     return e2;
   }
   _case_body() {
-    if (this._match(He.keywords.fallthrough))
-      return this._consume(He.tokens.semicolon, "Expected ';'"), [];
+    if (this._match(He.keywords.fallthrough)) return this._consume(He.tokens.semicolon, "Expected ';'"), [];
     let e2 = this._statement();
-    if (null == e2)
-      return [];
+    if (null == e2) return [];
     e2 instanceof Array || (e2 = [e2]);
     const t2 = this._case_body();
     return 0 == t2.length ? e2 : [...e2, t2[0]];
   }
   _if_statement() {
-    if (!this._match(He.keywords.if))
-      return null;
+    if (!this._match(He.keywords.if)) return null;
     const e2 = this._currentLine, t2 = this._optional_paren_expression();
     this._check(He.tokens.attr) && this._attribute();
     const n2 = this._compound_statement();
@@ -28687,39 +28425,33 @@ var gt = class {
     return e2.push(this._updateNode(new Le(t2, n2))), this._match_elseif() && (this._check(He.tokens.attr) && this._attribute(), this._elseif_statement(e2)), e2;
   }
   _return_statement() {
-    if (!this._match(He.keywords.return))
-      return null;
+    if (!this._match(He.keywords.return)) return null;
     const e2 = this._short_circuit_or_expression();
     return this._updateNode(new Y(e2));
   }
   _short_circuit_or_expression() {
     let e2 = this._short_circuit_and_expr();
-    for (; this._match(He.tokens.or_or); )
-      e2 = this._updateNode(new Ie(this._previous().toString(), e2, this._short_circuit_and_expr()));
+    for (; this._match(He.tokens.or_or); ) e2 = this._updateNode(new Ie(this._previous().toString(), e2, this._short_circuit_and_expr()));
     return e2;
   }
   _short_circuit_and_expr() {
     let e2 = this._inclusive_or_expression();
-    for (; this._match(He.tokens.and_and); )
-      e2 = this._updateNode(new Ie(this._previous().toString(), e2, this._inclusive_or_expression()));
+    for (; this._match(He.tokens.and_and); ) e2 = this._updateNode(new Ie(this._previous().toString(), e2, this._inclusive_or_expression()));
     return e2;
   }
   _inclusive_or_expression() {
     let e2 = this._exclusive_or_expression();
-    for (; this._match(He.tokens.or); )
-      e2 = this._updateNode(new Ie(this._previous().toString(), e2, this._exclusive_or_expression()));
+    for (; this._match(He.tokens.or); ) e2 = this._updateNode(new Ie(this._previous().toString(), e2, this._exclusive_or_expression()));
     return e2;
   }
   _exclusive_or_expression() {
     let e2 = this._and_expression();
-    for (; this._match(He.tokens.xor); )
-      e2 = this._updateNode(new Ie(this._previous().toString(), e2, this._and_expression()));
+    for (; this._match(He.tokens.xor); ) e2 = this._updateNode(new Ie(this._previous().toString(), e2, this._and_expression()));
     return e2;
   }
   _and_expression() {
     let e2 = this._equality_expression();
-    for (; this._match(He.tokens.and); )
-      e2 = this._updateNode(new Ie(this._previous().toString(), e2, this._equality_expression()));
+    for (; this._match(He.tokens.and); ) e2 = this._updateNode(new Ie(this._previous().toString(), e2, this._equality_expression()));
     return e2;
   }
   _equality_expression() {
@@ -28728,26 +28460,22 @@ var gt = class {
   }
   _relational_expression() {
     let e2 = this._shift_expression();
-    for (; this._match([He.tokens.less_than, He.tokens.greater_than, He.tokens.less_than_equal, He.tokens.greater_than_equal]); )
-      e2 = this._updateNode(new Ie(this._previous().toString(), e2, this._shift_expression()));
+    for (; this._match([He.tokens.less_than, He.tokens.greater_than, He.tokens.less_than_equal, He.tokens.greater_than_equal]); ) e2 = this._updateNode(new Ie(this._previous().toString(), e2, this._shift_expression()));
     return e2;
   }
   _shift_expression() {
     let e2 = this._additive_expression();
-    for (; this._match([He.tokens.shift_left, He.tokens.shift_right]); )
-      e2 = this._updateNode(new Ie(this._previous().toString(), e2, this._additive_expression()));
+    for (; this._match([He.tokens.shift_left, He.tokens.shift_right]); ) e2 = this._updateNode(new Ie(this._previous().toString(), e2, this._additive_expression()));
     return e2;
   }
   _additive_expression() {
     let e2 = this._multiplicative_expression();
-    for (; this._match([He.tokens.plus, He.tokens.minus]); )
-      e2 = this._updateNode(new Ie(this._previous().toString(), e2, this._multiplicative_expression()));
+    for (; this._match([He.tokens.plus, He.tokens.minus]); ) e2 = this._updateNode(new Ie(this._previous().toString(), e2, this._multiplicative_expression()));
     return e2;
   }
   _multiplicative_expression() {
     let e2 = this._unary_expression();
-    for (; this._match([He.tokens.star, He.tokens.forward_slash, He.tokens.modulo]); )
-      e2 = this._updateNode(new Ie(this._previous().toString(), e2, this._unary_expression()));
+    for (; this._match([He.tokens.star, He.tokens.forward_slash, He.tokens.modulo]); ) e2 = this._updateNode(new Ie(this._previous().toString(), e2, this._unary_expression()));
     return e2;
   }
   _unary_expression() {
@@ -28781,8 +28509,7 @@ var gt = class {
   }
   _getType(e2) {
     const t2 = this._getStruct(e2);
-    if (null !== t2)
-      return t2;
+    if (null !== t2) return t2;
     switch (e2) {
       case "void":
         return ae.void;
@@ -28897,10 +28624,8 @@ var gt = class {
   }
   _validateTypeRange(e2, t2) {
     if ("i32" === t2.name) {
-      if (e2 < -2147483648 || e2 > 2147483647)
-        throw this._error(this._previous(), `Value out of range for i32: ${e2}. Line: ${this._currentLine}.`);
-    } else if ("u32" === t2.name && (e2 < 0 || e2 > 4294967295))
-      throw this._error(this._previous(), `Value out of range for u32: ${e2}. Line: ${this._currentLine}.`);
+      if (e2 < -2147483648 || e2 > 2147483647) throw this._error(this._previous(), `Value out of range for i32: ${e2}. Line: ${this._currentLine}.`);
+    } else if ("u32" === t2.name && (e2 < 0 || e2 > 4294967295)) throw this._error(this._previous(), `Value out of range for u32: ${e2}. Line: ${this._currentLine}.`);
   }
   _primary_expression() {
     if (this._match(He.tokens.ident)) {
@@ -28937,8 +28662,7 @@ var gt = class {
       let e3 = this._previous().toString() === He.keywords.true.rule;
       return this._updateNode(new xe(new Be(e3 ? 1 : 0, this._exec.getTypeInfo(ae.bool)), ae.bool));
     }
-    if (this._check(He.tokens.paren_left))
-      return this._paren_expression();
+    if (this._check(He.tokens.paren_left)) return this._paren_expression();
     if (this._match(He.keywords.bitcast)) {
       this._consume(He.tokens.less_than, "Expected '<'.");
       const e3 = this._type_decl();
@@ -28950,12 +28674,10 @@ var gt = class {
     return this._updateNode(new de(e2, t2));
   }
   _argument_expression_list() {
-    if (!this._match(He.tokens.paren_left))
-      return null;
+    if (!this._match(He.tokens.paren_left)) return null;
     const e2 = [];
     do {
-      if (this._check(He.tokens.paren_right))
-        break;
+      if (this._check(He.tokens.paren_right)) break;
       const t2 = this._short_circuit_or_expression();
       e2.push(t2);
     } while (this._match(He.tokens.comma));
@@ -28972,8 +28694,7 @@ var gt = class {
     return this._consume(He.tokens.paren_right, "Expected ')'."), e2;
   }
   _struct_decl() {
-    if (!this._match(He.keywords.struct))
-      return null;
+    if (!this._match(He.keywords.struct)) return null;
     const e2 = this._currentLine, t2 = this._consume(He.tokens.ident, "Expected name for struct.").toString();
     this._consume(He.tokens.brace_left, "Expected '{' for struct body.");
     const n2 = [];
@@ -28989,20 +28710,17 @@ var gt = class {
   }
   _global_variable_decl() {
     const e2 = this._variable_decl();
-    if (!e2)
-      return null;
+    if (!e2) return null;
     if (this._match(He.tokens.equal)) {
       const t2 = this._const_expression();
       e2.value = t2;
     }
     if (null !== e2.type && e2.value instanceof xe) {
       if ("x32" !== e2.value.type.name) {
-        if (e2.type.getTypeName() !== e2.value.type.getTypeName())
-          throw this._error(this._peek(), `Invalid cast from ${e2.value.type.name} to ${e2.type.name}. Line:${this._currentLine}`);
+        if (e2.type.getTypeName() !== e2.value.type.getTypeName()) throw this._error(this._peek(), `Invalid cast from ${e2.value.type.name} to ${e2.type.name}. Line:${this._currentLine}`);
       }
       e2.value.isScalar && this._validateTypeRange(e2.value.scalarValue, e2.type), e2.value.type = e2.type;
-    } else
-      null === e2.type && e2.value instanceof xe && (e2.type = "x32" === e2.value.type.name ? ae.i32 : e2.value.type, e2.value.isScalar && this._validateTypeRange(e2.value.scalarValue, e2.type));
+    } else null === e2.type && e2.value instanceof xe && (e2.type = "x32" === e2.value.type.name ? ae.i32 : e2.value.type, e2.value.isScalar && this._validateTypeRange(e2.value.scalarValue, e2.type));
     return e2;
   }
   _override_variable_decl() {
@@ -29011,8 +28729,7 @@ var gt = class {
   }
   _global_const_decl() {
     var e2;
-    if (!this._match(He.keywords.const))
-      return null;
+    if (!this._match(He.keywords.const)) return null;
     const t2 = this._consume(He.tokens.name, "Expected variable name"), n2 = this._currentLine;
     let s2 = null;
     if (this._match(He.tokens.colon)) {
@@ -29030,18 +28747,15 @@ var gt = class {
     }
     if (null !== s2 && r2 instanceof xe) {
       if ("x32" !== r2.type.name) {
-        if (s2.getTypeName() !== r2.type.getTypeName())
-          throw this._error(this._peek(), `Invalid cast from ${r2.type.name} to ${s2.name}. Line:${this._currentLine}`);
+        if (s2.getTypeName() !== r2.type.getTypeName()) throw this._error(this._peek(), `Invalid cast from ${r2.type.name} to ${s2.name}. Line:${this._currentLine}`);
       }
       r2.type = s2, r2.isScalar && this._validateTypeRange(r2.scalarValue, r2.type);
-    } else
-      null === s2 && r2 instanceof xe && (s2 = null !== (e2 = null == r2 ? void 0 : r2.type) && void 0 !== e2 ? e2 : ae.f32, s2 === ae.x32 && (s2 = ae.i32));
+    } else null === s2 && r2 instanceof xe && (s2 = null !== (e2 = null == r2 ? void 0 : r2.type) && void 0 !== e2 ? e2 : ae.f32, s2 === ae.x32 && (s2 = ae.i32));
     const o3 = this._updateNode(new P(t2.toString(), s2, "", "", r2), n2);
     return this._context.constants.set(o3.name, o3), o3;
   }
   _global_let_decl() {
-    if (!this._match(He.keywords.let))
-      return null;
+    if (!this._match(He.keywords.let)) return null;
     const e2 = this._currentLine, t2 = this._consume(He.tokens.name, "Expected variable name");
     let n2 = null;
     if (this._match(He.tokens.colon)) {
@@ -29051,20 +28765,17 @@ var gt = class {
     let s2 = null;
     if (this._match(He.tokens.equal) && (s2 = this._const_expression()), null !== n2 && s2 instanceof xe) {
       if ("x32" !== s2.type.name) {
-        if (n2.getTypeName() !== s2.type.getTypeName())
-          throw this._error(this._peek(), `Invalid cast from ${s2.type.name} to ${n2.name}. Line:${this._currentLine}`);
+        if (n2.getTypeName() !== s2.type.getTypeName()) throw this._error(this._peek(), `Invalid cast from ${s2.type.name} to ${n2.name}. Line:${this._currentLine}`);
       }
       s2.type = n2;
-    } else
-      null === n2 && s2 instanceof xe && (n2 = "x32" === s2.type.name ? ae.i32 : s2.type);
+    } else null === n2 && s2 instanceof xe && (n2 = "x32" === s2.type.name ? ae.i32 : s2.type);
     return s2 instanceof xe && s2.isScalar && this._validateTypeRange(s2.scalarValue, n2), this._updateNode(new U(t2.toString(), n2, "", "", s2), e2);
   }
   _const_expression() {
     return this._short_circuit_or_expression();
   }
   _variable_decl() {
-    if (!this._match(He.keywords.var))
-      return null;
+    if (!this._match(He.keywords.var)) return null;
     const e2 = this._currentLine;
     let t2 = "", n2 = "";
     this._match(He.tokens.less_than) && (t2 = this._consume(He.storage_class, "Expected storage_class.").toString(), this._match(He.tokens.comma) && (n2 = this._consume(He.access_mode, "Expected access_mode.").toString()), this._consume(He.tokens.greater_than, "Expected '>'."));
@@ -29077,8 +28788,7 @@ var gt = class {
     return this._updateNode(new F(s2.toString(), r2, t2, n2, null), e2);
   }
   _override_decl() {
-    if (!this._match(He.keywords.override))
-      return null;
+    if (!this._match(He.keywords.override)) return null;
     const e2 = this._consume(He.tokens.name, "Expected variable name");
     let t2 = null;
     if (this._match(He.tokens.colon)) {
@@ -29113,8 +28823,7 @@ var gt = class {
     const e2 = this._consume(He.tokens.ident, "identity expected.");
     this._consume(He.tokens.equal, "Expected '=' for type alias.");
     let t2 = this._type_decl();
-    if (null === t2)
-      throw this._error(this._peek(), "Expected Type for Alias.");
+    if (null === t2) throw this._error(this._peek(), "Expected Type for Alias.");
     this._context.aliases.has(t2.name) && (t2 = this._context.aliases.get(t2.name).type);
     const n2 = this._updateNode(new te(e2.toString(), t2));
     return this._context.aliases.set(n2.name, n2), n2;
@@ -29122,10 +28831,8 @@ var gt = class {
   _type_decl() {
     if (this._check([He.tokens.ident, ...He.texel_format, He.keywords.bool, He.keywords.f32, He.keywords.i32, He.keywords.u32])) {
       const e3 = this._advance().toString();
-      if (this._context.structs.has(e3))
-        return this._context.structs.get(e3);
-      if (this._context.aliases.has(e3))
-        return this._context.aliases.get(e3).type;
+      if (this._context.structs.has(e3)) return this._context.structs.get(e3);
+      if (this._context.aliases.has(e3)) return this._context.aliases.get(e3).type;
       if (!this._getType(e3)) {
         const t3 = this._updateNode(new ie(e3));
         return this._forwardTypeCount++, t3;
@@ -29133,8 +28840,7 @@ var gt = class {
       return this._updateNode(new ae(e3));
     }
     let e2 = this._texture_sampler_types();
-    if (e2)
-      return e2;
+    if (e2) return e2;
     if (this._check(He.template_types)) {
       let e3 = this._advance().toString(), t3 = null, n2 = null;
       this._match(He.tokens.less_than) && (t3 = this._type_decl(), n2 = null, this._match(He.tokens.comma) && (n2 = this._consume(He.access_mode, "Expected access_mode for pointer").toString()), this._consume(He.tokens.greater_than, "Expected '>' for type."));
@@ -29174,10 +28880,8 @@ var gt = class {
     return null;
   }
   _texture_sampler_types() {
-    if (this._match(He.sampler_type))
-      return this._updateNode(new he(this._previous().toString(), null, null));
-    if (this._match(He.depth_texture_type))
-      return this._updateNode(new he(this._previous().toString(), null, null));
+    if (this._match(He.sampler_type)) return this._updateNode(new he(this._previous().toString(), null, null));
+    if (this._match(He.depth_texture_type)) return this._updateNode(new he(this._previous().toString(), null, null));
     if (this._match(He.sampled_texture_type) || this._match(He.multisampled_texture_type)) {
       const e2 = this._previous();
       this._consume(He.tokens.less_than, "Expected '<' for sampler type.");
@@ -29628,7 +29332,7 @@ function checkVector(v2, length5, callerName = "") {
 }
 
 // node_modules/@math.gl/core/dist/lib/assert.js
-function assert6(condition, message2) {
+function assert7(condition, message2) {
   if (!condition) {
     throw new Error(`math.gl assertion ${message2}`);
   }
@@ -29735,11 +29439,11 @@ var Vector = class extends MathArray {
     return this.distanceSquared(vector);
   }
   getComponent(i3) {
-    assert6(i3 >= 0 && i3 < this.ELEMENTS, "index is out of range");
+    assert7(i3 >= 0 && i3 < this.ELEMENTS, "index is out of range");
     return checkNumber(this[i3]);
   }
   setComponent(i3, value) {
-    assert6(i3 >= 0 && i3 < this.ELEMENTS, "index is out of range");
+    assert7(i3 >= 0 && i3 < this.ELEMENTS, "index is out of range");
     this[i3] = value;
     return this.check();
   }
@@ -30039,7 +29743,7 @@ var div = divide;
 var dist = distance;
 var sqrDist = squaredDistance;
 var sqrLen = squaredLength;
-var forEach2 = function() {
+var forEach2 = (function() {
   const vec = create();
   return function(a2, stride, offset, count2, fn, arg) {
     let i3;
@@ -30064,7 +29768,7 @@ var forEach2 = function() {
     }
     return a2;
   };
-}();
+})();
 
 // node_modules/@math.gl/core/dist/lib/gl-matrix-extras.js
 function vec2_transformMat4AsVector(out, a2, m2) {
@@ -30511,7 +30215,7 @@ var dist2 = distance2;
 var sqrDist2 = squaredDistance2;
 var len2 = length2;
 var sqrLen2 = squaredLength2;
-var forEach3 = function() {
+var forEach3 = (function() {
   const vec = create2();
   return function(a2, stride, offset, count2, fn, arg) {
     let i3;
@@ -30538,7 +30242,7 @@ var forEach3 = function() {
     }
     return a2;
   };
-}();
+})();
 
 // node_modules/@math.gl/core/dist/classes/vector3.js
 var ORIGIN = [0, 0, 0];
@@ -33018,7 +32722,7 @@ var dist3 = distance3;
 var sqrDist3 = squaredDistance3;
 var len3 = length3;
 var sqrLen3 = squaredLength3;
-var forEach4 = function() {
+var forEach4 = (function() {
   const vec = create5();
   return function(a2, stride, offset, count2, fn, arg) {
     let i3;
@@ -33047,7 +32751,7 @@ var forEach4 = function() {
     }
     return a2;
   };
-}();
+})();
 
 // node_modules/@math.gl/core/dist/classes/matrix4.js
 var INDICES2;
@@ -33753,7 +33457,7 @@ var lerp5 = lerp4;
 var length4 = length3;
 var squaredLength4 = squaredLength3;
 var normalize4 = normalize3;
-var rotationTo = function() {
+var rotationTo = (function() {
   const tmpvec3 = create2();
   const xUnitVec3 = fromValues2(1, 0, 0);
   const yUnitVec3 = fromValues2(0, 1, 0);
@@ -33780,8 +33484,8 @@ var rotationTo = function() {
     out[3] = 1 + dot5;
     return normalize4(out, out);
   };
-}();
-var sqlerp = function() {
+})();
+var sqlerp = (function() {
   const temp1 = create6();
   const temp2 = create6();
   return function(out, a2, b2, c2, d2, t2) {
@@ -33790,8 +33494,8 @@ var sqlerp = function() {
     slerp2(out, temp1, temp2, 2 * t2 * (1 - t2));
     return out;
   };
-}();
-var setAxes = function() {
+})();
+var setAxes = (function() {
   const matr = create3();
   return function(out, view, right, up) {
     matr[0] = right[0];
@@ -33805,7 +33509,7 @@ var setAxes = function() {
     matr[8] = -view[2];
     return normalize4(out, fromMat3(out, matr));
   };
-}();
+})();
 
 // node_modules/@math.gl/core/dist/classes/quaternion.js
 var IDENTITY_QUATERNION = [0, 0, 0, 1];
@@ -36345,7 +36049,7 @@ var Input2 = class {
 
 // node_modules/mjolnir.js/dist/utils/globals.js
 var userAgent = typeof navigator !== "undefined" && navigator.userAgent ? navigator.userAgent.toLowerCase() : "";
-var window_4 = typeof window !== "undefined" ? window : global;
+var window_5 = typeof window !== "undefined" ? window : global;
 
 // node_modules/mjolnir.js/dist/inputs/wheel-input.js
 var firefox = userAgent.indexOf("firefox") !== -1;
@@ -37226,6 +36930,7 @@ function calculateViewportUniforms({ viewport, devicePixelRatio, coordinateSyste
         uniforms.commonUnitsPerWorldUnit = distanceScalesAtOrigin.unitsPerDegree;
         uniforms.commonUnitsPerWorldUnit2 = distanceScalesAtOrigin.unitsPerDegree2;
         break;
+      // a.k.a "preprojected" positions
       case COORDINATE_SYSTEM.CARTESIAN:
         uniforms.commonUnitsPerWorldUnit = [1, 1, distanceScalesAtOrigin.unitsPerMeter[2]];
         uniforms.commonUnitsPerWorldUnit2 = [0, 0, distanceScalesAtOrigin.unitsPerMeter2[2]];
@@ -37869,7 +37574,7 @@ function ieLog2(x2) {
 var log22 = Math.log2 || ieLog2;
 
 // node_modules/@math.gl/web-mercator/dist/assert.js
-function assert7(condition, message2) {
+function assert8(condition, message2) {
   if (!condition) {
     throw new Error(message2 || "@math.gl/web-mercator: assertion failed.");
   }
@@ -37889,8 +37594,8 @@ function scaleToZoom(scale7) {
 }
 function lngLatToWorld(lngLat) {
   const [lng, lat] = lngLat;
-  assert7(Number.isFinite(lng));
-  assert7(Number.isFinite(lat) && lat >= -90 && lat <= 90, "invalid latitude");
+  assert8(Number.isFinite(lng));
+  assert8(Number.isFinite(lat) && lat >= -90 && lat <= 90, "invalid latitude");
   const lambda2 = lng * DEGREES_TO_RADIANS2;
   const phi2 = lat * DEGREES_TO_RADIANS2;
   const x2 = TILE_SIZE * (lambda2 + PI) / (2 * PI);
@@ -37905,7 +37610,7 @@ function worldToLngLat(xy) {
 }
 function getMeterZoom(options) {
   const { latitude } = options;
-  assert7(Number.isFinite(latitude));
+  assert8(Number.isFinite(latitude));
   const latCosine = Math.cos(latitude * DEGREES_TO_RADIANS2);
   return scaleToZoom(EARTH_CIRCUMFERENCE * latCosine) - 9;
 }
@@ -37915,7 +37620,7 @@ function unitsPerMeter(latitude) {
 }
 function getDistanceScales(options) {
   const { latitude, longitude, highPrecision = false } = options;
-  assert7(Number.isFinite(latitude) && Number.isFinite(longitude));
+  assert8(Number.isFinite(latitude) && Number.isFinite(longitude));
   const worldSize = TILE_SIZE;
   const latCosine = Math.cos(latitude * DEGREES_TO_RADIANS2);
   const unitsPerDegreeX = worldSize / 360;
@@ -38008,12 +37713,12 @@ function fovyToAltitude(fovy) {
 }
 function worldToPixels(xyz, pixelProjectionMatrix) {
   const [x2, y2, z2 = 0] = xyz;
-  assert7(Number.isFinite(x2) && Number.isFinite(y2) && Number.isFinite(z2));
+  assert8(Number.isFinite(x2) && Number.isFinite(y2) && Number.isFinite(z2));
   return transformVector(pixelProjectionMatrix, [x2, y2, z2, 1]);
 }
 function pixelsToWorld(xyz, pixelUnprojectionMatrix, targetZ = 0) {
   const [x2, y2, z2] = xyz;
-  assert7(Number.isFinite(x2) && Number.isFinite(y2), "invalid pixel coordinate");
+  assert8(Number.isFinite(x2) && Number.isFinite(y2), "invalid pixel coordinate");
   if (Number.isFinite(z2)) {
     const coord = transformVector(pixelUnprojectionMatrix, [x2, y2, z2, 1]);
     return coord;
@@ -38050,7 +37755,7 @@ function fitBounds(options) {
     width - padding.left - padding.right - Math.abs(offset[0]) * 2,
     height - padding.top - padding.bottom - Math.abs(offset[1]) * 2
   ];
-  assert7(targetSize[0] > 0 && targetSize[1] > 0);
+  assert8(targetSize[0] > 0 && targetSize[1] > 0);
   const scaleX2 = targetSize[0] / size[0];
   const scaleY2 = targetSize[1] / size[1];
   const offsetX = (padding.right - padding.left) / 2 / scaleX2;
@@ -38058,7 +37763,7 @@ function fitBounds(options) {
   const center = [(se2[0] + nw[0]) / 2 + offsetX, (se2[1] + nw[1]) / 2 + offsetY];
   const centerLngLat = worldToLngLat(center);
   const zoom = Math.min(maxZoom, log22(Math.abs(Math.min(scaleX2, scaleY2))));
-  assert7(Number.isFinite(zoom));
+  assert8(Number.isFinite(zoom));
   return {
     longitude: centerLngLat[0],
     latitude: centerLngLat[1],
@@ -38074,7 +37779,7 @@ function getPaddingObject(padding = 0) {
       right: padding
     };
   }
-  assert7(Number.isFinite(padding.top) && Number.isFinite(padding.bottom) && Number.isFinite(padding.left) && Number.isFinite(padding.right));
+  assert8(Number.isFinite(padding.top) && Number.isFinite(padding.bottom) && Number.isFinite(padding.left) && Number.isFinite(padding.right));
   return padding;
 }
 
@@ -40304,12 +40009,12 @@ var _PipelineFactory = class _PipelineFactory {
   }
   release(pipeline) {
     const hash = pipeline.hash;
-    const cache3 = pipeline instanceof ComputePipeline ? this._computePipelineCache : this._renderPipelineCache;
-    cache3[hash].useCount--;
-    if (cache3[hash].useCount === 0) {
+    const cache2 = pipeline instanceof ComputePipeline ? this._computePipelineCache : this._renderPipelineCache;
+    cache2[hash].useCount--;
+    if (cache2[hash].useCount === 0) {
       if (this.destroyPolicy === "unused") {
-        cache3[hash].pipeline.destroy();
-        delete cache3[hash];
+        cache2[hash].pipeline.destroy();
+        delete cache2[hash];
       }
     }
   }
@@ -40490,20 +40195,6 @@ function deepEqual(a2, b2, depth) {
     return true;
   }
   return false;
-}
-
-// node_modules/@math.gl/types/dist/is-array.js
-function isTypedArray2(value) {
-  return ArrayBuffer.isView(value) && !(value instanceof DataView);
-}
-function isNumberArray2(value) {
-  if (Array.isArray(value)) {
-    return value.length === 0 || typeof value[0] === "number";
-  }
-  return false;
-}
-function isNumericArray(value) {
-  return isTypedArray2(value) || isNumberArray2(value);
 }
 
 // node_modules/@luma.gl/engine/dist/model/split-uniforms-and-bindings.js
@@ -41682,12 +41373,12 @@ var LIFECYCLE = {
   AWAITING_FINALIZATION: "No longer matched. Awaiting garbage collection",
   FINALIZED: "Finalized! Awaiting garbage collection"
 };
-var COMPONENT_SYMBOL = Symbol.for("component");
-var PROP_TYPES_SYMBOL = Symbol.for("propTypes");
-var DEPRECATED_PROPS_SYMBOL = Symbol.for("deprecatedProps");
-var ASYNC_DEFAULTS_SYMBOL = Symbol.for("asyncPropDefaults");
-var ASYNC_ORIGINAL_SYMBOL = Symbol.for("asyncPropOriginal");
-var ASYNC_RESOLVED_SYMBOL = Symbol.for("asyncPropResolved");
+var COMPONENT_SYMBOL = /* @__PURE__ */ Symbol.for("component");
+var PROP_TYPES_SYMBOL = /* @__PURE__ */ Symbol.for("propTypes");
+var DEPRECATED_PROPS_SYMBOL = /* @__PURE__ */ Symbol.for("deprecatedProps");
+var ASYNC_DEFAULTS_SYMBOL = /* @__PURE__ */ Symbol.for("asyncPropDefaults");
+var ASYNC_ORIGINAL_SYMBOL = /* @__PURE__ */ Symbol.for("asyncPropOriginal");
+var ASYNC_RESOLVED_SYMBOL = /* @__PURE__ */ Symbol.for("asyncPropResolved");
 
 // node_modules/@deck.gl/core/dist/utils/flatten.js
 function flatten(array, filter = () => true) {
@@ -42474,6 +42165,7 @@ function parsePosition(value) {
           relative
         };
       }
+    // fallthrough
     default:
       throw new Error(`Could not parse position string ${value}`);
   }
@@ -42780,7 +42472,7 @@ var TransitionManager = class {
 };
 
 // node_modules/@deck.gl/core/dist/utils/assert.js
-function assert8(condition, message2) {
+function assert9(condition, message2) {
   if (!condition) {
     throw new Error(message2 || "deck.gl: assertion failed.");
   }
@@ -42850,7 +42542,7 @@ var TransitionInterpolator = class {
     }
     this._requiredProps.forEach((propName) => {
       const value = props[propName];
-      assert8(Number.isFinite(value) || Array.isArray(value), `${propName} is required for transition`);
+      assert9(Number.isFinite(value) || Array.isArray(value), `${propName} is required for transition`);
     });
   }
 };
@@ -43549,9 +43241,9 @@ var MapState = class extends ViewState {
       /** Normalize viewport props to fit map height into viewport */
       normalize: normalize6 = true
     } = options;
-    assert8(Number.isFinite(longitude));
-    assert8(Number.isFinite(latitude));
-    assert8(Number.isFinite(zoom));
+    assert9(Number.isFinite(longitude));
+    assert9(Number.isFinite(latitude));
+    assert9(Number.isFinite(zoom));
     super({
       width,
       height,
@@ -45711,18 +45403,18 @@ var GL_PARAMETER_SETTERS = {
   },
   viewport: (gl, value) => gl.viewport(...value)
 };
-function getValue(glEnum, values, cache3) {
-  return values[glEnum] !== void 0 ? values[glEnum] : cache3[glEnum];
+function getValue(glEnum, values, cache2) {
+  return values[glEnum] !== void 0 ? values[glEnum] : cache2[glEnum];
 }
 var GL_COMPOSITE_PARAMETER_SETTERS = {
-  blendEquation: (gl, values, cache3) => gl.blendEquationSeparate(getValue(32777, values, cache3), getValue(34877, values, cache3)),
-  blendFunc: (gl, values, cache3) => gl.blendFuncSeparate(getValue(32969, values, cache3), getValue(32968, values, cache3), getValue(32971, values, cache3), getValue(32970, values, cache3)),
-  polygonOffset: (gl, values, cache3) => gl.polygonOffset(getValue(32824, values, cache3), getValue(10752, values, cache3)),
-  sampleCoverage: (gl, values, cache3) => gl.sampleCoverage(getValue(32938, values, cache3), getValue(32939, values, cache3)),
-  stencilFuncFront: (gl, values, cache3) => gl.stencilFuncSeparate(1028, getValue(2962, values, cache3), getValue(2967, values, cache3), getValue(2963, values, cache3)),
-  stencilFuncBack: (gl, values, cache3) => gl.stencilFuncSeparate(1029, getValue(34816, values, cache3), getValue(36003, values, cache3), getValue(36004, values, cache3)),
-  stencilOpFront: (gl, values, cache3) => gl.stencilOpSeparate(1028, getValue(2964, values, cache3), getValue(2965, values, cache3), getValue(2966, values, cache3)),
-  stencilOpBack: (gl, values, cache3) => gl.stencilOpSeparate(1029, getValue(34817, values, cache3), getValue(34818, values, cache3), getValue(34819, values, cache3))
+  blendEquation: (gl, values, cache2) => gl.blendEquationSeparate(getValue(32777, values, cache2), getValue(34877, values, cache2)),
+  blendFunc: (gl, values, cache2) => gl.blendFuncSeparate(getValue(32969, values, cache2), getValue(32968, values, cache2), getValue(32971, values, cache2), getValue(32970, values, cache2)),
+  polygonOffset: (gl, values, cache2) => gl.polygonOffset(getValue(32824, values, cache2), getValue(10752, values, cache2)),
+  sampleCoverage: (gl, values, cache2) => gl.sampleCoverage(getValue(32938, values, cache2), getValue(32939, values, cache2)),
+  stencilFuncFront: (gl, values, cache2) => gl.stencilFuncSeparate(1028, getValue(2962, values, cache2), getValue(2967, values, cache2), getValue(2963, values, cache2)),
+  stencilFuncBack: (gl, values, cache2) => gl.stencilFuncSeparate(1029, getValue(34816, values, cache2), getValue(36003, values, cache2), getValue(36004, values, cache2)),
+  stencilOpFront: (gl, values, cache2) => gl.stencilOpSeparate(1028, getValue(2964, values, cache2), getValue(2965, values, cache2), getValue(2966, values, cache2)),
+  stencilOpBack: (gl, values, cache2) => gl.stencilOpSeparate(1029, getValue(34817, values, cache2), getValue(34818, values, cache2), getValue(34819, values, cache2))
 };
 var GL_HOOKED_SETTERS = {
   // GENERIC SETTERS
@@ -45943,11 +45635,11 @@ function setGLParameters(gl, parameters) {
       }
     }
   }
-  const cache3 = gl.state && gl.state.cache;
-  if (cache3) {
+  const cache2 = gl.state && gl.state.cache;
+  if (cache2) {
     for (const key in compositeSetters) {
       const compositeSetter = GL_COMPOSITE_PARAMETER_SETTERS[key];
-      compositeSetter(gl, parameters, cache3);
+      compositeSetter(gl, parameters, cache2);
     }
   }
 }
@@ -46260,6 +45952,9 @@ function getGLFromVertexType(dataType) {
       return 5125;
     case "sint32":
       return 5124;
+    // WebGPU does not support normalized 32 bit integer attributes
+    // case 'unorm32': return GL.UNSIGNED_INT;
+    // case 'snorm32': return GL.INT;
     case "float16":
       return 5131;
     case "float32":
@@ -46818,8 +46513,11 @@ function _getFrameBufferStatus(status) {
       return "Height/width mismatch";
     case 36061:
       return "Unsupported or split attachments";
+    // WebGL2
     case 36182:
       return "Samples mismatch";
+    // OVR_multiview2 extension
+    // case GL.FRAMEBUFFER_INCOMPLETE_VIEW_TARGETS_OVR: return 'baseViewIndex mismatch';
     default:
       return `${status}`;
   }
@@ -47724,6 +47422,7 @@ function glFormatToComponents(format) {
     case 36249:
     case 34836:
       return 4;
+    // TODO: Add support for additional WebGL2 formats
     default:
       return 0;
   }
@@ -47738,6 +47437,7 @@ function glTypeToBytes(type) {
       return 2;
     case 5126:
       return 4;
+    // TODO: Add support for additional WebGL2 types
     default:
       return 0;
   }
@@ -47842,14 +47542,19 @@ function getWebGLTextureTarget(dimension) {
   switch (dimension) {
     case "1d":
       break;
+    // not supported in any WebGL version
     case "2d":
       return 3553;
+    // supported in WebGL1
     case "3d":
       return 32879;
+    // supported in WebGL2
     case "cube":
       return 34067;
+    // supported in WebGL1
     case "2d-array":
       return 35866;
+    // supported in WebGL2
     case "cube-array":
       break;
   }
@@ -48041,6 +47746,7 @@ var WEBGLTexture = class extends Texture {
         case "cube-array":
           this.setTextureCubeArrayData(propsWithData.data);
           break;
+        // @ts-expect-error
         default:
           throw new Error(propsWithData.dimension);
       }
@@ -48744,14 +48450,14 @@ function parseUniformName(name2) {
     };
   }
   const UNIFORM_NAME_REGEXP = /([^[]*)(\[[0-9]+\])?/;
-  const matches3 = UNIFORM_NAME_REGEXP.exec(name2);
-  if (!matches3 || matches3.length < 2) {
+  const matches4 = UNIFORM_NAME_REGEXP.exec(name2);
+  if (!matches4 || matches4.length < 2) {
     throw new Error(`Failed to parse GLSL uniform name ${name2}`);
   }
   return {
-    name: matches3[1],
-    length: matches3[2] ? 1 : 0,
-    isArray: Boolean(matches3[2])
+    name: matches4[1],
+    length: matches4[2] ? 1 : 0,
+    isArray: Boolean(matches4[2])
   };
 }
 
@@ -48810,6 +48516,7 @@ function setUniform(gl, location, type, value) {
       return gl.uniform3iv(location, arrayValue);
     case 35673:
       return gl.uniform4iv(location, arrayValue);
+    // WEBGL2 - unsigned integers
     case 5125:
       return gl2.uniform1uiv(location, arrayValue, 1);
     case 36294:
@@ -48818,12 +48525,15 @@ function setUniform(gl, location, type, value) {
       return gl2.uniform3uiv(location, arrayValue, 3);
     case 36296:
       return gl2.uniform4uiv(location, arrayValue, 4);
+    // WebGL2 - quadratic matrices
+    // false: don't transpose the matrix
     case 35674:
       return gl.uniformMatrix2fv(location, false, arrayValue);
     case 35675:
       return gl.uniformMatrix3fv(location, false, arrayValue);
     case 35676:
       return gl.uniformMatrix4fv(location, false, arrayValue);
+    // WebGL2 - rectangular matrices
     case 35685:
       return gl2.uniformMatrix2x3fv(location, false, arrayValue);
     case 35686:
@@ -49270,6 +48980,9 @@ var WEBGLCommandBuffer = class extends CommandBuffer {
         case "copy-texture-to-texture":
           _copyTextureToTexture(this.device, command.options);
           break;
+        // case 'clear-texture':
+        //   _clearTexture(this.device, command.options);
+        //   break;
         default:
           throw new Error(command.name);
       }
@@ -50772,14 +50485,14 @@ var Deck = class {
   }
   /** Get a list of views that are currently rendered */
   getViews() {
-    assert8(this.viewManager);
+    assert9(this.viewManager);
     return this.viewManager.views;
   }
   /** Get a list of viewports that are currently rendered.
    * @param rect If provided, only returns viewports within the given bounding box.
    */
   getViewports(rect) {
-    assert8(this.viewManager);
+    assert9(this.viewManager);
     return this.viewManager.getViewports(rect);
   }
   /** Get the current canvas element. */
@@ -50829,7 +50542,7 @@ var Deck = class {
     this.layerManager?.removeDefaultShaderModule(module);
   }
   _pick(method, statKey, opts) {
-    assert8(this.deckPicker);
+    assert9(this.deckPicker);
     const { stats } = this;
     stats.get("Pick Count").incrementCount();
     stats.get(statKey).timeStart();
@@ -50850,7 +50563,7 @@ var Deck = class {
     let canvas2 = props.canvas;
     if (typeof canvas2 === "string") {
       canvas2 = document.getElementById(canvas2);
-      assert8(canvas2);
+      assert9(canvas2);
     }
     if (!canvas2) {
       canvas2 = document.createElement("canvas");
@@ -51869,7 +51582,7 @@ var Attribute = class extends DataColumn {
         buffer = { value: buffer };
       }
       const binaryValue = buffer;
-      assert8(ArrayBuffer.isView(binaryValue.value), `invalid ${settings.accessor}`);
+      assert9(ArrayBuffer.isView(binaryValue.value), `invalid ${settings.accessor}`);
       const needsNormalize = Boolean(binaryValue.size) && binaryValue.size !== this.size;
       state.binaryAccessor = getAccessorFromBuffer(binaryValue.value, {
         size: binaryValue.size || this.size,
@@ -51934,7 +51647,7 @@ var Attribute = class extends DataColumn {
     if (typeof accessorFunc !== "function") {
       accessorFunc = () => accessorFunc;
     }
-    assert8(typeof accessorFunc === "function", `accessor "${accessor}" is not a function`);
+    assert9(typeof accessorFunc === "function", `accessor "${accessor}" is not a function`);
     let i3 = attribute.getVertexOffset(startRow);
     const { iterable, objectInfo } = createIterable(data, startRow, endRow);
     for (const object of iterable) {
@@ -54011,7 +53724,7 @@ var Layer = class extends component_default {
   // Public API for users
   /** Projects a point with current view state from the current layer's coordinate system to screen */
   project(xyz) {
-    assert8(this.internalState);
+    assert9(this.internalState);
     const viewport = this.internalState.viewport || this.context.viewport;
     const worldPosition = getWorldPosition(xyz, {
       viewport,
@@ -54025,13 +53738,13 @@ var Layer = class extends component_default {
   /** Unprojects a screen pixel to the current view's default coordinate system
       Note: this does not reverse `project`. */
   unproject(xy) {
-    assert8(this.internalState);
+    assert9(this.internalState);
     const viewport = this.internalState.viewport || this.context.viewport;
     return viewport.unproject(xy);
   }
   /** Projects a point with current view state from the current layer's coordinate system to the world space */
   projectPosition(xyz, params) {
-    assert8(this.internalState);
+    assert9(this.internalState);
     const viewport = this.internalState.viewport || this.context.viewport;
     return projectPosition(xyz, {
       viewport,
@@ -54140,7 +53853,7 @@ var Layer = class extends component_default {
   // @param {Uint8Array} color - color array to be decoded
   // @return {Array} - the decoded picking color
   decodePickingColor(color) {
-    assert8(color instanceof Uint8Array);
+    assert9(color instanceof Uint8Array);
     const [i1, i22, i3] = color;
     const index = i1 + i22 * 256 + i3 * 65536 - 1;
     return index;
@@ -54484,8 +54197,8 @@ var Layer = class extends component_default {
   /* eslint-disable max-statements */
   /* (Internal) Called by layer manager when a new layer is found */
   _initialize() {
-    assert8(!this.internalState);
-    assert8(Number.isFinite(this.props.coordinateSystem));
+    assert9(!this.internalState);
+    assert9(Number.isFinite(this.props.coordinateSystem));
     debug(TRACE_INITIALIZE, this);
     const attributeManager = this._getAttributeManager();
     if (attributeManager) {
@@ -55623,7 +55336,7 @@ var Tesselator = class {
     this.buffers = buffers;
     this.normalize = normalize6;
     if (geometryBuffer) {
-      assert8(data.startIndices);
+      assert9(data.startIndices);
       this.getGeometry = this.getGeometryFromBuffer(geometryBuffer);
       if (!normalize6) {
         buffers.vertexPositions = geometryBuffer;
@@ -61821,11 +61534,9 @@ var TinySDF = class {
     const len4 = Math.max(width * height, 0);
     const data = new Uint8ClampedArray(len4);
     const glyph = { data, width, height, glyphWidth, glyphHeight, glyphTop, glyphLeft, glyphAdvance };
-    if (glyphWidth === 0 || glyphHeight === 0)
-      return glyph;
+    if (glyphWidth === 0 || glyphHeight === 0) return glyph;
     const { ctx: ctx2, buffer, gridInner, gridOuter } = this;
-    if (this.lang)
-      ctx2.lang = this.lang;
+    if (this.lang) ctx2.lang = this.lang;
     ctx2.clearRect(buffer, buffer, glyphWidth, glyphHeight);
     ctx2.fillText(char, buffer, buffer + glyphTop);
     const imgData = ctx2.getImageData(buffer, buffer, glyphWidth, glyphHeight);
@@ -61834,8 +61545,7 @@ var TinySDF = class {
     for (let y2 = 0; y2 < glyphHeight; y2++) {
       for (let x2 = 0; x2 < glyphWidth; x2++) {
         const a2 = imgData.data[4 * (y2 * glyphWidth + x2) + 3] / 255;
-        if (a2 === 0)
-          continue;
+        if (a2 === 0) continue;
         const j2 = (y2 + buffer) * width + x2 + buffer;
         if (a2 === 1) {
           gridOuter[j2] = 0;
@@ -61857,10 +61567,8 @@ var TinySDF = class {
   }
 };
 function edt(data, x0, y0, width, height, gridSize, f2, v2, z2) {
-  for (let x2 = x0; x2 < x0 + width; x2++)
-    edt1d(data, y0 * gridSize + x2, gridSize, height, f2, v2, z2);
-  for (let y2 = y0; y2 < y0 + height; y2++)
-    edt1d(data, y2 * gridSize + x0, 1, width, f2, v2, z2);
+  for (let x2 = x0; x2 < x0 + width; x2++) edt1d(data, y0 * gridSize + x2, gridSize, height, f2, v2, z2);
+  for (let y2 = y0; y2 < y0 + height; y2++) edt1d(data, y2 * gridSize + x0, 1, width, f2, v2, z2);
 }
 function edt1d(grid, offset, stride, length5, f2, v2, z2) {
   v2[0] = 0;
@@ -61880,8 +61588,7 @@ function edt1d(grid, offset, stride, length5, f2, v2, z2) {
     z2[k2 + 1] = INF;
   }
   for (let q2 = 0, k2 = 0; q2 < length5; q2++) {
-    while (z2[k2 + 1] < q2)
-      k2++;
+    while (z2[k2 + 1] < q2) k2++;
     const r2 = v2[k2];
     const qr = q2 - r2;
     grid[offset + q2 * stride] = f2[r2] + qr * qr;
@@ -62156,7 +61863,7 @@ var MAX_CANVAS_WIDTH = 1024;
 var BASELINE_SCALE = 0.9;
 var HEIGHT_SCALE = 1.2;
 var CACHE_LIMIT = 3;
-var cache2 = new LRUCache(CACHE_LIMIT);
+var cache = new LRUCache(CACHE_LIMIT);
 function getNewChars(cacheKey, characterSet) {
   let newCharSet;
   if (typeof characterSet === "string") {
@@ -62164,7 +61871,7 @@ function getNewChars(cacheKey, characterSet) {
   } else {
     newCharSet = new Set(characterSet);
   }
-  const cachedFontAtlas = cache2.get(cacheKey);
+  const cachedFontAtlas = cache.get(cacheKey);
   if (!cachedFontAtlas) {
     return newCharSet;
   }
@@ -62188,7 +61895,7 @@ function setTextStyle(ctx2, fontFamily, fontSize, fontWeight) {
 }
 function setFontAtlasCacheLimit(limit) {
   log_default.assert(Number.isFinite(limit) && limit >= CACHE_LIMIT, "Invalid cache limit");
-  cache2 = new LRUCache(limit);
+  cache = new LRUCache(limit);
 }
 var FontAtlasManager = class {
   constructor() {
@@ -62212,7 +61919,7 @@ var FontAtlasManager = class {
     Object.assign(this.props, props);
     this._key = this._getKey();
     const charSet = getNewChars(this._key, this.props.characterSet);
-    const cachedFontAtlas = cache2.get(this._key);
+    const cachedFontAtlas = cache.get(this._key);
     if (cachedFontAtlas && charSet.size === 0) {
       if (this._atlas !== cachedFontAtlas) {
         this._atlas = cachedFontAtlas;
@@ -62221,7 +61928,7 @@ var FontAtlasManager = class {
     }
     const fontAtlas = this._generateFontAtlas(charSet, cachedFontAtlas);
     this._atlas = fontAtlas;
-    cache2.set(this._key, fontAtlas);
+    cache.set(this._key, fontAtlas);
   }
   // eslint-disable-next-line max-statements
   _generateFontAtlas(characterSet, cachedFontAtlas) {
@@ -63972,7 +63679,7 @@ var Plane = class _Plane {
   }
   /** Creates a plane from a normal and a distance from the origin. */
   fromNormalDistance(normal, distance5) {
-    assert6(Number.isFinite(distance5));
+    assert7(Number.isFinite(distance5));
     this.normal.from(normal).normalize();
     this.distance = distance5;
     return this;
@@ -63988,7 +63695,7 @@ var Plane = class _Plane {
   /** Creates a plane from the general equation */
   fromCoefficients(a2, b2, c2, d2) {
     this.normal.set(a2, b2, c2);
-    assert6(equals(this.normal.len(), 1));
+    assert7(equals(this.normal.len(), 1));
     this.distance = d2;
     return this;
   }
@@ -64084,7 +63791,7 @@ var CullingVolume = class _CullingVolume {
    *   and that plane check can be skipped.
    */
   computeVisibilityWithPlaneMask(boundingVolume, parentPlaneMask) {
-    assert6(Number.isFinite(parentPlaneMask), "parentPlaneMask is required.");
+    assert7(Number.isFinite(parentPlaneMask), "parentPlaneMask is required.");
     if (parentPlaneMask === _CullingVolume.MASK_OUTSIDE || parentPlaneMask === _CullingVolume.MASK_INSIDE) {
       return parentPlaneMask;
     }
