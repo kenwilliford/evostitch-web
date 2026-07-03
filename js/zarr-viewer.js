@@ -1026,7 +1026,11 @@ function updateLayer() {
         contrastLimits: contrastLimits,
         colors: colors,
         channelsVisible: channelsVisible,
-        dtype: 'Uint16',
+        // Derive dtype from the loader (the live V3 store is uint8, |u1). Viv's
+        // MultiscaleImageLayer already overrides this prop with loader[0].dtype, so
+        // this is behavior-neutral today — but it keeps the declared value truthful
+        // and correct for any future path that constructs an XRLayer directly.
+        dtype: loaderData[0]?.dtype || 'Uint8',
         refinementStrategy: 'best-available',
         onViewportLoad: () => {
             // Ignore stale callbacks — user already moved to a different Z-plane
