@@ -29,9 +29,30 @@ this repository, and none of it may be committed here.
 | Staged three.js vendor tree | `/data/evostitch/staged/js/vendor/three/` (pop-os, see §6) |
 | Entries in archive | 1,628,553 files |
 
-The sha-256 above was computed on the source host (`shasum -a 256` on evom1ni) and
-re-verified against the transferred copy on pop-os; the transfer used
+The sha-256 above was computed on the source host (`shasum -a 256` on evom1ni)
+and **re-verified byte-for-byte against the transferred copy on pop-os** — both
+ends report `27e60bb7…bedb6` and 58,653,045,129 bytes. The transfer used
 `rsync -aP --append-verify`.
+
+Extraction completed cleanly (`unzip` exit 0): 1,628,528 files plus 25
+directories = the 1,628,553 archive entries. Post-extraction validation:
+
+| Check | Result |
+|---|---|
+| 143 voice takes in `assets/vo/` | ✅ 143 |
+| 8 `.glb` models | ✅ 8 |
+| Level-0 chunk count | ✅ 1,217,160 (+3 metadata) |
+| Level-0 pixel scale — README's critical check | ✅ `0.089843` / `0.089884`, **not** the bad `0.1797` |
+| `wasm/CHECKSUMS.sha256` | ⚠️ see below |
+
+The archive's own `wasm/CHECKSUMS.sha256` reports `jpeg-decode.js: FAILED`. This
+is **benign and fully explained**: the shipped file has CRLF line terminators (19
+of them), and stripping the CR bytes reproduces the recorded hash `af00c388…`
+exactly. The `.wasm` binary verifies clean as-is, and the extracted `.js` matches
+the copy inside the zip byte-for-byte, so nothing was corrupted in transit — the
+checksum was simply generated before a line-ending conversion. JavaScript is
+insensitive to CRLF, so there is no runtime effect. Worth mentioning to the
+author only so the manifest can be regenerated.
 
 ## 2. What it is
 
@@ -194,6 +215,29 @@ given pixel maps to the same physical location in both; the imagery is
 equivalent, the encodings are not. The declared slide extent shrinks by 0.35%
 (7.73 → 7.70 mm wide), which is worth mentioning to the author since the
 narration quotes `7.73 × 5.29 mm`, but it is far below anything visible.
+
+### Confirmed live in a browser
+
+The swap was exercised end to end against the real hosted store, with **no edit
+to the author's tree**, by loading
+`…/index.html?zarr=https://data.evostitch.net/mosaic_3d_zarr_v3/0/`:
+
+- All ten levels' `.zarray` fetched `200`.
+- Chunks fetched `200` using **slash-separated** keys
+  (`…/0/9/0/0/0/0/0`, `…/0/7/0/1/1/0/1`) — the runtime separator detection works
+  against a store whose layout differs from the bundled one.
+- The viewer reported `Z: 1/21`, drew the scale bar, placed all three specimen
+  hotspots, and rendered the sample behind the entry screen. **No red banner.**
+- Zero JavaScript errors; the only console warnings are headless-GPU
+  `ReadPixels` performance notices.
+
+One cosmetic difference: ten `404`s, one per level, for `.zattrs`. The bundled
+store carries a 2-byte `{}` stub at each level and the hosted store does not.
+zarrita probes for these and tolerates their absence — chunks load fine
+immediately afterwards — but they surface as red console entries, which conflicts
+with the README's own deployment check ("the console should be quiet apart from
+informational logs"). **Trivial fix under option A:** write ten 2-byte `{}`
+objects to `mosaic_3d_zarr_v3/0/{0..9}/.zattrs` in the hosted bucket.
 
 ### Why the differences do not block the swap
 
@@ -372,6 +416,15 @@ http://pop-os.tail8455a8.ts.net:8010/
 
 (`python3 -m http.server 8010 --directory /data/evostitch/gunflint-notebook`,
 Tailscale-only, no auth, temporary.)
+
+Add `?zarr=https://data.evostitch.net/mosaic_3d_zarr_v3/0/` to the URL to see the
+same page running against the hosted store instead of the bundled one — this is
+the §5 comparison, side by side, with no files changed.
+
+Both configurations were checked in a headless browser and pass the README's
+first two steps (entry screen present; sample visible with no red banner).
+Screenshots: `.playwright-mcp/gunflint-01-bundled-store.png` and
+`gunflint-02-hosted-store.png` in the primary worktree.
 
 The payload's own README, final section, gives the deployment check sequence — entry screen,
 sample visible with no red banner, first narration line audible, skip-to-end
