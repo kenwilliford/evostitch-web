@@ -51,8 +51,14 @@ of them), and stripping the CR bytes reproduces the recorded hash `af00c388…`
 exactly. The `.wasm` binary verifies clean as-is, and the extracted `.js` matches
 the copy inside the zip byte-for-byte, so nothing was corrupted in transit — the
 checksum was simply generated before a line-ending conversion. JavaScript is
-insensitive to CRLF, so there is no runtime effect. Worth mentioning to the
-author only so the manifest can be regenerated.
+insensitive to CRLF, so there was no runtime effect.
+
+**Resolved 2026-08-19.** The file was converted back to LF in the extracted tree,
+which restores the hash the author recorded; `sha256sum -c CHECKSUMS.sha256` now
+reports `OK` for both entries. Fixing the file rather than regenerating the
+manifest was the right direction — `af00c388…` is the genuine build output, and
+the CRLF was picked up somewhere in delivery. The CRLF original is kept in the
+session scratchpad and the zip remains the untouched immutable original.
 
 ## 2. What it is
 
@@ -437,3 +443,88 @@ locally.
 The payload lives on pop-os at `/data/evostitch/` and in the R2 bucket once
 uploaded. It is **not** in git, here or anywhere else: `evostitch-ysp` is
 archived, and this repository is public. Only this document tracks it.
+
+## 11. Licensing — recommendation
+
+Not legal advice; this is the shape the material argues for, for the operator and
+the author to agree on.
+
+**The author did not state a preference.** His README says the licence is "not
+decided yet" and asks that the folder be treated as shared for review and hosting
+while that conversation is open. `assets/vo/README.md` and `.gitignore` say
+nothing about licensing, and the only licence file in the tree is
+`wasm/LICENSE.libjpeg-turbo` (a third-party dependency). The conversation he is
+deferring to has not happened yet — and since the narrative layer is his
+copyright, the arrangement below should be offered to him rather than chosen for
+him.
+
+**One licence for the whole folder would be wrong in both directions.** It would
+over-claim, by purporting to sublicense a figure we do not own, and under-serve,
+because data, software and narrative want different instruments. Licence per
+component:
+
+| Component | Author | Recommended |
+|---|---|---|
+| `SCH-55-22B` scan + derived OME-Zarr store | K. Williford | **CC BY 4.0** |
+| Viewer code (`js/`, `dist/`, `sw.js`, `wasm/` wrapper) | K. Williford | **MIT** |
+| Experience code (`js/experience/`, `specimen-explorer.js`, …) | J. Pérez Rodríguez | **MIT** |
+| Narration, subtitles, scripts, evidence text, 3D reconstructions, 143 voice takes | J. Pérez Rodríguez | **CC BY 4.0** |
+| Barghoorn & Tyler (1965) *Science* **147** Fig. 7 | AAAS | **Not ours to license** — explicit carve-out |
+| `assets/darwin.mp4` / `.webm` (Act II animation) | unknown | **Provenance unresolved** — see below |
+| three.js r160, deck.gl, Viv, libjpeg-turbo | third parties | already MIT / BSD; keep notices |
+
+### Why CC BY 4.0 for the scan, not MIT
+
+MIT is a software licence. It speaks of "the Software", and it says nothing about
+database rights — applying it to a 54 GiB image stack creates ambiguity rather
+than resolving it. CC BY 4.0 is built for data and media, explicitly covers *sui
+generis* database rights, and is what journals, funders and data repositories
+expect for scientific data. Its attribution clause is legally operative in a way
+a README credit line is not.
+
+CC BY rather than CC BY-NC: the non-commercial variant is widely discouraged in
+science because its scope is genuinely unclear (is a university lab with industry
+funding "commercial"?), it blocks legitimate downstream reuse, and it makes the
+data ineligible for several aggregators and for Wikimedia reuse. If reciprocity
+matters more than reach, CC BY-SA 4.0 is the stronger option; CC BY is the
+standard.
+
+An honest note on force: raw measurement data attracts thin copyright protection
+in the US — facts are not copyrightable. The preparation, imaging and processing
+choices here make a claim arguable, but **the practical lever for getting credit
+is norms, not enforcement**.
+
+### What actually produces citation
+
+A licence is a permission, not a citation mechanism. Credit comes from:
+
+1. A **Zenodo DOI** for the dataset, with the licence attached.
+2. A **`CITATION.cff`** at the repository root and a "How to cite" block in the
+   README, giving the exact preferred form.
+3. A **provenance statement** naming the chain: sample from Stanley Tyler's
+   Schreiber Beach material (1.88 Ga Gunflint Iron Formation); polished thin
+   section, microscopy, and data processing by K. Williford; interactive
+   experience by J. Pérez Rodríguez.
+
+Item 1 is the one that makes the work findable and countable in the literature.
+
+### The Barghoorn & Tyler figure
+
+Citation is necessary but is **not** a licence — the two do different jobs.
+Reproducing a single figure for scholarly identification in an educational,
+non-commercial context is a defensible fair-use posture (US §107: educational
+purpose, factual work, one figure, no market substitution), and the on-screen
+caption already names the source and locality. What matters is that it is an
+**explicit carve-out**, so a blanket CC BY does not appear to sublicense AAAS's
+figure. If certainty is wanted, AAAS permission through RightsLink is usually
+free or nominal for this use.
+
+### Open items
+
+- **`assets/darwin.mp4` / `.webm`.** The README lists the Act II animation among
+  the material not covered by any licence granted, without saying where it came
+  from. Its provenance needs resolving before publication — it may be third-party
+  footage.
+- **BMSIS intern IP policy.** The programme may have terms governing what an
+  intern can license from work produced during the internship. Worth checking
+  before the author is asked to agree to anything.
