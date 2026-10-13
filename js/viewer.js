@@ -3,8 +3,8 @@
 (function() {
     'use strict';
 
-    // Tile server configuration
-    const TILES_BASE_URL = 'https://pub-db7ffa4b7df04b76aaae379c13562977.r2.dev';
+    // R2 custom domain: corporate filters (e.g. JPL VPN) block *.r2.dev
+    const TILES_BASE_URL = 'https://data.evostitch.net';
 
     // Parse mosaic ID from URL
     const params = new URLSearchParams(window.location.search);

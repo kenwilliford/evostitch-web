@@ -776,7 +776,7 @@ The web viewer consumes output from both DZI generation and OME-Zarr conversion:
 core/                                    R2 Cloud Storage
 ┌────────────────────┐                  ┌──────────────────────────┐
 │ evostitch publish  │ ──rclone──────→ │ DZI tiles                │
-│ (generates DZI)    │                  │ (pub-*.r2.dev)           │
+│ (generates DZI)    │                  │ (data.evostitch.net)     │
 └────────────────────┘                  └────────────┬─────────────┘
                                                      │ viewer.js
 ┌────────────────────┐                  ┌────────────▼─────────────┐
@@ -897,7 +897,7 @@ The `metadata.json` provides scale from core's OME-TIFF metadata.
 
 Static files deployed to GitHub Pages from `web/` directory.
 - Custom domain: evostitch.net (configured via CNAME file)
-- DZI tiles served from Cloudflare R2 (`pub-*.r2.dev`)
+- DZI tiles served from R2 custom domain: `data.evostitch.net` (`pub-*.r2.dev` is blocked by some corporate filters)
 - OME-Zarr chunks served from R2 custom domain: `data.evostitch.net` (HTTP/2, Cloudflare CDN)
 - Cache-Control headers set via Cloudflare Transform Rules: chunks `immutable` (1yr), metadata `max-age=3600` (1hr)
 - See `web/docs/metadata-runbook.md` for CDN purge and SW update procedures

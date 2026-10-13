@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Spike 1 — persistent Z-texture benchmark</title>
+<style>
+  body { font-family: monospace; margin: 0; background:#111; color:#ddd; }
+  #canvas { display:block; width:100vw; height:70vh; background:#000; }
+  #log { padding:8px 12px; font-size:12px; white-space:pre-wrap; }
+  .z { color:#6cf; }
+</style>
+</head>
+<body>
+<canvas id="canvas" width="1920" height="1080"></canvas>
+<div id="log">booting…</div>
+
+<!-- WASM JPEG decoder glue + zarrita codec (reused from production viewer) -->
+<script src="wasm/jpeg-decode.js"></script>
+<script src="js/jpeg-zarr-codec.js"></script>
+<script>
+/*
+ * Spike 1 (dossier §4). Proves the recommended architecture's core mechanism:
+ * decoded Z-planes held as persistent sampler2DArray textures, Z-switch = uZ
+ * uniform swap + redraw. Measures Z-switch work time, upload/plane, VRAM, and
+ * 100-switch context stability on a REAL GPU (headless chromium + ANGLE/Vulkan).
+ *
+ * URL params (all optional):
+ *   level (default 4), y0, x0, cols, rows (tile region), z (plane count, default 21)
+ *   ceilCols, ceilRows (VRAM-ceiling allocation test region; default 8x5 = 40 tiles)
+ */
+'use strict';
+const STORE = 'https://data.evostitch.net/mosaic_3d_zarr_v3/0';
+const P = new URLSearchParams(location.search);
+const LEVEL = +(P.get('level') ?? 4);
+const Y0 = +(P.get('y0') ?? 3), X0 = +(P.get('x0') ?? 4);
+const COLS = +(P.get('cols') ?? 3), ROWS = +(P.get('rows') ?? 3);
+const ZC = +(P.get('z') ?? 21);
+const CEIL_COLS = +(P.get('ceilCols') ?? 8), CEIL_ROWS = +(P.get('ceilRows') ?? 5);
+const CH = [0, 1, 2];            // RGB channels of the brightfield store
+const TILE = 512;
+const REGION_W = COLS * TILE, REGION_H = ROWS * TILE;
+const logEl = document.getElementById('log');
+const results = { config: { LEVEL, Y0, X0, COLS, ROWS, ZC } };
+let lines = [];
+function log(s){ lines.push(s); logEl.textContent = lines.join('\n'); console.log('[spike] ' + s); }
+
+function pct(arr, p){ const a=[...arr].sort((x,y)=>x-y); return a[Math.min(a.length-1, Math.floor(p/100*a.length))]; }
+function mean(arr){ return arr.reduce((a,b)=>a+b,0)/arr.length; }
+
+async function fetchDecodeChunk(codec, level, c, z, ty, tx){
+  const url = `${STORE}/${level}/0/${c}/${z}/${ty}/${tx}`;
+  const r = await fetch(url, { mode:'cors', credentials:'omit' });
+  if (!r.ok) throw new Error(`chunk ${url} -> ${r.status}`);
+  const bytes = new Uint8Array(await r.arrayBuffer());
+  return await codec.decode(bytes);   // Uint8Array(512*512) grayscale
+}
+
+// Assemble one (channel, z) region from its COLS*ROWS tiles into a single Uint8Array.
+function blit(dst, dstW, tile, col, row){
+  const ox = col*TILE, oy = row*TILE;
+  for (let r=0; r<TILE; r++){
+    dst.set(tile.subarray(r*TILE, r*TILE+TILE), (oy+r)*dstW + ox);
+  }
+}
+
+async function main(){
+  const t_boot = performance.now();
+  // 1. WASM decoder
+  const ready = await window._jpegWasmInit();
+  const codec = new window._ImagecodecsJpegCodec({ level: 95 });
+  log(`WASM decoder ready=${ready} (${window.evostitch?.jpegCodec?.getState?.().wasmState})`);
+
+  // NOTE: the WebGL2 context is created AFTER the async fetch phase. Under headless
+  // ANGLE/Vulkan an idle context (no compositor) is reclaimed during a multi-second
+  // await gap (verified: a 4s gap → isContextLost()===true). This is a headless-
+  // benchmark artifact, not an architecture property — a real visible browser keeps
+  // the context alive. So: gather all data first, then do ALL GL work synchronously.
+
+  // 3. Fetch + decode all chunks for the region, assemble per-(channel,z)
+  const nChunks = CH.length * ZC * COLS * ROWS;
+  log(`fetching+decoding ${nChunks} chunks (region ${COLS}x${ROWS} tiles = ${REGION_W}x${REGION_H}, ${ZC} planes, ${CH.length} ch)…`);
+  // planeData[c] = array of ZC Uint8Arrays, each REGION_W*REGION_H
+  const planeData = CH.map(()=>Array.from({length:ZC}, ()=>new Uint8Array(REGION_W*REGION_H)));
+  const t_fetch0 = performance.now();
+  let decodeMs = 0, decoded = 0, failed = 0;
+  // bounded concurrency
+  const jobs = [];
+  for (const c of CH) for (let z=0; z<ZC; z++) for (let row=0; row<ROWS; row++) for (let col=0; col<COLS; col++)
+    jobs.push({ c, z, ty: Y0+row, tx: X0+col, row, col });
+  const CONC = 12;
+  let ji = 0;
+  async function worker(){
+    while (ji < jobs.length){
+      const j = jobs[ji++];
+      try {
+        const td = performance.now();
+        const tile = await fetchDecodeChunk(codec, LEVEL, j.c, j.z, j.ty, j.tx);
+        decodeMs += performance.now()-td; decoded++;
+        blit(planeData[CH.indexOf(j.c)][j.z], REGION_W, tile, j.col, j.row);
+      } catch(e){ failed++; if (failed<=3) log('  fetch fail: '+e.message); }
+    }
+  }
+  await Promise.all(Array.from({length:CONC}, worker));
+  const t_fetch = performance.now()-t_fetch0;
+  results.fetch = { chunks:nChunks, decoded, failed, totalMs:+t_fetch.toFixed(1),
+                    avgDecodeMsPerChunk:+(decodeMs/Math.max(1,decoded)).toFixed(2) };
+  log(`fetch+decode: ${decoded}/${nChunks} ok (${failed} fail) in ${t_fetch.toFixed(0)}ms, avg decode ${(decodeMs/Math.max(1,decoded)).toFixed(2)}ms/chunk`);
+  if (decoded === 0){ results.fatal='all chunks failed (CORS?)'; window.SPIKE_RESULTS=results; log('FATAL: no chunks'); return; }
+
+  // ---- BEGIN synchronous GL phase (no awaits past this point) ----
+  const canvas = document.getElementById('canvas');
+  const gl = canvas.getContext('webgl2', { antialias:false, preserveDrawingBuffer:false });
+  if (!gl){ log('FATAL: no webgl2'); results.fatal='no webgl2'; window.SPIKE_RESULTS=results; return; }
+  const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+  results.gpu = dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : 'unknown';
+  results.maxArrayLayers = gl.getParameter(gl.MAX_ARRAY_TEXTURE_LAYERS);
+  const swiftshader = /swiftshader|software|llvmpipe/i.test(results.gpu);
+  results.realGPU = !swiftshader;
+  log(`GPU: ${results.gpu}  (realGPU=${results.realGPU}, maxLayers=${results.maxArrayLayers})`);
+
+  // 4. Upload each channel's ZC planes into a persistent sampler2DArray (immutable R8)
+  function makeArray(w,h,layers){
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D_ARRAY, tex);
+    gl.texStorage3D(gl.TEXTURE_2D_ARRAY, 1, gl.R8, w, h, layers);
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    return tex;
+  }
+  gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+  const texArrays = [];
+  let nPlanes = 0;
+  const tUp0 = performance.now();
+  for (let ci=0; ci<CH.length; ci++){
+    const tex = makeArray(REGION_W, REGION_H, ZC);
+    texArrays.push(tex);
+    for (let z=0; z<ZC; z++){
+      gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0,0,z, REGION_W, REGION_H, 1, gl.RED, gl.UNSIGNED_BYTE, planeData[ci][z]);
+      nPlanes++;
+    }
+  }
+  gl.finish();  // one sync after all uploads → total GPU upload time
+  const tUp = performance.now()-tUp0;
+  const residentBytes = REGION_W*REGION_H*ZC*CH.length;
+  results.upload = { planes: nPlanes, totalMs:+tUp.toFixed(2), avgMsPerPlane:+(tUp/nPlanes).toFixed(3),
+                     MBperPlane:+(REGION_W*REGION_H/1048576).toFixed(3),
+                     residentMB:+(residentBytes/1048576).toFixed(1),
+                     effectiveGBps:+((residentBytes/1073741824)/(tUp/1000)).toFixed(2) };
+  log(`upload: ${nPlanes} planes in ${tUp.toFixed(1)}ms (${results.upload.avgMsPerPlane}ms/plane, ${results.upload.effectiveGBps} GB/s), resident ${results.upload.residentMB}MB`);
+
+  // 5. Shader: full-screen quad sampling 3 arrays at layer uZ -> RGB
+  const vs = `#version 300 es
+  in vec2 p; out vec2 uv;
+  void main(){ uv = vec2(p.x*0.5+0.5, 1.0-(p.y*0.5+0.5)); gl_Position = vec4(p,0.0,1.0); }`;
+  const fs = `#version 300 es
+  precision highp float; precision highp int;
+  in vec2 uv; out vec4 o;
+  uniform highp sampler2DArray t0;
+  uniform highp sampler2DArray t1;
+  uniform highp sampler2DArray t2;
+  uniform float uZ;
+  void main(){
+    float r = texture(t0, vec3(uv, uZ)).r;
+    float g = texture(t1, vec3(uv, uZ)).r;
+    float b = texture(t2, vec3(uv, uZ)).r;
+    o = vec4(r,g,b,1.0);
+  }`;
+  function sh(type,src){ const s=gl.createShader(type); gl.shaderSource(s,src); gl.compileShader(s);
+    if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){
+      const tn = type===gl.VERTEX_SHADER?'VERT':'FRAG';
+      throw new Error(tn+' compile failed: ['+gl.getShaderInfoLog(s)+'] glError='+gl.getError());
+    } return s; }
+  const prog = gl.createProgram();
+  gl.attachShader(prog, sh(gl.VERTEX_SHADER,vs)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER,fs));
+  gl.linkProgram(prog);
+  if(!gl.getProgramParameter(prog,gl.LINK_STATUS)) throw new Error('link: '+gl.getProgramInfoLog(prog));
+  gl.useProgram(prog);
+  const quad = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(prog,'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+  function bindArrays(arrs){
+    for (let i=0;i<3;i++){ gl.activeTexture(gl.TEXTURE0+i); gl.bindTexture(gl.TEXTURE_2D_ARRAY, arrs[i]); }
+    gl.uniform1i(gl.getUniformLocation(prog,'t0'),0);
+    gl.uniform1i(gl.getUniformLocation(prog,'t1'),1);
+    gl.uniform1i(gl.getUniformLocation(prog,'t2'),2);
+  }
+  const uZ = gl.getUniformLocation(prog,'uZ');
+  const px = new Uint8Array(4);
+  function drawZ(z){
+    gl.viewport(0,0,canvas.width,canvas.height);
+    gl.uniform1f(uZ, z);
+    gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+    gl.readPixels(canvas.width>>1, canvas.height>>1, 1,1, gl.RGBA, gl.UNSIGNED_BYTE, px); // force GPU sync
+  }
+  bindArrays(texArrays);
+  drawZ(Math.floor(ZC/2)); // initial render (mid plane, defaultZ)
+
+  // 6. Z-switch benchmark: 100 switches, measure uniform-swap + redraw + sync
+  function benchSwitches(n){
+    const t=[]; let z=0;
+    // warm
+    for(let i=0;i<5;i++){ drawZ(z=(z+1)%ZC); }
+    for(let i=0;i<n;i++){ const t0=performance.now(); drawZ(z=(z+1)%ZC); t.push(performance.now()-t0); }
+    return { n, p50:+pct(t,50).toFixed(3), p95:+pct(t,95).toFixed(3), min:+Math.min(...t).toFixed(3),
+             max:+Math.max(...t).toFixed(3), mean:+mean(t).toFixed(3) };
+  }
+  results.zswitch_realdata = benchSwitches(100);
+  results.contextLostAfterReal = gl.isContextLost();
+  log(`Z-switch (real data, ${REGION_W}x${REGION_H} arrays @ ${canvas.width}x${canvas.height} canvas): p50=${results.zswitch_realdata.p50}ms p95=${results.zswitch_realdata.p95}ms max=${results.zswitch_realdata.max}ms`);
+
+  // 7. VRAM ceiling test: allocate the acceptance-target viewport (40 tiles, 3ch, ZC planes)
+  //    and confirm it allocates + renders + switches without context loss.
+  const CW = CEIL_COLS*TILE, CHH = CEIL_ROWS*TILE;
+  const ceilBytes = CW*CHH*ZC*CH.length;
+  log(`VRAM ceiling: allocating 3x sampler2DArray ${CW}x${CHH}x${ZC} = ${(ceilBytes/1048576).toFixed(0)}MB…`);
+  let ceilArrays = null, ceilErr = null;
+  try {
+    ceilArrays = [];
+    for (let ci=0; ci<CH.length; ci++){
+      const tex = makeArray(CW, CHH, ZC);
+      ceilArrays.push(tex);
+      // fill each layer by tiling the real region data (data-agnostic for GPU timing)
+      const src = planeData[ci][ci % ZC];
+      // upload the real region into the top-left; leave rest as allocated (zeros) — allocation is what we test
+      for (let z=0; z<ZC; z++){
+        gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0,0,z, REGION_W, REGION_H, 1, gl.RED, gl.UNSIGNED_BYTE, planeData[ci][z]);
+      }
+    }
+    gl.finish();
+    const glErr = gl.getError();
+    results.ceiling = { region:`${CEIL_COLS}x${CEIL_ROWS} tiles`, dims:`${CW}x${CHH}x${ZC}`,
+                        allocMB:+(ceilBytes/1048576).toFixed(0), glError:glErr, contextLost:gl.isContextLost() };
+    if (glErr === 0 && !gl.isContextLost()){
+      bindArrays(ceilArrays);
+      results.zswitch_ceiling = benchSwitches(100);
+      results.ceiling.contextLostAfterSwitches = gl.isContextLost();
+      log(`VRAM ceiling: allocated ${results.ceiling.allocMB}MB OK (glError=${glErr}), Z-switch p50=${results.zswitch_ceiling.p50}ms p95=${results.zswitch_ceiling.p95}ms, contextLost=${gl.isContextLost()}`);
+    } else {
+      log(`VRAM ceiling: FAILED glError=${glErr} contextLost=${gl.isContextLost()}`);
+    }
+  } catch(e){ ceilErr = e.message; results.ceiling = { error:e.message }; log('VRAM ceiling ERR: '+e.message); }
+
+  // 8. Verdict
+  const zs = results.zswitch_ceiling || results.zswitch_realdata;
+  const passSwitch = zs.p50 < 8 && zs.p95 < 16;
+  const passVRAM = (results.ceiling?.allocMB ?? 1e9) < 1024 && !(results.ceiling?.contextLost) && (results.ceiling?.glError===0);
+  const passStable = !results.contextLostAfterReal && !(results.ceiling?.contextLostAfterSwitches);
+  results.verdict = {
+    realGPU: results.realGPU,
+    passSwitch, passVRAM, passStable,
+    GO: results.realGPU && passSwitch && passVRAM && passStable,
+    summary: `switch p50=${zs.p50}ms/p95=${zs.p95}ms (<8/<16 → ${passSwitch}); VRAM ${results.ceiling?.allocMB}MB<1024 → ${passVRAM}; stable → ${passStable}`
+  };
+  log(`\nVERDICT: ${results.verdict.GO ? 'GO' : 'NO-GO / see numbers'} — ${results.verdict.summary}`);
+  window.SPIKE_RESULTS = results;
+  window.SPIKE_DONE = true;
+}
+main().catch(e=>{ log('FATAL: '+e.message+'\n'+e.stack); results.fatal=e.message; window.SPIKE_RESULTS=results; window.SPIKE_DONE=true; });
+</script>
+</body>
+</html>

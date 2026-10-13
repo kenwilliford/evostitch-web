@@ -42,6 +42,20 @@ async function run2DMosaicTest() {
             }
         });
 
+        // Simulate corporate filters (e.g. JPL VPN) that block *.r2.dev;
+        // all 2D data must come from the custom domain
+        const r2DevRequests = [];
+        const dataDomainRequests = [];
+        await page.route(/^https:\/\/[^/]+\.r2\.dev\//, route => {
+            r2DevRequests.push(route.request().url());
+            route.abort();
+        });
+        page.on('request', req => {
+            if (new URL(req.url()).host === 'data.evostitch.net') {
+                dataDomainRequests.push(req.url());
+            }
+        });
+
         // Navigate to 2D mosaic
         const url = `${CONFIG.VIEWER_URL}?mosaic=${CONFIG.MOSAIC_ID}`;
         console.log(`Navigating to 2D mosaic: ${url}`);
@@ -252,9 +266,15 @@ async function run2DMosaicTest() {
         // 3. Heartbeat not active when queue empty
         const tilesIncreased = finalState.tilesLoaded > initialState.tilesLoaded;
         const noHeartbeatIssue = !(heartbeatState?.pendingJobs === 0 && heartbeatState?.heartbeatActive);
-        const success = criticalErrors.length === 0 && tilesIncreased && noHeartbeatIssue;
+        // 4. No requests to *.r2.dev; metadata, DZI and tiles via data.evostitch.net
+        const servedFromDataDomain = r2DevRequests.length === 0 &&
+            dataDomainRequests.some(u => u.endsWith('/metadata.json')) &&
+            dataDomainRequests.some(u => u.endsWith('.dzi')) &&
+            dataDomainRequests.some(u => u.includes('_files/'));
+        const success = criticalErrors.length === 0 && tilesIncreased && noHeartbeatIssue && servedFromDataDomain;
 
         console.log(`\nTiles loaded during session: ${tilesIncreased ? 'YES' : 'NO'}`);
+        console.log(`Served from data.evostitch.net (no r2.dev): ${servedFromDataDomain ? 'YES' : 'NO'} (r2.dev requests: ${r2DevRequests.length})`);
         console.log(`Heartbeat behaves correctly: ${noHeartbeatIssue ? 'YES' : 'NO'}`);
         console.log(`No critical errors: ${criticalErrors.length === 0 ? 'YES' : 'NO'}`);
 
@@ -266,6 +286,7 @@ async function run2DMosaicTest() {
             if (!tilesIncreased) console.log('  - Tiles did not load during interactions');
             if (!noHeartbeatIssue) console.log('  - Heartbeat active with empty queue');
             if (criticalErrors.length > 0) console.log('  - JavaScript errors occurred');
+            if (!servedFromDataDomain) console.log('  - 2D data not served from data.evostitch.net (r2.dev is blocked on some networks)');
         }
 
         return {
@@ -273,6 +294,8 @@ async function run2DMosaicTest() {
             tilesLoaded: finalState.tilesLoaded,
             tilesIncreased,
             heartbeatCorrect: noHeartbeatIssue,
+            servedFromDataDomain,
+            r2DevRequests: r2DevRequests.length,
             errorCount: criticalErrors.length
         };
 
